@@ -1,0 +1,12 @@
+.venv
+__pycache__/
+venv
+.eggs
+.pytest_cache
+*.egg-info
+.DS_Store
+.vscode
+dist
+secrets.yaml
+secrets.yml
+settings.json

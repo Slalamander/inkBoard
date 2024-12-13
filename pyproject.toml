@@ -1,0 +1,33 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+include-package-data = true
+
+[project]
+name = "inkBoard"
+authors = [
+    { name="Slalamander" }
+]
+description = "inkBoard aims to provide PSSM based dashboards in an easy, but flexible way"
+readme = "README.md"
+requires-python = ">=3.9"
+keywords = ["gui", "pixels", "interface", "MaterialDesignIcon", "mdi icons"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+]
+dependencies = [
+    "PyYAML", "pssm"
+]
+dynamic = ["version"]
+
+[project.scripts]
+inkBoard = "inkBoard.__main__:main"
+
+[tool.setuptools.dynamic]
+version = {attr = "inkBoard.__version__"}
+
+[project.urls]
+Homepage = "https://github.com/Slalamander/test"

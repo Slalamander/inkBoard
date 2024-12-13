@@ -1,0 +1,10 @@
+{
+    "version": "0.0.1",
+    "requirements": ["ttkbootstrap"],
+    "optional_requirements": {
+        "connection": ["pywifi"]
+    },
+    "inkboard_requirements": {
+        "inkboard_version": "1.0.0"
+    }
+}
