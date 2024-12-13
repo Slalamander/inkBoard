@@ -18,8 +18,9 @@ classifiers = [
     "Programming Language :: Python :: 3",
     "Operating System :: OS Independent",
 ]
+
 dependencies = [
-    "PyYAML", "pssm"
+    "PyYAML", "PythonScreenStackManager"
 ]
 dynamic = ["version"]
 
@@ -30,4 +31,4 @@ inkBoard = "inkBoard.__main__:main"
 version = {attr = "inkBoard.__version__"}
 
 [project.urls]
-Homepage = "https://github.com/Slalamander/test"
+Homepage = "https://github.com/Slalamander/inkBoard"
