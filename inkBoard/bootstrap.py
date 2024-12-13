@@ -84,7 +84,6 @@ async def setup_screen(core: "CORE") -> "pssm.PSSMScreen":
     from PythonScreenStackManager import pssm
 
     try:
-        # screen = pssm.set_screen(core.device, background = config.screen.background)
         screen = pssm.PSSMScreen(core.device, **vars(config.screen))
         await asyncio.sleep(0)
     except Exception as exce:
@@ -200,20 +199,10 @@ def _shutdown_core(core: "CORE", reload_ = False):
     
     _LOGGER.info("Shutting down inkBoard core")
 
-    # core.screen.mainLoop.stop()
-
-    # await asyncio.sleep(0)
-
     for task in asyncio.all_tasks():
         if task == asyncio.current_task(core.screen.mainLoop):
             continue
         task.cancel()
-
-    # await asyncio.sleep(0)
-
-
-
-    # await asyncio.sleep(0)
 
 def reload_core(core: "CORE", full_reload: bool = False):
     """Reloads the core object and required modules so it can be set up fresh again.
@@ -226,7 +215,6 @@ def reload_core(core: "CORE", full_reload: bool = False):
         A full reload reloads all modules that affect printing, i.e. PSSM, non custom integrations, platforms, etc. by default False
     """    
 
-    # await asyncio.shield(_shutdown_core(core,full_reload))
     _shutdown_core(core,full_reload)
 
     if not full_reload:
@@ -260,7 +248,6 @@ def reload_core(core: "CORE", full_reload: bool = False):
 
 def stop_core(core: "CORE"):
     try:
-        # await _shutdown_core(core,False)
         _shutdown_core(core,False)
     except Exception as exce:
         print(f"inkBoard did not shutdown gracefully: {exce}")

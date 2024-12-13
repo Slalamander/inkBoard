@@ -5,9 +5,6 @@ from pathlib import Path
 
 from mdi_pil import MDI_WEATHER_ICONS
 
-# from .arguments import args
-# __raise = args.raise_errors
-
 if TYPE_CHECKING:
     from PythonScreenStackManager.elements import Element
 
@@ -40,11 +37,7 @@ IMPORTER_THREADPOOL = "inkboard-import-threadpool"
 INKBOARD_FOLDER = Path(__file__).parent.resolve()
 "Absolute path to the folder containing the inkBoard module"
 
-##These should be moved to the config folder. They're not constants
-# CONFIG_FILE: str = args.config_file.lstrip()
-
-# DEFAULT_CONFIG = str(Path("./testconfig/second_config/second_config.yaml"))
-DEFAULT_CONFIG = str(Path("./testconfig/config.yaml"))
+DEFAULT_CONFIG = "./configuration.yaml"
 "The default name to use for the config file"
 
 CONFIG_FILE_TYPES = (
@@ -62,43 +55,6 @@ INKBOARD_COLORS = {
 }
 
 INKBOARD_ICON = INKBOARD_FOLDER / "files/icons/inkboard.ico"
-
-# MDI_WEATHER_ICONS : dict = {"default": "cloudy",
-#         "day": {
-#             "clear-night": "night",
-#             'cloudy':"cloudy",
-#             "exceptional": "cloudy-alert",
-#             'fog': "fog",
-#             'hail': "hail",
-#             'lightning': 'lightning',
-#             "lightning-rainy": "lightning-rainy",
-#             "partlycloudy": "partly-cloudy",
-#             "pouring": "pouring",
-#             'rainy': "rainy",
-#             "snowy": "snowy",
-#             "snowy-rainy": "snowy-rainy",
-#             "sunny": "sunny",
-#             "windy": "windy",
-#             "windy-variant": "windy-variant",
-
-#             ##Icons not in the recommended conditions, but present as mdi icons. See https://pictogrammers.com/library/mdi/category/weather/
-#             'hazy': "hazy",
-#             "hurricane": "hurricane",
-#             'dust': "dust",
-#             "partly-lightning": "partly-lightning",
-#             "partly-rainy": "partly-rainy",
-#             "partly-snowy": "partly-snowy",
-#             "partly-snowy-rainy": "partly-snowy-rainy",             
-#             "snowy-heavy": "snowy-heavy",
-#             "tornado": "tornado"
-#             },
-#         "night": {
-#             'cloudy': "night-partly-cloudy",
-#             "partlycloudy": "night-partly-cloudy",
-#             "sunny": "night",
-#             "clear-night": "night"
-#             }}
-# "Dict linking forecast conditions to mdi icons"
 
 ##See https://developers.home-assistant.io/docs/core/entity/weather#forecast-data
 ##Not included: is_daytime, condition
@@ -194,27 +150,6 @@ METEOCONS_FORECAST_ICONS : dict = {
                             }
 "Meteocon icons for forecast entries."
 
-__base_mod = __package__
-
-# _no_reload_mods = [
-#     "__main__",
-#     "constants",
-#     "arguments",
-#     "helpers",
-#     "integrations",
-#     "dashboard",
-#     ]
-
-# NO_RELOAD = [
-#     # __package__,
-#     # f"{__base_mod}.__main__",
-#     # f"{__base_mod}.arguments",
-#     # f"{__base_mod}"
-# ]
-"List of modules that do not need to removed from sys.modules upon reloading"
-
-# for mod in _no_reload_mods:
-#     NO_RELOAD.append(f"{__base_mod}.{mod}")
 
 BASE_RELOAD_MODULES = (
     f"{__package__}.core",
@@ -231,9 +166,6 @@ FULL_RELOAD_MODULES = [
 for i, mod in enumerate(FULL_RELOAD_MODULES):
     FULL_RELOAD_MODULES[i] = f"{__package__}.{mod}"
     # NO_RELOAD.append(f"{__base_mod}.{mod}")
-
-# FULL_RELOAD_MODULES = ("PythonScreenStackManager.elements", "PythonScreenStackManager.pssm",
-#                        *FULL_RELOAD_MODULES, "custom")
 
 ##Generally: don't reload pssm, should not change when designing elements or platforms which is what the full reload is mainly meant for.
 ##Full reload should reload all custom elements, platforms outside basedevice, and reset the screen.

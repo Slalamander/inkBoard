@@ -3,8 +3,6 @@ from multiprocessing import freeze_support
 
 import inkBoard.logging
 
-# import inkBoard.integration_loader
-
 freeze_support()
 
 import logging
@@ -17,10 +15,6 @@ import tracemalloc
 import sys
 import os
 import concurrent.futures
-
-# #Adding to path to solve some issues with running in Powershell (since it doesn't want to run with -m)
-# p = Path(__file__).parent.parent.absolute()
-# sys.path.append(str(p))
 
 import inkBoard
 from inkBoard import constants as const, bootstrap, loaders
