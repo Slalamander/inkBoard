@@ -36,7 +36,3 @@ def get_module_elements(module: ModuleType) -> dict[str,"Element"]:
 
     return element_dict
 
-def mount_custom_folder(folder: Path):
-    ##Or do it in the config?
-    
-    return

@@ -15,8 +15,7 @@ if TYPE_CHECKING:
 #                               General constants                              #
 # ---------------------------------------------------------------------------- #
 
-__version__ = "0.1.0" ##0.1.0: Integrations framework implemented
-"inkBoard version"
+
 
 FuncExceptions = (TypeError, KeyError, IndexError, OSError, RuntimeError)
 "General exceptions to catch when calling functions like update. Usage  in try statements as `except FuncExceptions:`"

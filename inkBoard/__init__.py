@@ -1,18 +1,13 @@
 ###Inkboard
 
-import sys
 from types import TracebackType, MappingProxyType
 from typing import Callable, TYPE_CHECKING, Literal, Any, Union
 import __main__
-from functools import partialmethod, partial
 from . import logging as ib_logging
 
-from yaml import SafeLoader
+__version__ = "0.1.0"   ##Version is in __init__, since the constants imported from mdi_pil which caused an error when building.
+"inkBoard version"
 
-from . import helpers, constants
-from .constants import RAISE, __version__
-
-#Location is correct (i.e. points to the package location)
 
 if TYPE_CHECKING:
     ##These are set in the main() function, so they can actually be imported during runtime too.
@@ -35,8 +30,6 @@ def getLogger(name: Union[str,None] = None) -> ib_logging.BaseLogger:
     """
     return ib_logging.logging.getLogger(name)
 
-configLoader = SafeLoader
-"configLoader object"
 
 class DomainError(ValueError):
     "The supplied entity is not of a valid domain."
