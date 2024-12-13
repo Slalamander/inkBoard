@@ -43,8 +43,7 @@ def build_config_elements(config : "config", core: "CORE"):
             ##Determine how to deal with the validators, i.e. they should only validate the top_level elements
             validator = validator_dict.get(conf_key,validate.validate_general)
             DashboardLoader._validator = validator
-            # c = conf[conf_key]
-            
+
             conf_res = DashboardLoader().construct_dashboard_node(conf[conf_key],True)
 
             if conf_key  == "statusbar":
@@ -78,7 +77,6 @@ def build_config_elements(config : "config", core: "CORE"):
             dash_conf[conf_key] = conf_res
 
     if DashboardLoader._config_error:
-        # logger.error("Error parsing configuration for the dashboard. See the logs for more information.")
         raise DashboardError("Error parsing configuration for the dashboard. See the logs for more information.") #@IgnoreExceptions
     return dash_conf
 
@@ -87,12 +85,7 @@ def get_main_layout(dash_config: "config.configuration"):
     Builds the main layout element based on the settings in the configuration.
     Returns the main layout element. Unless otherwise specified in the config, this will return the tab element made from the tabs key, and the statusbar, if specified
     """
-    # layouts = [dash_config["layouts"][0]]
 
-
-    # layout_row = ["?"]
-    # for layout_elt in layouts:
-    #     layout_row.append((layout_elt,"?"))
     layout = []
 
     if dash_config.get("main_tabs",None):
@@ -120,7 +113,6 @@ def get_main_layout(dash_config: "config.configuration"):
         layout.append(["?", (main_elt,"?")])
 
     return Layout(layout)
-    # return Layout([["?"],layout_row,["?"]])
 
 def _add_ha_defaults():
     from inkBoard.integrations import imported_modules

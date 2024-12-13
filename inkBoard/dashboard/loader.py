@@ -12,7 +12,6 @@ from PythonScreenStackManager import elements
 from PythonScreenStackManager.pssm.screen import DuplicateElementError
 
 from .. import core as CORE
-# from ..helpers import get_module_elements
 from ..configuration import loaders, const
 
 from .validate import validate_general
@@ -21,14 +20,11 @@ logger = logging.getLogger(__package__)
 
 ## Loading here kinda messes with things.
 ##Reload before building then. -> should be fine since it is not interfaced with
-# integration_parsers = CORE.get_element_parsers()
 
 ##This should be fine to do here since it imports from PSSM
 default_elements = CORE.util.get_module_elements(elements)
 
 #elements that are part of the default pack, i.e. parsed without an identifier
-
-
 
 class DashboardLoader(loaders.BaseSafeLoader):
     """
@@ -70,14 +66,12 @@ class DashboardLoader(loaders.BaseSafeLoader):
             else:
                 parser = parsers[idf]
                 elt_class = parser(elt_type_str)
-            
-        # if elt_class != None:
+
         validator(elt_class,elt_type)
 
         return elt_class
 
     def construct_mapping(self, node : yaml.MappingNode, deep=True, depth = 0):
-        # d = super().construct_mapping(node, deep)
 
         d = {}
         for (key_node, value_node) in node.value:
@@ -86,7 +80,6 @@ class DashboardLoader(loaders.BaseSafeLoader):
 
         if "type" not in d:
             return d
-            # return MappingProxyType(d)
 
         if d["type"] == "None" and len(d) == 1:
             return None
@@ -113,7 +106,6 @@ class DashboardLoader(loaders.BaseSafeLoader):
         
         if elt_type == None:
             return d
-            # return MappingProxyType(d)
         
         type_str = d.pop("type")
         
@@ -156,18 +148,5 @@ class DashboardLoader(loaders.BaseSafeLoader):
             else:
                 v = self.construct_scalar(node)
         return v
-    
-    # def construct_object(self, node, deep=False):
-    #     self.yaml_constructors
-    #     if getattr(node,"tag",None) in self.yaml_constructors:
-    #         tag_constructor = self.yaml_constructors[node.tag]
-    #         n = tag_constructor(self,node)
-    #     else:
-    #         n = super().construct_object(node, deep)
-    #     return n
 
-# def includor(*args):
-#     return "included something"
-
-# DashboardLoader.add_constructor("!include", includor)
 
