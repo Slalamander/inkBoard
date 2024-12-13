@@ -103,6 +103,13 @@ def setup_styles(core: "CORE"):
 
     if config.styles:
         pssm.pssm.styles.add_colors(**config.styles.get("shorthand_colors",{}))
+    
+    new_folders = {
+                "font_folder": config.folders.font_folder,
+                "icon_folder": config.folders.icon_folder,
+                "picture_folder": config.folders.picture_folder
+                }
+    pssm.constants.CUSTOM_FOLDERS.update(new_folders)
 
 def setup_dashboard_config(core: "CORE") -> "elements.Layout":
     "Reads out validates the dashboard nodes from the config, as well as optionally importing the custom dashboard file."

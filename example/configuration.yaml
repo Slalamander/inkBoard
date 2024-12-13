@@ -1,0 +1,101 @@
+device:
+  platform: desktop
+  name: Example Device
+  fullscreen: false
+
+
+screen:
+  poll_interval: 10   ##Amount of seconds between polling various device features
+
+inkBoard:
+  name: "Test6"
+  date_format: "%A %d %B %Y" #"%A %d %B %Y"  #Date format datetime format string. Defaults to "%d-%m-%Y"
+  time_format: "%H:%M" #Time format in datetime format string. Defaults to %H:%M
+  integration_start_time: -1 #Time to wait for integrations to start, before moving on to running the dashboard. -1 means wait until they are all finished.
+
+popups:
+  - type: PopupMenu
+    id: grid-popup
+    title: "Popping up"
+    menu_layout: grid-popup-layout
+
+layouts:
+  - type: GridLayout
+    id: my-layout
+    outer_margins: 10
+    inner_margins: 10
+    rows: 2
+    columns: 1
+    elements:
+      - type: Button
+        id: test1-button
+        text: We've had one button yes.
+        multiline: true
+      - type: GridLayout
+        inner_margins: 0
+        outer_margins: 0
+        rows: 1
+        columns: 2
+        elements:
+          - type: Button
+            id: test-button
+            text: But what about a second button?
+            multiline: true
+            background_color: grey
+            radius: 10
+          - type: Icon
+            icon: mdi:ring
+
+  - type: GridLayout
+    columns: 3
+    rows: 1
+    id: grid-popup-layout
+    elements:
+      - type: Button
+        text: I'm in a popup layout!
+
+  - type: GridLayout
+    id: custom-elements
+    columns: 3
+    rows: 1
+    row_size: "h*0.5"
+    column_size: ["w*0.4", "w*0.15", w*0.4]
+    outer_margins: [h*0.25, 25]
+    inner_margins: 10
+    elements:
+      - type: Button
+        font: DancingScript-Bold.ttf
+        text: I can write in a custom font!
+        background_color: inkboard-light
+      - type: Icon
+        icon: speaker-outline.png
+        icon_color: white
+        background_color: inkboard
+        background_shape: circle
+      - type: Picture
+        picture: 1024px-Kingda_Ka.jpg
+        background_shape: rounded_rectangle
+
+
+main_tabs:
+  ##Add some defaults in the parser here for markup (i.e. margins etc.)
+  foreground_color: inkboard-light
+  element_properties:
+    navigation:
+      inactive_properties:
+        background_color: None
+        radius: 5
+        element_properties:
+          name: 
+            font_color: gray
+      active_properties:
+        background_color: [255, 255, 255, 200]
+        element_properties:
+          name: 
+            font_color: active
+  tabs:
+    - element: my-layout
+      name: Breakfast
+      icon: mdi:bread-slice
+    - element: custom-elements
+      name: "Elements"

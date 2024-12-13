@@ -5,6 +5,8 @@ from pathlib import Path
 
 from mdi_pil import MDI_WEATHER_ICONS
 
+from . import __version__
+
 if TYPE_CHECKING:
     from PythonScreenStackManager.elements import Element
 
