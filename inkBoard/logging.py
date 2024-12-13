@@ -37,7 +37,6 @@ LOG_LEVELS = ("NOTEST", "VERBOSE", "DEBUG", "INFO", "WARNING", "ERROR", "CRITICA
 
 
 log_format = '%(asctime)s [%(levelname)s %(name)s %(funcName)s, line %(lineno)s]: %(message)s'
-# log_format = '%(asctime)s -thread: %(threadName)s- [%(levelname)s %(name)s %(funcName)s line %(lineno)s]: %(message)s'
 log_dateformat = '%d-%m-%Y %H:%M:%S'
 
 
@@ -239,7 +238,6 @@ def setup_logging(core: "CORE"):
     if config.basic_config != False:
         overwrite_basicConfig(core, config)
 
-    # if core.DESIGNER_RUN and "log_to_file" in config:
     if config.log_to_file != False:
         setup_filehandler(core, config)
     

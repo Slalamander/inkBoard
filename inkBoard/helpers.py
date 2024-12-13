@@ -114,7 +114,6 @@ def reload_full_module(module: Union[str,ModuleType], exclude: list[str] = []):
     mod_list = [x for x in sys.modules.copy() if x.startswith(module) and not x in exclude]
     for mod_name in mod_list:
         mod = sys.modules[mod_name]
-        # with suppress(ModuleNotFoundError):
         try:
             importlib.reload(mod)
         except ModuleNotFoundError:

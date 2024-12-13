@@ -359,8 +359,6 @@ class Packager:
         ignore_set = {"__pycache__"}
         if Path(src).parent == parentbase_folder:
             ignore_set.update(ignore_in_baseparent_folder)
-            # ignore_set.add("designer")
-            # ignore_set.add("designer.py")
 
         for name in filter(lambda x: x.endswith(CONFIG_FILE_TYPES), names):
             self._copied_yamls.add(Path(src) / name)
@@ -606,7 +604,6 @@ class Installer:
                 self.ask_confirm(msg)
                 self.pip_install_packages(*reqs, no_input=self._skip_confirmations)
         
-        # self.__zip_file.extract(platform_info)
         self.extract_zip_folder(platform_info, path = INKBOARD_FOLDER / "platforms", allow_overwrite=True)
         _LOGGER.info("Extracted platform file")
         return
@@ -669,7 +666,6 @@ class Installer:
                 self.ask_confirm(msg)
                 self.pip_install_packages(*reqs, no_input=self._skip_confirmations)
         
-        # self.__zip_file.extract(platform_info)
         self.extract_zip_folder(integration_info, path = INKBOARD_FOLDER / "integrations", allow_overwrite=True)
         _LOGGER.info("Extracted integration files")
         return

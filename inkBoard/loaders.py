@@ -13,7 +13,6 @@ from pathlib import Path
 
 import inkBoard
 from inkBoard.helpers import classproperty, reload_full_module
-# from inkBoard import core as CORE
 import inkBoard.integrations
 
 if TYPE_CHECKING:
@@ -180,11 +179,9 @@ class IntegrationLoader:
             
             if c := manifest.get("config_entry",False):
                 #Will require config_keys, similar to esphome, which can be left empty if needed.
-                # cls.add_integration_config_key(c, int_dir)    ##Not saving the folders, can get those from the module itself (from sys.modules)
                 name = f"{base_module}.{int_dir.name}"
                 ##These should not be checked by config key (i.e., save the key in the dict entry); key should be the folder name.
                 cls.add_integration_config_key(c, name)
-                # cls._installed_integrations.append(int_dir)
                 cls._installed_integrations[int_dir.name] = int_dir
                 cls._integration_modules[int_dir.name] = name
             else:
@@ -222,7 +219,6 @@ class IntegrationLoader:
                 _LOGGER.warning(f"Unable to successfully import integration {integration} from {name}")
             else:
                 cls._imported_modules[integration] = module
-                # core.imported_integrations[integration] = module
         
         cls._reload_imports = False
         return
