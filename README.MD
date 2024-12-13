@@ -13,4 +13,4 @@ WIP
 
 # Examples
 
-See the example folder for a small configuration file to make a dashboard. It can be run by using the command `inkBoard run configuration.yaml` in the example folder.
+See the example folder for a small configuration file to make a dashboard. It can be run by using the command `inkBoard run configuration.yaml` from the folder.
