@@ -54,7 +54,6 @@ class InkboardEntry(_BaseConfigEntry):
     integration_start_time : 'pssm.DurationType' = -1
     "Maximum time to allow integrations to run their start tasks before inkBoard continues to printing. Gets parsed to seconds. Keep in mind that setting this may cause issues with integrations. Default is -1 (No maximum time.)"
 
-# @dataclass(frozen=True)
 class StylesEntry(TypedDict):
     """
     Dataclass for styling options, used to set custom colours, define default fonts and certain icon styles.

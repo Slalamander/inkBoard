@@ -18,7 +18,5 @@ _LOGGER = logging.getLogger(__name__)
 def log_yaml_line(level: int, msg: str, node: "Node", *args, **kwargs):
     yaml_line = node.start_mark.line
     yaml_file = node.start_mark.name
-    msg = f"[yaml file {yaml_line} line {yaml_line}]: {msg}"
+    msg = f"[yaml file {yaml_file} line {yaml_line}]: {msg}"
     _LOGGER.log(level, msg, *args, **kwargs)
-
-# logger.log = log_yaml_line

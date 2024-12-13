@@ -17,7 +17,6 @@ from ..helpers import classproperty, ConfigError
 
 from . import const
 from .types import *
-# from .const import DEFAULT_CONFIG_FILE, BASE_FOLDER, DASHBOARD_KEYS, INKBOARD_FOLDER
 from .loaders import MainConfigLoader, BaseSafeLoader
 
 
@@ -33,7 +32,6 @@ _LOGGER = logging.getLogger(__name__)
 def mount_config_dir(folder: Path):
     
     if not isinstance(folder, str):
-        # assert isinstance(folder,Path)
         folder = str(folder)
 
     sys.path.insert(0, folder)
@@ -45,7 +43,6 @@ def mount_config_dir(folder: Path):
     sys.path_importer_cache.pop(folder, None)
 
 def read_config(filepath: Path) -> MainEntry:
-    # file = const.DEFAULT_CONFIG_FILE
     with open(filepath) as f:
         _config = yaml.load(f, Loader=MainConfigLoader)
     return MappingProxyType(_config)
@@ -81,8 +78,6 @@ def set_folders(full_config : MainEntry, base_folder: Path) -> FolderEntry:
 
     return FolderEntry(**folderDict)
 
-# MainConfigLoader._dashboard_entries = ("elements","layouts","popups","main_tabs", "statusbar")
-
 class configMeta(type):
     """
     Metaclass for inkBoard configuration. Ensures class attributes cannot be overwritten.
@@ -92,10 +87,8 @@ class configMeta(type):
         raise AttributeError("Cannot modify config attributes")
 
     def __delattr__(cls, name):
-        # if name == "thingies":
         raise AttributeError("Cannot delete config attributes")
-        # else:
-        #     return type.__delattr__(cls, name)
+
 
 ##Turn this into a singleton.
 ##And make it all instance based not class based.

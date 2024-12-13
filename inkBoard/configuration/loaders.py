@@ -17,8 +17,6 @@ try:
 except ImportError:
     pass
     
-
-# from .const import SECRETS_YAML, ENTITIES_YAML, BASE_FOLDER, DEFAULT_CONFIG_FILE, DASHBOARD_KEYS
 from . import const
 
 if TYPE_CHECKING:
@@ -33,7 +31,6 @@ def secret_constructor(loader: "BaseSafeLoader", node: yaml.nodes.ScalarNode) ->
         return loader._secrets[key]
     else:
         _LOGGER.error(f"{key} is not defined in secrets.yaml")
-        # sys.exit()
 
 def entity_constructor(loader: "BaseSafeLoader", node: yaml.nodes.ScalarNode) -> str:
     
@@ -43,7 +40,6 @@ def entity_constructor(loader: "BaseSafeLoader", node: yaml.nodes.ScalarNode) ->
         return loader._entities[key]
     else:
         _LOGGER.error(f"{key} is not defined in entitities.yaml")
-        # sys.exit()
 
 def include_constructor(loader: "BaseSafeLoader", node: yaml.nodes.ScalarNode) -> str:
     """Get appropriate entries from secrets.yaml"""
@@ -55,7 +51,7 @@ def include_constructor(loader: "BaseSafeLoader", node: yaml.nodes.ScalarNode) -
     if not file_path.exists():
         _LOGGER.error(f"Included file {file} cannot be found in {str(loader._base_folder)}")
         return {}
-    # with open(BASE_FOLDER / file) as f:
+
     with open(file_path) as f:
         c = yaml.load(f, Loader=loader.__class__)
 
@@ -141,9 +137,3 @@ class MainConfigLoader(BaseSafeLoader):
         #Not returning mappingproxies, as it leads to quite some difficulties
         #I.e. JSON not wanting to dump stuff when it is a MappingProxy.
         return d
-    
-    # def construct_scalar(self, node):
-    #     val = super().construct_scalar(node)
-    #     if "$" in val and hasattr(self.__class__, "_substitutions"):
-    #         val = Template(val).safe_substitute(**self.__class__._substitutions)
-    #     return val
