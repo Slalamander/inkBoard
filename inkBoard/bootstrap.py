@@ -18,7 +18,7 @@ import inkBoard.platforms
 _LOGGER = inkBoard.getLogger(__name__)
 
 if arguments.DESIGNER_MOD:
-    import inkBoard_designer.integrations
+    import inkBoarddesigner.integrations
 
 if TYPE_CHECKING:
     import inkBoard
@@ -151,7 +151,7 @@ async def setup_core(config_file, integration_loader: "loaders.IntegrationLoader
             inkBoard.integrations.__package__: Path(inkBoard.integrations.__path__[0]) 
             }
         if arguments.DESIGNER_MOD:
-            folders[inkBoard_designer.integrations.__package__] = Path(inkBoard_designer.integrations.__path__[0])
+            folders[inkBoarddesigner.integrations.__package__] = Path(inkBoarddesigner.integrations.__path__[0])
         CORE.integration_loader.get_integrations(folders)
     
     CORE.config = setup_base_config(config_file)

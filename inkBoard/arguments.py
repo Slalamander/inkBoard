@@ -11,9 +11,9 @@ DESIGNER_MOD = False #To indicate if the designer is installed
 try:
     ##For this: ensure the designer can be imported without the window being build etc.
     ##i.e. move a lot of the init into a runner file
-    import inkBoard_designer
+    import inkBoarddesigner
     DESIGNER_MOD = True
-    from inkBoard_designer import const as designer_const
+    from inkBoarddesigner import const as designer_const
     designer_version = designer_const.__version__
 except ModuleNotFoundError:
     pass
@@ -42,10 +42,10 @@ def command_version(*args):
 def command_designer(args):
     if not DESIGNER_MOD:
         print("Running inkBoard designer require the inkBoard designer to be installed")
-        print("Run 'pip install inkBoard_designer' to install it")
+        print("Run 'pip install inkBoarddesigner' to install it")
         return 1
 
-    inkBoard_designer.run_designer(args)
+    inkBoarddesigner.run_designer(args)
 
 def command_install(args):
     from .packaging import install_packages
@@ -104,11 +104,11 @@ def parse_args():
     ##Could optionally add the RAISE flag to this.
 
     if DESIGNER_MOD:
-        inkBoard_designer._add_parser(subparsers, const.COMMAND_DESIGNER)
+        inkBoarddesigner._add_parser(subparsers, const.COMMAND_DESIGNER)
     else:
         designer_parser = subparsers.add_parser(const.COMMAND_DESIGNER, 
                                             description="inkBoard designer is not installed",
-                                            help="Runs inkBoard in designer mode. inkBoard_designer must be installed for it.")
+                                            help="Runs inkBoard in designer mode. inkBoarddesigner must be installed for it.")
 
     parser_pack = subparsers.add_parser(
         const.COMMAND_PACK, help="Creates an inkBoard package using the provided config file"

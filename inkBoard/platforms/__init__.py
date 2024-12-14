@@ -12,7 +12,7 @@ from .basedevice import BaseDevice, Device, FEATURES
 from .validate import validate_device
 
 if DESIGNER_MOD:
-    import inkBoard_designer
+    import inkBoarddesigner
 
 if TYPE_CHECKING:
     from inkBoard import config as configuration
@@ -24,13 +24,13 @@ def get_device(config : "configuration") -> Device:
 
     ##Don't forget to include a way to import the designer
     if args.command == "designer":
-        from inkBoard_designer.emulator.device import Device, window
+        from inkBoarddesigner.emulator.device import Device, window
         return Device(config)
 
     conf_platform = config.device["platform"]
     if DESIGNER_MOD:
-        platform_path = Path(inkBoard_designer.__file__).parent / "platforms" / conf_platform
-        platform_package = f"{inkBoard_designer.__package__}.platforms"
+        platform_path = Path(inkBoarddesigner.__file__).parent / "platforms" / conf_platform
+        platform_package = f"{inkBoarddesigner.__package__}.platforms"
         if not platform_path.exists() or not platform_path.is_dir():
             platform_path = Path(__file__).parent / conf_platform
             platform_package = __package__

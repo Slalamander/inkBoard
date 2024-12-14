@@ -6,9 +6,9 @@ import ttkbootstrap as ttk
 
 from inkBoard import core as CORE
 
-from inkBoard_designer.tkinter import window, functions as tk_functions
-from inkBoard_designer.tkinter.widgets import Treeview
-from inkBoard_designer import const as des_const
+from inkBoarddesigner.tkinter import window, functions as tk_functions
+from inkBoarddesigner.tkinter.widgets import Treeview
+from inkBoarddesigner import const as des_const
 
 from .const import ENTITY_ICONS
 from .. import async_setup as super_setup, async_start as super_start, logger as _LOGGER

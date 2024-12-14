@@ -5,7 +5,7 @@ inkBoard is a dashboarding software that uses the [PythonScreenStackManager](htt
 The system is designed with extendability in mind, such that new platforms can easily be implemented, and to allow integrations to implement new features, elements, and the like. The idea is that by making it easy to write integrations and implement them, inkBoard can be used for various simple dashboards.  
 
 ## Install
-`pip install PythonScreenStackManager`
+`pip install inkBoard`
 
 # Documentation
 

@@ -28,7 +28,7 @@ if TYPE_CHECKING:
     from packaging.version import Version
 
 with suppress(ModuleNotFoundError):
-    import inkBoard_designer
+    import inkBoarddesigner
 
 try:
     from packaging.version import parse as parse_version
@@ -51,10 +51,10 @@ class PackageDict(TypedDict):
     created: str
     "The date and time the package was created, in isoformat"
 
-    created_with: Literal["inkBoard", "inkBoard_designer"]
+    created_with: Literal["inkBoard", "inkBoarddesigner"]
     "Whether this package was created via inkBoard itself, or via the designer"
 
-    versions: dict[Literal["inkBoard", "PythonScreenStackManager", "inkBoard_designer"],str]
+    versions: dict[Literal["inkBoard", "PythonScreenStackManager", "inkBoarddesigner"],str]
     "The versions of the core packages installed when creating it. Designer version is None if not installed"
 
     platform: str
@@ -374,12 +374,12 @@ class Packager:
         
 
         if self.CORE.DESIGNER_RUN:
-            package_dict["created_with"] = "inkBoard_designer"
-            package_dict["versions"]["inkBoard_designer"] = inkBoard_designer.__version__
+            package_dict["created_with"] = "inkBoarddesigner"
+            package_dict["versions"]["inkBoarddesigner"] = inkBoarddesigner.__version__
             package_dict["platform"] = self.CORE.device.emulated_platform
         else:
             package_dict["created_with"] = "inkBoard"
-            package_dict["versions"]["inkBoard_designer"] = None
+            package_dict["versions"]["inkBoarddesigner"] = None
             package_dict["platform"] = self.CORE.device.platform
 
         return PackageDict(**package_dict)
