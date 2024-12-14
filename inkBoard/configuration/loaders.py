@@ -116,7 +116,7 @@ class MainConfigLoader(BaseSafeLoader):
                     BaseSafeLoader._substitutions = MappingProxyType(val)
 
                 elif key_node.value in const.DASHBOARD_KEYS:
-                    _LOGGER.trace(f"dashboard node is {value_node}")
+                    _LOGGER.verbose(f"dashboard node is {value_node}")
                     d[key_node.value] = value_node
                 else:
                     parse_later[key_node.value] = value_node
