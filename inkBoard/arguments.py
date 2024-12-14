@@ -13,8 +13,7 @@ try:
     ##i.e. move a lot of the init into a runner file
     import inkBoarddesigner
     DESIGNER_MOD = True
-    from inkBoarddesigner import const as designer_const
-    designer_version = designer_const.__version__
+    designer_version = inkBoarddesigner.__version__
 except ModuleNotFoundError:
     pass
 

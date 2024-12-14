@@ -10,6 +10,6 @@ dist
 secrets.yaml
 secrets.yml
 settings.json
-inkBoard/platforms/*/*
-inkBoard/integrations/*/*
+inkBoard/platforms/*/
+inkBoard/integrations/*/
 inkBoarddesigner
