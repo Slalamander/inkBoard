@@ -4,6 +4,7 @@ import tracemalloc
 from pathlib import Path
 
 from mdi_pil import MDI_WEATHER_ICONS
+import importlib.util
 
 from . import __version__
 
@@ -14,15 +15,17 @@ if TYPE_CHECKING:
 #                               General constants                              #
 # ---------------------------------------------------------------------------- #
 
-DESIGNER_INSTALLED = False
+# DESIGNER_INSTALLED = False
 
-try:
-    ##For this: ensure the designer can be imported without the window being build etc.
-    ##i.e. move a lot of the init into a runner file
-    import inkBoarddesigner
-    DESIGNER_INSTALLED = True
-except ModuleNotFoundError:
-    pass
+# try:
+#     ##For this: ensure the designer can be imported without the window being build etc.
+#     ##i.e. move a lot of the init into a runner file
+#     import inkBoarddesigner
+#     DESIGNER_INSTALLED = True
+# except ModuleNotFoundError:
+#     pass
+
+DESIGNER_INSTALLED = importlib.util.find_spec("inkBoarddesigner") != None
 
 FuncExceptions = (TypeError, KeyError, IndexError, OSError, RuntimeError)
 "General exceptions to catch when calling functions like update. Usage  in try statements as `except FuncExceptions:`"
