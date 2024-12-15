@@ -182,7 +182,7 @@ def create_emulatorjson_init(device: type[Device]):
 
     _LOGGER.info("Writing to emulator.json")
     with open(platform_file, "w") as f:
-        cur_conf.update({"__init__", parameter_dict})
+        cur_conf.update({"__init__": parameter_dict})
         json.dump(cur_conf, f, indent=4)
 
     _LOGGER.info("Succesfully updated emulator.json")
