@@ -189,7 +189,14 @@ def create_emulatorjson_init(device: type[Device]):
     return
 
 def create_emulatorjson_features(device: Device):
-    
+    """Uses an _instance_ of a device to add/update features to the emulator.json file
+
+    Parameters
+    ----------
+    device : Device
+        _description_
+    """    
+
     import json
     import inspect
     from pathlib import Path

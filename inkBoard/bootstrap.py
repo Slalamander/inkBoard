@@ -67,7 +67,7 @@ async def setup_device(core: "CORE") -> "platforms.Device":
     ##Gotta check how this deals with being reloaded, same with config
     config = core.config
     try:
-        device = platforms.get_device(config)
+        device = platforms.get_device(config, core)
         await asyncio.sleep(0)  ##Allow startup tasks from devices to optionally run
     except Exception as exce:
         if isinstance(exce, DeviceError):

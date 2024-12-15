@@ -18,7 +18,6 @@ import concurrent.futures
 
 import inkBoard
 from inkBoard import constants as const, bootstrap, loaders
-from inkBoard.arguments import args, PRE_CORE_ACTIONS, POST_CORE_ACTIONS
 from inkBoard.helpers import DeviceError, ScreenError, reload_full_module
 
 from PythonScreenStackManager.exceptions import ReloadWarning, FullReloadWarning
@@ -75,6 +74,7 @@ def run_config(config_file: Union[Path,str]):
                         debug=_LOGGER.getEffectiveLevel() <= logging.DEBUG)
 
 def main():
+
     inkBoard.logging.init_logging(args.logs, args.quiet, args.verbose)
 
     if args.command in PRE_CORE_ACTIONS:
@@ -84,6 +84,7 @@ def main():
     return run()
 
 if __name__ == "__main__":
+    from inkBoard.arguments import args, PRE_CORE_ACTIONS, POST_CORE_ACTIONS
     sys.exit(main())
 
 

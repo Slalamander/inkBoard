@@ -14,7 +14,15 @@ if TYPE_CHECKING:
 #                               General constants                              #
 # ---------------------------------------------------------------------------- #
 
+DESIGNER_INSTALLED = False
 
+try:
+    ##For this: ensure the designer can be imported without the window being build etc.
+    ##i.e. move a lot of the init into a runner file
+    import inkBoarddesigner
+    DESIGNER_INSTALLED = True
+except ModuleNotFoundError:
+    pass
 
 FuncExceptions = (TypeError, KeyError, IndexError, OSError, RuntimeError)
 "General exceptions to catch when calling functions like update. Usage  in try statements as `except FuncExceptions:`"

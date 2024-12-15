@@ -6,29 +6,31 @@ import logging
 import importlib
 from typing import TYPE_CHECKING
 
-from ..arguments import args, DESIGNER_MOD
+# from ..arguments import args, DESIGNER_MOD
+
+from .. import constants as const
 
 from .basedevice import BaseDevice, Device, FEATURES
 from .validate import validate_device
 
-if DESIGNER_MOD:
+if const.DESIGNER_INSTALLED:
     import inkBoarddesigner
 
 if TYPE_CHECKING:
-    from inkBoard import config as configuration
+    from inkBoard import config as configuration, core as CORE
 
 logger = logging.getLogger(__name__)
 
-def get_device(config : "configuration") -> Device:
+def get_device(config : "configuration", core: "CORE") -> Device:
     "Initialises the correct device based on the config."
 
     ##Don't forget to include a way to import the designer
-    if args.command == "designer":
+    if core.DESIGNER_RUN:
         from inkBoarddesigner.emulator.device import Device, window
         return Device(config)
 
     conf_platform = config.device["platform"]
-    if DESIGNER_MOD:
+    if const.DESIGNER_INSTALLED:
         platform_path = Path(inkBoarddesigner.__file__).parent / "platforms" / conf_platform
         platform_package = f"{inkBoarddesigner.__package__}.platforms"
         if not platform_path.exists() or not platform_path.is_dir():
