@@ -19,6 +19,7 @@ import inkBoard
 import inkBoard.platforms
 from inkBoard.configuration.const import CONFIG_FILE_TYPES, INKBOARD_FOLDER
 from inkBoard.types  import *
+from inkBoard import constants as const
 
 import PythonScreenStackManager as PSSM
 
@@ -1081,4 +1082,23 @@ class InternalInstaller(Installer):
     "Handles installing requirements already installed platforms and integrations."
     def __init__(self, install_type: internalinstalltypes, name: str, skip_confirmations = False, confirmation_function = None):
         ##May remove the subclassing, but just reuse the usable functions (i.e. seperate out a few funcs.)
-        super().__init__(file, skip_confirmations, confirmation_function)
+        ##Also, use the constant designer mod in case something is not found internally.
+        ##Do give a warning for platforms though, or integrations without a designer module.
+        # super().__init__(file, skip_confirmations, confirmation_function)
+        if install_type == "integration":
+            file = Path("integrations") / name
+        elif install_type == "platform":
+            file = Path("platforms") / name
+
+        full_path = INKBOARD_FOLDER / file
+        if not const.DESIGNER_INSTALLED:
+            assert full_path.exists(), f"{install_type} {name} is not installed or does not exist"
+        else:
+            if not full_path.exists():
+                assert (const.DESIGNER_LOCATION / file).exist(),  f"{install_type} {name} is not installed or does not exist"
+                full_path = const.DESIGNER_LOCATION / file
+
+        self._full_path = full_path
+        self._confirmation_function = confirmation_function
+        self._skip_confirmations = skip_confirmations
+        return
