@@ -97,12 +97,12 @@ def setup_styles(core: "CORE"):
     config = core.config
 
     import PythonScreenStackManager as pssm
-    pssm.pssm.styles.add_colors(**const.INKBOARD_COLORS)
+    pssm.pssm.styles.Style.add_color_shorthand(**const.INKBOARD_COLORS)
 
     pssm.constants.SHORTHAND_ICONS["inkboard"] = const.INKBOARD_ICON
 
     if config.styles:
-        pssm.pssm.styles.add_colors(**config.styles.get("shorthand_colors",{}))
+        pssm.pssm.styles.Style.add_color_shorthand(**config.styles.get("shorthand_colors",{}))
     
     new_folders = {
                 "font_folder": config.folders.font_folder,
@@ -206,7 +206,7 @@ def _shutdown_core(core: "CORE", reload_ = False):
     
     _LOGGER.info("Shutting down inkBoard core")
 
-    for task in asyncio.all_tasks():
+    for task in asyncio.all_tasks(core.screen.mainLoop):
         if task == asyncio.current_task(core.screen.mainLoop):
             continue
         task.cancel()
