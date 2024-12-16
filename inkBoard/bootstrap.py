@@ -199,7 +199,7 @@ async def run_core(core: "CORE"):
     L = asyncio.gather(
                     *coros,
                     return_exceptions=False)
-    return await L  #@IgnoreException
+    return await L  #@IgnoreExceptions
 
 def _shutdown_core(core: "CORE", reload_ = False):
     "Shuts down the core object and optionally reloads the necessary modules"
