@@ -20,7 +20,7 @@ classifiers = [
 ]
 
 dependencies = [
-    "PyYAML", "PythonScreenStackManager=>0.2.2"
+    "PyYAML", "PythonScreenStackManager>=0.2.2"
 ]
 dynamic = ["version"]
 
