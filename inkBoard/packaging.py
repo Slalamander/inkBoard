@@ -45,6 +45,7 @@ packageidfiles : dict[packagetypes,str] = {
     'integration': 'manifest.json',
     'platform': 'platform.json'
 }
+internalinstalltypes = Literal["platform", "integration"]
 
 class PackageDict(TypedDict):
 
@@ -154,6 +155,15 @@ def create_package(core: "CORE", name: str = None, pack_all: bool = False, confi
 
         Packager(core).create_package(name, pack)
     return 0
+
+def command_install(command: str, no_input: bool = False):
+    ##Add functionality to installer for internal installs (platforms and integrations)
+    ##Usage: install [platform/integration] [name]
+    ##But needs perhaps some other identifier or something in the init.
+    ##Or make a subclass for it.
+    ##Can't focus now though because of music nextdoor
+    return
+
 
 def install_packages(file: Union[str, Path] = None, no_input: bool = False):
     
@@ -586,9 +596,29 @@ class Installer:
             return
         
         _LOGGER.info(f"Installing new platform {platform}, version {platform_version}")
-        
-        requirements = platform_conf["requirements"]
+        if self._install_platform_requirements(platform,platform_conf):
+            self.extract_zip_folder(platform_info, path = INKBOARD_FOLDER / "platforms", allow_overwrite=True)
+            _LOGGER.info("Extracted platform file")
+        return
 
+    def _install_platform_requirements(self, name: str, platform_conf: platformjson) -> bool:
+        """Installs requirements based on a platformjson dict
+
+        Parameters
+        ----------
+        name : str
+            Name of the platform. For logging
+        platform_conf : platformjson
+            The platform.json dict
+
+        Returns
+        -------
+        bool
+            Whether the requirements were installed successfully
+        """        
+
+        platform = name
+        requirements = platform_conf["requirements"]
         res = self.pip_install_packages(*requirements, no_input=self._skip_confirmations)
 
         if res.returncode != 0:
@@ -596,7 +626,7 @@ class Installer:
                 msg = f"Something went wrong installing the requirements using pip. Continue installation of platform {platform}?"
                 self.ask_confirm(msg, force_ask=True)
             except NegativeConfirmation:
-                return
+                return False
 
         for opt_req, reqs in platform_conf.get("optional_requirements", {}).items():
             with suppress(NegativeConfirmation):
@@ -604,9 +634,7 @@ class Installer:
                 self.ask_confirm(msg)
                 self.pip_install_packages(*reqs, no_input=self._skip_confirmations)
         
-        self.extract_zip_folder(platform_info, path = INKBOARD_FOLDER / "platforms", allow_overwrite=True)
-        _LOGGER.info("Extracted platform file")
-        return
+        return True
 
     def _install_integration_zipinfo(self, integration_info: zipfile.ZipInfo):
         
@@ -618,7 +646,6 @@ class Installer:
         with self.__zip_file.open(f"{integration_info.filename}{packageidfiles['integration']}") as f:
             integration_conf: manifestjson = json.load(f)
             integration_version = parse_version(integration_conf['version'])
-
 
         install = True
         ib_requirements = integration_conf["inkboard_requirements"]
@@ -646,10 +673,33 @@ class Installer:
         if not install:
             _LOGGER.info(f"Not installing Integration {integration} {integration_version}")
             return
-        
+
+        if self._install_integration_requirements(integration, integration_conf):
+            self.extract_zip_folder(integration_info, path = INKBOARD_FOLDER / "integrations", allow_overwrite=True)
+            _LOGGER.info("Extracted integration files")
+
+    def _install_integration_requirements(self, name: str, manifest: manifestjson) -> bool:
+        """Installs integration requirements based on a manifestjson dict
+
+        Parameters
+        ----------
+        name : str
+            Name of the integration. For logging
+        platform_conf : platformjson
+            The manifest.json dict
+
+        Returns
+        -------
+        bool
+            Whether the requirements were installed successfully
+        """
+
+        integration_version = parse_version(manifest['version'])
+        integration = name
+
         _LOGGER.info(f"Installing new Integration {integration}, version {integration_version}")
         
-        requirements = integration_conf["requirements"]
+        requirements = manifest["requirements"]
         if requirements:
             res = self.pip_install_packages(*requirements, no_input=self._skip_confirmations)
 
@@ -658,17 +708,14 @@ class Installer:
                 msg = f"Something went wrong installing the requirements using pip. Continue installation of integration {integration}?"
                 self.ask_confirm(msg, force_ask=True)
             except NegativeConfirmation:
-                return
+                return False
 
-        for opt_req, reqs in integration_conf.get("optional_requirements", {}).items():
+        for opt_req, reqs in manifest.get("optional_requirements", {}).items():
             with suppress(NegativeConfirmation):
                 msg = f"Install requirements for optional features {opt_req}?"
                 self.ask_confirm(msg)
                 self.pip_install_packages(*reqs, no_input=self._skip_confirmations)
-        
-        self.extract_zip_folder(integration_info, path = INKBOARD_FOLDER / "integrations", allow_overwrite=True)
-        _LOGGER.info("Extracted integration files")
-        return
+        return True
 
     def ask_confirm(self, msg: str, force_ask: bool = False):
         """Prompts the user to confirm something.
@@ -1029,3 +1076,9 @@ class Installer:
     # - Platform
     # - Integration
     # - requirements; internal and external -> internal eh, should be taken care of when actually installing it.
+
+class InternalInstaller(Installer):
+    "Handles installing requirements already installed platforms and integrations."
+    def __init__(self, install_type: internalinstalltypes, name: str, skip_confirmations = False, confirmation_function = None):
+        ##May remove the subclassing, but just reuse the usable functions (i.e. seperate out a few funcs.)
+        super().__init__(file, skip_confirmations, confirmation_function)
