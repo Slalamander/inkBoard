@@ -1,5 +1,5 @@
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Union
 import tracemalloc
 from pathlib import Path
 
@@ -15,17 +15,13 @@ if TYPE_CHECKING:
 #                               General constants                              #
 # ---------------------------------------------------------------------------- #
 
-# DESIGNER_INSTALLED = False
+DESIGNER_INSTALLED: bool = False
+DESIGNER_FOLDER: Union[None,Path] = None
 
-# try:
-#     ##For this: ensure the designer can be imported without the window being build etc.
-#     ##i.e. move a lot of the init into a runner file
-#     import inkBoarddesigner
-#     DESIGNER_INSTALLED = True
-# except ModuleNotFoundError:
-#     pass
+if s := importlib.util.find_spec("inkBoarddesigner"):
+    DESIGNER_INSTALLED = True
+    DESIGNER_FOLDER = Path(s.origin).parent
 
-DESIGNER_INSTALLED = importlib.util.find_spec("inkBoarddesigner") != None
 
 FuncExceptions = (TypeError, KeyError, IndexError, OSError, RuntimeError)
 "General exceptions to catch when calling functions like update. Usage  in try statements as `except FuncExceptions:`"

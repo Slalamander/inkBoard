@@ -1095,8 +1095,8 @@ class InternalInstaller(Installer):
             assert full_path.exists(), f"{install_type} {name} is not installed or does not exist"
         else:
             if not full_path.exists():
-                assert (const.DESIGNER_LOCATION / file).exist(),  f"{install_type} {name} is not installed or does not exist"
-                full_path = const.DESIGNER_LOCATION / file
+                assert (const.DESIGNER_FOLDER / file).exist(),  f"{install_type} {name} is not installed or does not exist"
+                full_path = const.DESIGNER_FOLDER / file
 
         self._full_path = full_path
         self._confirmation_function = confirmation_function
