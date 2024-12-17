@@ -24,7 +24,7 @@ except ModuleNotFoundError:
 
 def pop_base_args(args) -> dict:
     "Returns a dict with the base argparse arguments removed (i.e. anything that is not command)"
-    d = vars(args)
+    d = vars(args).copy()
     d.pop("logs")
     d.pop("quiet")
     d.pop("verbose")
@@ -47,8 +47,9 @@ def command_designer(args):
     inkBoarddesigner.run_designer(args)
 
 def command_install(args):
-    from .packaging import install_packages
-    return install_packages(**pop_base_args(args))
+    from .packaging import command_install
+    d = pop_base_args(args)
+    return command_install(**pop_base_args(args))
 
 def command_pack(args):
     from .packaging import create_config_package
@@ -130,9 +131,14 @@ def parse_args():
     parser_install.add_argument("file", help="""
                             The file to install. If it is a ZIP file, inkBoard will check if it is an inkBoard compatible one (Either an inkBoard package, or a zip of a platform or integration folder).
                             If a YAML file, inkBoard will go through the base directory, the files folder and the custom folder and call pip install on any files it finds titled requirements.txt. In the custom integration folder, it will also take care of installing requirements for the integrations presents.
+                            If it is platform or integration, appended by a name, inkBoard will go through the install process of that respective platform/integration, provided it is installed internally.
                             If not supplied, the installer will look for all suitable ZIP files in the current directory.
                             """, default=None, nargs='?')
+    ##How to deal with passing the name part of the command?
     
+    parser_install.add_argument("name", help="The name of platform or integration to install. This is not used if the file command is not one of integration or platform.",
+                                default=None, nargs="?")
+
     parser_install.add_argument('--no-input', help="Disables any input prompts that are deemed optional", action='store_true')
 
     parser.add_argument(
