@@ -1,7 +1,0 @@
-{
-    "name": "inkBoard Dummy Integration",
-    "config_entry": "dummy_integration",
-    "codeowners": [],
-    "documentation": "https://www.example.com",
-    "requirements": []
-}

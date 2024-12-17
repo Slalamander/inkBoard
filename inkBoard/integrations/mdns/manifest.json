@@ -1,7 +1,0 @@
-{
-    "name": "inkBoard mdns",
-    "config_entry": "mdns",
-    "codeowners": [],
-    "documentation": "https://www.example.com",
-    "requirements": []
-}
