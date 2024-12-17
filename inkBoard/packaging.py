@@ -1153,7 +1153,7 @@ class InternalInstaller(BaseInstaller):
             assert full_path.exists(), f"{install_type} {name} is not installed or does not exist"
         else:
             if not full_path.exists():
-                assert (const.DESIGNER_FOLDER / file).exist(),  f"{install_type} {name} is not installed or does not exist"
+                assert (const.DESIGNER_FOLDER / file).exists(),  f"{install_type} {name} is not installed or does not exist"
                 full_path = const.DESIGNER_FOLDER / file
 
         self._name = full_path.name
@@ -1170,13 +1170,22 @@ class InternalInstaller(BaseInstaller):
             return self.install_platform()
 
     def install_platform(self):
+
         with open(self._full_path / packageidfiles["platform"]) as f:
             conf: platformjson = json.load(f)
-        
-        return self.install_platform_requirements(self._name, conf)
+            
+        with suppress(NegativeConfirmation):
+            msg = f"Install platform {self._name}?"
+            self.ask_confirm(msg)
+            return self.install_platform_requirements(self._name, conf)
+        return 1
 
     def install_integration(self):
         with open(self._full_path / packageidfiles["integration"]) as f:
             conf: platformjson = json.load(f)
         
-        return self.install_integration_requirements(self._name, conf)
+        with suppress(NegativeConfirmation):
+            msg = f"Install integration {self._name}?"
+            self.ask_confirm(msg)
+            return self.install_integration_requirements(self._name, conf)
+        return 1
