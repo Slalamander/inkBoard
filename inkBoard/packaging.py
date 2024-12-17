@@ -1,6 +1,6 @@
 "Handles inkBoard packages, both creating and installing them."
 
-from typing import TYPE_CHECKING, TypedDict, Literal, Callable, Union, Optional
+import asyncio
 import zipfile
 import os
 import tempfile
@@ -9,8 +9,9 @@ import inspect
 import json
 import subprocess
 import sys
-from abc import abstractmethod
 
+from typing import TYPE_CHECKING, TypedDict, Literal, Callable, Union, Optional
+from abc import abstractmethod
 from functools import partial
 from pathlib import Path
 from datetime import datetime as dt
@@ -20,7 +21,7 @@ import inkBoard
 import inkBoard.platforms
 from inkBoard.configuration.const import CONFIG_FILE_TYPES, INKBOARD_FOLDER
 from inkBoard.types  import *
-from inkBoard import constants as const
+from inkBoard import constants as const, bootstrap
 
 import PythonScreenStackManager as PSSM
 
@@ -136,7 +137,33 @@ def confirm_input(msg: str, installer: "BaseInstaller"):
         print("Please answer one of Y(es) or N(o) (Not case sensitive)")
         return confirm_input(msg)
 
-def create_package(core: "CORE", name: str = None, pack_all: bool = False, config: bool = False, platform: bool = False, integrations: bool = False):
+def create_config_package(configuration: str, name: str = None, pack_all: bool = False, config: bool = False, platform: bool = False, integrations: bool = False):
+    """Sets up a core instance and creates a package from it
+
+    Parameters
+    ----------
+    configuration : str
+        The YAML file to use
+    name : str, optional
+        The name of the package, by default None
+    pack_all : bool, optional
+        Packages all components (config stuff, platform and integrations), by default False
+    config : bool, optional
+        Packages the config folder, by default False
+    platform : bool, optional
+        Packages the platform, by default False
+    integrations : bool, optional
+        Packages the imported integrations, by default False
+
+    Returns
+    -------
+    int
+        Return code
+    """    
+    core = asyncio.run(bootstrap.setup_core(configuration, bootstrap.loaders.IntegrationLoader))
+    return create_core_package(core, name, pack_all, config, platform, integrations)
+
+def create_core_package(core: "CORE", name: str = None, pack_all: bool = False, config: bool = False, platform: bool = False, integrations: bool = False):
     """Creates an inkBoard package from a core instance.
 
     This bundles all required files and folders from the configuration folder, as well in the required platforms and integrations.
@@ -158,6 +185,7 @@ def create_package(core: "CORE", name: str = None, pack_all: bool = False, confi
         Packager(core).create_package(name, pack)
     return 0
 
+
 def command_install(command: str, no_input: bool = False):
     ##Add functionality to installer for internal installs (platforms and integrations)
     ##Usage: install [platform/integration] [name]
@@ -166,19 +194,18 @@ def command_install(command: str, no_input: bool = False):
     ##Can't focus now though because of music nextdoor
     return
 
-
 def install_packages(file: Union[str, Path] = None, no_input: bool = False):
     
     if file:
-        return BaseInstaller(file, skip_confirmations=no_input, confirmation_function=confirm_input).install()
+        return PackageInstaller(file, skip_confirmations=no_input, confirmation_function=confirm_input).install()
     else:
-        packages = BaseInstaller.gather_inkboard_packages()
+        packages = PackageInstaller.gather_inkboard_packages()
         if len(packages) == 1:
             print(f"Found 1 package that can be installed")
         else:
             print(f"Found {len(packages)} packages that can be installed")
-        for package, p_type in packages.items():
-            BaseInstaller(package, skip_confirmations=no_input, confirmation_function=confirm_input).install()
+        for package in packages:
+            PackageInstaller(package, skip_confirmations=no_input, confirmation_function=confirm_input).install()
         return 0
 
 
@@ -641,7 +668,7 @@ class BaseInstaller:
 class PackageInstaller(BaseInstaller):
     """Installs an inkBoard compatible .zip file, or requirements files in a config directory.
 
-    Call `Installer().install()` to run the installer.
+    Call `PackageInstaller().install()` to run the installer.
     There are a few classmethods and staticmethods too that can be called without instantiating.
 
     Parameters

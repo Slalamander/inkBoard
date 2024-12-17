@@ -51,9 +51,9 @@ def command_install(args):
     return install_packages(**pop_base_args(args))
 
 def command_pack(args):
-    from .packaging import create_package
-    from inkBoard import core as CORE
-    return create_package(CORE, **pop_base_args(args))
+    from .packaging import create_config_package
+    # from inkBoard import core as CORE
+    return create_config_package(**pop_base_args(args))
 
 
 PRE_CORE_ACTIONS = {
