@@ -186,13 +186,17 @@ def create_core_package(core: "CORE", name: str = None, pack_all: bool = False, 
     return 0
 
 
-def command_install(command: str, no_input: bool = False):
+def command_install(file: str, name: str, no_input: bool):
     ##Add functionality to installer for internal installs (platforms and integrations)
     ##Usage: install [platform/integration] [name]
-    ##But needs perhaps some other identifier or something in the init.
-    ##Or make a subclass for it.
-    ##Can't focus now though because of music nextdoor
-    return
+
+    if file in internalinstalltypes.__args__:
+        return install_internal(file, name, no_input)
+    else:
+        return install_packages(file, no_input)
+
+def install_internal(install_type: str, name:str, no_input: bool = False):
+    return InternalInstaller(install_type, name, no_input, confirm_input).install()
 
 def install_packages(file: Union[str, Path] = None, no_input: bool = False):
     
@@ -428,6 +432,20 @@ class BaseInstaller:
 
     Call `Installer().install()` to run the installer, or use the pip functions to install packages via pip
     """
+
+    _skip_confirmations: bool
+    _confirmation_function: Callable[[str, 'BaseInstaller'],bool]
+
+    @property
+    def skip_confirmations(self) -> bool:
+        "Whether to ask for confirmation for all actions"
+        return self._skip_confirmations
+    
+    @property
+    def confirmation_function(self) -> Callable[[str, 'BaseInstaller'],bool]:
+        "The function used to prompt the user for confirmation"
+        return self._confirmation_function
+    
 
     @abstractmethod
     def install(self):
@@ -1119,13 +1137,12 @@ class PackageInstaller(BaseInstaller):
 
 
 
-class InternalInstaller:
+class InternalInstaller(BaseInstaller):
     "Handles installing requirements already installed platforms and integrations."
     def __init__(self, install_type: internalinstalltypes, name: str, skip_confirmations = False, confirmation_function = None):
         ##May remove the subclassing, but just reuse the usable functions (i.e. seperate out a few funcs.)
         ##Also, use the constant designer mod in case something is not found internally.
         ##Do give a warning for platforms though, or integrations without a designer module.
-        # super().__init__(file, skip_confirmations, confirmation_function)
         if install_type == "integration":
             file = Path("integrations") / name
         elif install_type == "platform":
@@ -1139,9 +1156,27 @@ class InternalInstaller:
                 assert (const.DESIGNER_FOLDER / file).exist(),  f"{install_type} {name} is not installed or does not exist"
                 full_path = const.DESIGNER_FOLDER / file
 
+        self._name = full_path.name
         self._full_path = full_path
         self._confirmation_function = confirmation_function
         self._skip_confirmations = skip_confirmations
-
+        self._install_type = install_type
         return
     
+    def install(self):
+        if self._install_type == "integration":
+            return self.install_integration()
+        elif self._install_type == "platform":
+            return self.install_platform()
+
+    def install_platform(self):
+        with open(self._full_path / packageidfiles["platform"]) as f:
+            conf: platformjson = json.load(f)
+        
+        return self.install_platform_requirements(self._name, conf)
+
+    def install_integration(self):
+        with open(self._full_path / packageidfiles["integration"]) as f:
+            conf: platformjson = json.load(f)
+        
+        return self.install_integration_requirements(self._name, conf)
