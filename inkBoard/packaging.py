@@ -9,6 +9,7 @@ import inspect
 import json
 import subprocess
 import sys
+from abc import abstractmethod
 
 from functools import partial
 from pathlib import Path
@@ -125,7 +126,7 @@ def compare_versions(requirement: Union[str,"Version"], compare_version: Union[s
     
     return eval(comp_str, {}, {"compare_version": compare_version, "required_version": parse_version(req_version)})
 
-def confirm_input(msg: str, installer: "Installer"):
+def confirm_input(msg: str, installer: "BaseInstaller"):
     answer = input(f"{msg}\n(Y/N): ")
     if answer.lower() in {"y","yes"}:
         return True
@@ -169,15 +170,15 @@ def command_install(command: str, no_input: bool = False):
 def install_packages(file: Union[str, Path] = None, no_input: bool = False):
     
     if file:
-        return Installer(file, skip_confirmations=no_input, confirmation_function=confirm_input).install()
+        return BaseInstaller(file, skip_confirmations=no_input, confirmation_function=confirm_input).install()
     else:
-        packages = Installer.gather_inkboard_packages()
+        packages = BaseInstaller.gather_inkboard_packages()
         if len(packages) == 1:
             print(f"Found 1 package that can be installed")
         else:
             print(f"Found {len(packages)} packages that can be installed")
         for package, p_type in packages.items():
-            Installer(package, skip_confirmations=no_input, confirmation_function=confirm_input).install()
+            BaseInstaller(package, skip_confirmations=no_input, confirmation_function=confirm_input).install()
         return 0
 
 
@@ -395,8 +396,250 @@ class Packager:
 
         return PackageDict(**package_dict)
 
-class Installer:
-    """Installs an inkBoard compatible .zip file.
+class BaseInstaller:
+    """Base class for installers
+
+    Call `Installer().install()` to run the installer, or use the pip functions to install packages via pip
+    """
+
+    @abstractmethod
+    def install(self):
+        "Runs the installer"
+        return
+
+    def install_platform_requirements(self, name: str, platform_conf: platformjson) -> bool:
+        """Installs requirements based on a platformjson dict
+
+        Parameters
+        ----------
+        name : str
+            Name of the platform. For logging
+        platform_conf : platformjson
+            The platform.json dict
+
+        Returns
+        -------
+        bool
+            Whether the requirements were installed successfully
+        """        
+
+        platform = name
+        requirements = platform_conf["requirements"]
+        res = self.pip_install_packages(*requirements, no_input=self._skip_confirmations)
+
+        if res.returncode != 0:
+            try:
+                msg = f"Something went wrong installing the requirements using pip. Continue installation of platform {platform}?"
+                self.ask_confirm(msg, force_ask=True)
+            except NegativeConfirmation:
+                return False
+
+        for opt_req, reqs in platform_conf.get("optional_requirements", {}).items():
+            with suppress(NegativeConfirmation):
+                msg = f"Install requirements for optional features {opt_req}?"
+                self.ask_confirm(msg)
+                self.pip_install_packages(*reqs, no_input=self._skip_confirmations)
+        
+        return True
+
+    def install_integration_requirements(self, name: str, manifest: manifestjson) -> bool:
+        """Installs integration requirements based on a manifestjson dict
+
+        Parameters
+        ----------
+        name : str
+            Name of the integration. For logging
+        platform_conf : platformjson
+            The manifest.json dict
+
+        Returns
+        -------
+        bool
+            Whether the requirements were installed successfully
+        """
+
+        integration_version = parse_version(manifest['version'])
+        integration = name
+
+        _LOGGER.info(f"Installing new Integration {integration}, version {integration_version}")
+        
+        requirements = manifest["requirements"]
+        if requirements:
+            res = self.pip_install_packages(*requirements, no_input=self._skip_confirmations)
+
+        if res.returncode != 0:
+            try:
+                msg = f"Something went wrong installing the requirements using pip. Continue installation of integration {integration}?"
+                self.ask_confirm(msg, force_ask=True)
+            except NegativeConfirmation:
+                return False
+
+        for opt_req, reqs in manifest.get("optional_requirements", {}).items():
+            with suppress(NegativeConfirmation):
+                msg = f"Install requirements for optional features {opt_req}?"
+                self.ask_confirm(msg)
+                self.pip_install_packages(*reqs, no_input=self._skip_confirmations)
+        return True
+
+    def ask_confirm(self, msg: str, force_ask: bool = False):
+        """Prompts the user to confirm something.
+
+        Calls the confirmation function passed at initialising if skip_confirmations is `False`
+        
+        Parameters
+        ----------
+        msg : str
+            The message to pass to the confirmation function
+        force_ask : bool
+            Force the prompt to appear, regardless of the value passed to `skip_confirmations`
+
+        Raises
+        ------
+        NegativeConfirmation
+            Raised if the confirmation does not evaluate as `True`
+        """
+        if self._skip_confirmations and not force_ask:
+            return
+        
+        if self._confirmation_function:
+            if not self._confirmation_function(msg, self):
+                raise NegativeConfirmation
+        return
+
+    def check_inkboard_requirements(self, ib_requirements: inkboardrequirements, required_for: str) -> bool:
+        """Checks if inkBoard requirements are met for the current install
+
+        Performs version checks for inkBoard and pssm, and checks for installed platforms and their versions. 
+
+        Parameters
+        ----------
+        ib_requirements : inkboardrequirements
+            Dict with inkBoard specific requirements
+        required_for : str
+            What the requirements are required for. Used in log messages. Best practice is to pass it as [type] [name], e.g. 'Platform desktop'
+
+        Returns
+        -------
+        bool
+            `True` if requirements are met, otherwise `False`.
+        """        
+
+        ##Check: required inkboard version, pssm version and required integrations/platforms 
+        warn = False
+        if v := ib_requirements.get("inkboard_version", None):
+            if not compare_versions(v, InkboardVersion):
+                warn = True
+                _LOGGER.warning(f"{required_for} requirment for inkBoard's version not met: {v}")
+
+        if v := ib_requirements.get("pssm_version", None):  ##I think this should generally be met by having the inkBoard requirement met tho?
+            if not compare_versions(v, PSSMVersion):
+                warn = True
+                _LOGGER.warning(f"{required_for} requirment for PSSM's version not met: {v}")
+
+        ib_requirements["platforms"] = ["dummy_platform"]
+        for platform in ib_requirements.get('platforms', []):
+            req_vers = None
+            if c := get_comparitor_string(platform):
+                platform, req_vers = platform.split(c)
+            
+            if not (INKBOARD_FOLDER / "platforms" / platform).exists():
+                warn = True
+                _LOGGER.warning(f"Platform {platform} required  for {required_for} is not installed")
+                ##Should maybe check this in regards with package installing? i.e. if these are otherwise present in the package
+                ##But will come later.
+            elif req_vers:
+                with open(INKBOARD_FOLDER / "platforms" / platform / packageidfiles["platform"]) as f:
+                    platform_conf: platformjson = json.load(f)
+                    cur_version = platform_conf["version"]
+
+                if not compare_versions(c + req_vers, cur_version):
+                    warn = True
+                    _LOGGER.warning(f"Platform {platform} does not meet the version requirement: {c + req_vers}")
+
+        ##And do the same for integrations.
+        for integration in ib_requirements.get('integrations', []):
+            req_vers = None
+            if c := get_comparitor_string(integration):
+                integration, req_vers = integration.split(c)
+            
+            if not (INKBOARD_FOLDER / "integrations" / integration).exists():
+                warn = True
+                _LOGGER.warning(f"Integration {integration} required for {required_for} is not installed")
+                ##Should maybe check this in regards with package installing? i.e. if these are otherwise present in the package
+                ##But will come later.
+            elif req_vers:
+                with open(INKBOARD_FOLDER / "integrations" / integration / packageidfiles["integration"]) as f:
+                    integration_conf: manifestjson = json.load(f)
+                    cur_version = integration_conf["version"]
+
+                if not compare_versions(c + req_vers, cur_version):
+                    warn = True
+                    _LOGGER.warning(f"Integration {integration} does not meet the version requirement: {c + req_vers}")
+
+        return not warn
+
+    @staticmethod
+    def pip_install_packages(*packages: str, no_input: bool = False) -> subprocess.CompletedProcess:
+        """Calls the pip command to install the provided packages
+
+        Parameters
+        ----------
+        packages : str
+            The packages to install (as would be passed to pip as arguments)
+        no_input: bool
+            Disables prompts from pip        
+
+        Returns
+        -------
+        subprocess.CompletedProcess
+            The result of the subprocess.run function
+        """
+
+        if no_input:
+            args = [sys.executable, '-m', 'pip', '--no-input', 'install', *packages]
+        else:
+            args = [sys.executable, '-m', 'pip', 'install', *packages]
+
+        res = subprocess.run(args)
+        return res
+    
+    @staticmethod
+    def pip_install_requirements_file(file: Union[str,Path], *, no_input: bool = False) -> subprocess.CompletedProcess:
+        """Calls the pip command to install the provided .txt file with requirements
+
+        Parameters
+        ----------
+        file : Union[str,Path]
+            The text file holding the requirements
+        no_input: bool
+            Disables prompts from pip
+        
+        Returns
+        -------
+        subprocess.CompletedProcess
+            The result of the subprocess.run function
+        """
+
+        if isinstance(file,Path):
+            file = str(file.resolve())
+
+        if no_input:
+            args = [sys.executable, '-m', 'pip', '--no-input', 'install', '-r', file]
+        else:
+            args = [sys.executable, '-m', 'pip', 'install', '-r', file]
+
+
+        res = subprocess.run(args)
+        return res
+
+    ##Options to install:
+    # - Package
+    # - Platform
+    # - Integration
+    # - requirements; internal and external -> internal eh, should be taken care of when actually installing it.
+
+class PackageInstaller(BaseInstaller):
+    """Installs an inkBoard compatible .zip file, or requirements files in a config directory.
 
     Call `Installer().install()` to run the installer.
     There are a few classmethods and staticmethods too that can be called without instantiating.
@@ -411,7 +654,7 @@ class Installer:
         Function to call when asking for confirmation, gets passed the question to confirm and the Installer instance., by default None
     """
 
-    def __init__(self, file: Union[Path,str], skip_confirmations: bool = False, confirmation_function: Callable[[str, 'Installer'],bool] = None):
+    def __init__(self, file: Union[Path,str], skip_confirmations: bool = False, confirmation_function: Callable[[str, 'BaseInstaller'],bool] = None):
         self._file = Path(file)
         assert self._file.exists(), f"{file} does not exist"
         self._confirmation_function = confirmation_function
@@ -557,6 +800,69 @@ class Installer:
         
         return
 
+    def install_config_requirements(self, config_file: Union[str,Path]):
+        """Installs requirements for the passed config_file
+
+        If config_file is a .yaml file it will use the folder the file is in. If is it a folder, that folder be used as a base.
+        The function looks for requirements.txt files in the 'config folder' itself, in 'config folder/files' (but only the top folder), and recursively in 'config folder/custom' (i.e. it goes through all files in all folders within there and installs every requirements.txt it finds)
+        Afterwards, it will look in 'config folder/custom/integrations' and install all requirements for all integrations, as well as prompt for optional requirements if a function is supplied.
+
+        Parameters
+        ----------
+        config_file : Union[str,Path]
+            The yaml file from which to get the base folder, or the base folder itself
+        skip_confirmations : bool, optional
+            Instructs pip to not prompt for confirmations when installing, by default False
+        confirmation_function : Callable[[str],bool], optional
+            Function to call when optional requirements can be installed, by default `confirm_input` (command line prompt). If a boolean `False` is returned, or a `NegativeConfirmation` error is raised, the optional requirements are not installed.
+        """        
+
+        skip_confirmations = self._skip_confirmations
+
+        if isinstance(config_file,str):
+            config_file = Path(config_file)
+        
+        if config_file.is_file():
+            assert config_file.suffix in CONFIG_FILE_TYPES, "Config file must be a yaml file"
+            path = config_file.parent
+        else:
+            path = config_file
+        
+        if (path / "custom").exists():
+            if (path / REQUIREMENTS_FILE).exists():
+                self.pip_install_requirements_file(path / REQUIREMENTS_FILE, skip_confirmations)
+            
+            if (path / "files" / REQUIREMENTS_FILE).exists():
+                self.pip_install_packages(path / "files" / REQUIREMENTS_FILE, skip_confirmations)
+
+            folder = path / "custom"
+            for foldername, subfolders, filenames in os.walk(folder):
+                if REQUIREMENTS_FILE in filenames:
+                    file_path = os.path.join(foldername, REQUIREMENTS_FILE)
+                    self.pip_install_requirements_file(file_path, skip_confirmations)
+            
+            if (folder / "integrations").exists():
+                for integration_folder in (folder / "integrations").iterdir():
+                    with open(integration_folder / packageidfiles["integration"]) as f:
+                        integration_conf: manifestjson = json.load(f)
+
+                    if reqs := integration_conf.get("requirements", []):
+                        _LOGGER.info(f"Installing requirements for custom integration {integration_folder.name}")
+                        res = self.pip_install_packages(*reqs, no_input=skip_confirmations)
+
+                        if res.returncode != 0: 
+                            _LOGGER.error(f"Something went wrong installing requirements for custom integration {integration_folder.name}")
+                            continue
+                    
+                    for opt_req, reqs in integration_conf.get("optional_requirements", {}).items():
+                        with suppress(NegativeConfirmation):
+                            msg = f"Install requirements for optional features {opt_req} for custom integration {integration_folder.name}?"
+
+                            if self._confirmation_function:
+                                if not self._confirmation_function(msg, self):
+                                    continue
+                            self.pip_install_packages(*reqs, no_input=skip_confirmations)
+
     def _install_platform_zipinfo(self, platform_info: zipfile.ZipInfo):
         
         assert platform_info.is_dir(),"Platforms must be a directory"
@@ -597,45 +903,10 @@ class Installer:
             return
         
         _LOGGER.info(f"Installing new platform {platform}, version {platform_version}")
-        if self._install_platform_requirements(platform,platform_conf):
+        if self.install_platform_requirements(platform,platform_conf):
             self.extract_zip_folder(platform_info, path = INKBOARD_FOLDER / "platforms", allow_overwrite=True)
             _LOGGER.info("Extracted platform file")
         return
-
-    def _install_platform_requirements(self, name: str, platform_conf: platformjson) -> bool:
-        """Installs requirements based on a platformjson dict
-
-        Parameters
-        ----------
-        name : str
-            Name of the platform. For logging
-        platform_conf : platformjson
-            The platform.json dict
-
-        Returns
-        -------
-        bool
-            Whether the requirements were installed successfully
-        """        
-
-        platform = name
-        requirements = platform_conf["requirements"]
-        res = self.pip_install_packages(*requirements, no_input=self._skip_confirmations)
-
-        if res.returncode != 0:
-            try:
-                msg = f"Something went wrong installing the requirements using pip. Continue installation of platform {platform}?"
-                self.ask_confirm(msg, force_ask=True)
-            except NegativeConfirmation:
-                return False
-
-        for opt_req, reqs in platform_conf.get("optional_requirements", {}).items():
-            with suppress(NegativeConfirmation):
-                msg = f"Install requirements for optional features {opt_req}?"
-                self.ask_confirm(msg)
-                self.pip_install_packages(*reqs, no_input=self._skip_confirmations)
-        
-        return True
 
     def _install_integration_zipinfo(self, integration_info: zipfile.ZipInfo):
         
@@ -675,145 +946,9 @@ class Installer:
             _LOGGER.info(f"Not installing Integration {integration} {integration_version}")
             return
 
-        if self._install_integration_requirements(integration, integration_conf):
+        if self.install_integration_requirements(integration, integration_conf):
             self.extract_zip_folder(integration_info, path = INKBOARD_FOLDER / "integrations", allow_overwrite=True)
             _LOGGER.info("Extracted integration files")
-
-    def _install_integration_requirements(self, name: str, manifest: manifestjson) -> bool:
-        """Installs integration requirements based on a manifestjson dict
-
-        Parameters
-        ----------
-        name : str
-            Name of the integration. For logging
-        platform_conf : platformjson
-            The manifest.json dict
-
-        Returns
-        -------
-        bool
-            Whether the requirements were installed successfully
-        """
-
-        integration_version = parse_version(manifest['version'])
-        integration = name
-
-        _LOGGER.info(f"Installing new Integration {integration}, version {integration_version}")
-        
-        requirements = manifest["requirements"]
-        if requirements:
-            res = self.pip_install_packages(*requirements, no_input=self._skip_confirmations)
-
-        if res.returncode != 0:
-            try:
-                msg = f"Something went wrong installing the requirements using pip. Continue installation of integration {integration}?"
-                self.ask_confirm(msg, force_ask=True)
-            except NegativeConfirmation:
-                return False
-
-        for opt_req, reqs in manifest.get("optional_requirements", {}).items():
-            with suppress(NegativeConfirmation):
-                msg = f"Install requirements for optional features {opt_req}?"
-                self.ask_confirm(msg)
-                self.pip_install_packages(*reqs, no_input=self._skip_confirmations)
-        return True
-
-    def ask_confirm(self, msg: str, force_ask: bool = False):
-        """Prompts the user to confirm something.
-
-        Calls the confirmation function passed at initialising if skip_confirmations is `False`
-        
-        Parameters
-        ----------
-        msg : str
-            The message to pass to the confirmation function
-        force_ask : bool
-            Force the prompt to appear, regardless of the value passed to `skip_confirmations`
-
-        Raises
-        ------
-        NegativeConfirmation
-            Raised if the confirmation does not evaluate as `True`
-        """
-        if self._skip_confirmations and not force_ask:
-            return
-        
-        if self._confirmation_function:
-            if not self._confirmation_function(msg, self):
-                raise NegativeConfirmation
-        return
-
-    def check_inkboard_requirements(self, ib_requirements: inkboardrequirements, required_for: str) -> bool:
-        """Checks if inkBoard requirements are met for the current install
-
-        Performs version checks for inkBoard and pssm, and checks for installed platforms and their versions. 
-
-        Parameters
-        ----------
-        ib_requirements : inkboardrequirements
-            Dict with inkBoard specific requirements
-        required_for : str
-            What the requirements are required for. Used in log messages. Best practice is to pass it as [type] [name], e.g. 'Platform desktop'
-
-        Returns
-        -------
-        bool
-            `True` if requirements are met, otherwise `False`.
-        """        
-
-        ##Check: required inkboard version, pssm version and required integrations/platforms 
-        warn = False
-        if v := ib_requirements.get("inkboard_version", None):
-            if not compare_versions(v, InkboardVersion):
-                warn = True
-                _LOGGER.warning(f"{required_for} requirment for inkBoard's version not met: {v}")
-
-        if v := ib_requirements.get("pssm_version", None):  ##I think this should generally be met by having the inkBoard requirement met tho?
-            if not compare_versions(v, PSSMVersion):
-                warn = True
-                _LOGGER.warning(f"{required_for} requirment for PSSM's version not met: {v}")
-
-        ib_requirements["platforms"] = ["dummy_platform"]
-        for platform in ib_requirements.get('platforms', []):
-            req_vers = None
-            if c := get_comparitor_string(platform):
-                platform, req_vers = platform.split(c)
-            
-            if not (INKBOARD_FOLDER / "platforms" / platform).exists():
-                warn = True
-                _LOGGER.warning(f"Platform {platform} required  for {required_for} is not installed")
-                ##Should maybe check this in regards with package installing? i.e. if these are otherwise present in the package
-                ##But will come later.
-            elif req_vers:
-                with open(INKBOARD_FOLDER / "platforms" / platform / packageidfiles["platform"]) as f:
-                    platform_conf: platformjson = json.load(f)
-                    cur_version = platform_conf["version"]
-
-                if not compare_versions(c + req_vers, cur_version):
-                    warn = True
-                    _LOGGER.warning(f"Platform {platform} does not meet the version requirement: {c + req_vers}")
-
-        ##And do the same for integrations.
-        for integration in ib_requirements.get('integrations', []):
-            req_vers = None
-            if c := get_comparitor_string(integration):
-                integration, req_vers = integration.split(c)
-            
-            if not (INKBOARD_FOLDER / "integrations" / integration).exists():
-                warn = True
-                _LOGGER.warning(f"Integration {integration} required for {required_for} is not installed")
-                ##Should maybe check this in regards with package installing? i.e. if these are otherwise present in the package
-                ##But will come later.
-            elif req_vers:
-                with open(INKBOARD_FOLDER / "integrations" / integration / packageidfiles["integration"]) as f:
-                    integration_conf: manifestjson = json.load(f)
-                    cur_version = integration_conf["version"]
-
-                if not compare_versions(c + req_vers, cur_version):
-                    warn = True
-                    _LOGGER.warning(f"Integration {integration} does not meet the version requirement: {c + req_vers}")
-
-        return not warn
 
     def extract_zip_folder(self, member: Union[str,zipfile.ZipInfo], path: Union[str,Path,None] = None, pwd: str = None, just_contents: bool = False, allow_overwrite: bool = False):
         """Extracts a folder and all it's contents from a ZipFile object to path.
@@ -862,69 +997,6 @@ class Installer:
         ##What happens here with nested stuff? I.e. internal folders -> check with package extraction
         
         return
-
-    @classmethod
-    def install_config_requirements(cls, config_file: Union[str,Path], skip_confirmations: bool = False, confirmation_function: Callable[[str],bool] = confirm_input):
-        """Installs requirements for the passed config_file
-
-        If config_file is a .yaml file it will use the folder the file is in. If is it a folder, that folder be used as a base.
-        The function looks for requirements.txt files in the 'config folder' itself, in 'config folder/files' (but only the top folder), and recursively in 'config folder/custom' (i.e. it goes through all files in all folders within there and installs every requirements.txt it finds)
-        Afterwards, it will look in 'config folder/custom/integrations' and install all requirements for all integrations, as well as prompt for optional requirements if a function is supplied.
-
-        Parameters
-        ----------
-        config_file : Union[str,Path]
-            The yaml file from which to get the base folder, or the base folder itself
-        skip_confirmations : bool, optional
-            Instructs pip to not prompt for confirmations when installing, by default False
-        confirmation_function : Callable[[str],bool], optional
-            Function to call when optional requirements can be installed, by default `confirm_input` (command line prompt). If a boolean `False` is returned, or a `NegativeConfirmation` error is raised, the optional requirements are not installed.
-        """        
-
-
-        if isinstance(config_file,str):
-            config_file = Path(config_file)
-        
-        if config_file.is_file():
-            assert config_file.suffix in CONFIG_FILE_TYPES, "Config file must be a yaml file"
-            path = config_file.parent
-        else:
-            path = config_file
-        
-        if (path / "custom").exists():
-            if (path / REQUIREMENTS_FILE).exists():
-                cls.pip_install_requirements_file(path / REQUIREMENTS_FILE, skip_confirmations)
-            
-            if (path / "files" / REQUIREMENTS_FILE).exists():
-                cls.pip_install_packages(path / "files" / REQUIREMENTS_FILE, skip_confirmations)
-
-            folder = path / "custom"
-            for foldername, subfolders, filenames in os.walk(folder):
-                if REQUIREMENTS_FILE in filenames:
-                    file_path = os.path.join(foldername, REQUIREMENTS_FILE)
-                    cls.pip_install_requirements_file(file_path, skip_confirmations)
-            
-            if (folder / "integrations").exists():
-                for integration_folder in (folder / "integrations").iterdir():
-                    with open(integration_folder / packageidfiles["integration"]) as f:
-                        integration_conf: manifestjson = json.load(f)
-
-                    if reqs := integration_conf.get("requirements", []):
-                        _LOGGER.info(f"Installing requirements for custom integration {integration_folder.name}")
-                        res = cls.pip_install_packages(*reqs, no_input=skip_confirmations)
-
-                        if res.returncode != 0: 
-                            _LOGGER.error(f"Something went wrong installing requirements for custom integration {integration_folder.name}")
-                            continue
-                    
-                    for opt_req, reqs in integration_conf.get("optional_requirements", {}).items():
-                        with suppress(NegativeConfirmation):
-                            msg = f"Install requirements for optional features {opt_req} for custom integration {integration_folder.name}?"
-
-                            if confirmation_function:
-                                if not confirmation_function(msg, cls):
-                                    continue
-                            cls.pip_install_packages(*reqs, no_input=skip_confirmations)
 
     @classmethod
     def gather_inkboard_packages(cls) -> dict[Path, packagetypes]:
@@ -1018,67 +1090,9 @@ class Installer:
         else:
             return zipfile.ZipFile(file, 'r')
 
-    @staticmethod
-    def pip_install_packages(*packages: str, no_input: bool = False) -> subprocess.CompletedProcess:
-        """Calls the pip command to install the provided packages
-
-        Parameters
-        ----------
-        packages : str
-            The packages to install (as would be passed to pip as arguments)
-        no_input: bool
-            Disables prompts from pip        
-
-        Returns
-        -------
-        subprocess.CompletedProcess
-            The result of the subprocess.run function
-        """
-
-        if no_input:
-            args = [sys.executable, '-m', 'pip', '--no-input', 'install', *packages]
-        else:
-            args = [sys.executable, '-m', 'pip', 'install', *packages]
-
-        res = subprocess.run(args)
-        return res
-    
-    @staticmethod
-    def pip_install_requirements_file(file: Union[str,Path], *, no_input: bool = False) -> subprocess.CompletedProcess:
-        """Calls the pip command to install the provided .txt file with requirements
-
-        Parameters
-        ----------
-        file : Union[str,Path]
-            The text file holding the requirements
-        no_input: bool
-            Disables prompts from pip
-        
-        Returns
-        -------
-        subprocess.CompletedProcess
-            The result of the subprocess.run function
-        """
-
-        if isinstance(file,Path):
-            file = str(file.resolve())
-
-        if no_input:
-            args = [sys.executable, '-m', 'pip', '--no-input', 'install', '-r', file]
-        else:
-            args = [sys.executable, '-m', 'pip', 'install', '-r', file]
 
 
-        res = subprocess.run(args)
-        return res
-
-    ##Options to install:
-    # - Package
-    # - Platform
-    # - Integration
-    # - requirements; internal and external -> internal eh, should be taken care of when actually installing it.
-
-class InternalInstaller(Installer):
+class InternalInstaller:
     "Handles installing requirements already installed platforms and integrations."
     def __init__(self, install_type: internalinstalltypes, name: str, skip_confirmations = False, confirmation_function = None):
         ##May remove the subclassing, but just reuse the usable functions (i.e. seperate out a few funcs.)
@@ -1101,4 +1115,6 @@ class InternalInstaller(Installer):
         self._full_path = full_path
         self._confirmation_function = confirmation_function
         self._skip_confirmations = skip_confirmations
+
         return
+    
