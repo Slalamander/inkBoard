@@ -2,7 +2,6 @@
 Handles command line arguments for inkboard
 """
 import argparse
-
 from . import constants as const
 from .logging import LOG_LEVELS
 

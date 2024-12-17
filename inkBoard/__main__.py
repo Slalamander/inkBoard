@@ -74,7 +74,7 @@ def run_config(config_file: Union[Path,str]):
                         debug=_LOGGER.getEffectiveLevel() <= logging.DEBUG)
 
 def main():
-
+    from inkBoard.arguments import args, PRE_CORE_ACTIONS, POST_CORE_ACTIONS
     inkBoard.logging.init_logging(args.logs, args.quiet, args.verbose)
 
     if args.command in PRE_CORE_ACTIONS:
@@ -84,7 +84,6 @@ def main():
     return run()
 
 if __name__ == "__main__":
-    from inkBoard.arguments import args, PRE_CORE_ACTIONS, POST_CORE_ACTIONS
     sys.exit(main())
 
 
