@@ -53,7 +53,7 @@ def include_constructor(loader: "BaseSafeLoader", node: yaml.nodes.ScalarNode) -
         return {}
 
     with open(file_path) as f:
-        c = yaml.load(f, Loader=loader.__class__)
+        c = yaml.load(f, Loader=BaseSafeLoader)
 
     return c
 
@@ -74,6 +74,7 @@ class BaseSafeLoader(FastestAvailableSafeLoader):
         if secrets_file.exists():
             with open(secrets_file) as f:
                 cls._secrets = MappingProxyType(yaml.load(f, Loader=cls))
+                return
         else:
             cls._secrets = MappingProxyType({})
 
@@ -83,6 +84,7 @@ class BaseSafeLoader(FastestAvailableSafeLoader):
         if entity_file.exists():
             with open(entity_file) as f:
                 cls._entities = MappingProxyType(yaml.load(f, Loader=cls))
+                return
         else:
             cls._entities = MappingProxyType({})
 
@@ -111,7 +113,11 @@ class MainConfigLoader(BaseSafeLoader):
 
             for (key_node, value_node) in node.value:
                 if key_node.value == "substitutions":
-                    val = super().construct_mapping(value_node)
+                    if isinstance(value_node, yaml.MappingNode):
+                        val = super().construct_mapping(value_node)
+                    else:
+                        val = self.construct_object(value_node)
+                    
                     d[key_node.value] = val
                     BaseSafeLoader._substitutions = MappingProxyType(val)
 
