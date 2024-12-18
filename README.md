@@ -1,4 +1,4 @@
-# inkBoard
+![image info](./files/blue_logo_vector.svg)
 
 inkBoard is a dashboarding software that uses the [PythonScreenStackManager](https://github.com/Slalamander/PythonScreenStackManager) library to make it possible to use the dashboards on any platforms that support it. There is also a designer package, which is a tool to allow designing dashboards on desktop without the limitations of whatever platform it is meant to be deployed to, as well as giving a gui to certain actions easier.
 
