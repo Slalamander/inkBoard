@@ -7,6 +7,7 @@ import yaml
 import logging
 from typing import TYPE_CHECKING, Callable, Literal
 from types import MappingProxyType
+from pathlib import Path
 
 from PythonScreenStackManager import elements
 from PythonScreenStackManager.pssm.screen import DuplicateElementError
@@ -55,7 +56,7 @@ class DashboardLoader(loaders.BaseSafeLoader):
             return None
         
         if ":" not in elt_type:
-            return default_elements.get(elt_type,None)
+            return default_elements[elt_type]
         else:
             idf, elt_type_str = elt_type.split(":")
             parsers = self._CORE.get_element_parsers()
@@ -91,15 +92,21 @@ class DashboardLoader(loaders.BaseSafeLoader):
 
         try:
             elt_type = self.parse_element_type(d["type"], validator)
-        except TypeError:
+        except (TypeError, KeyError):
             yaml_line = node.start_mark.line
-            msg = f"Invalid element type '{d['type']}' in configuration file {node.start_mark.name}, line {yaml_line}"
+            if "id" in d:
+                msg = f"Invalid element type '{d['type']}' (id {d['id']}) in configuration file {Path(node.start_mark.name).name}, line {yaml_line}"
+            else:
+                msg = f"Invalid element type '{d['type']}' in configuration file {Path(node.start_mark.name).name}, line {yaml_line}"
             logger.error(msg)
             self.__class__._config_error = True
             return None
         except SyntaxWarning:
             yaml_line = node.start_mark.line
-            msg = f"Invalid element identifier in configuration file {node.start_mark.name}, line {yaml_line}: {d['type']}"
+            if "id" in d:
+                msg = f"Invalid element identifier in configuration file {Path(node.start_mark.name).name}, line {yaml_line}: {d['type']}  (id {d['id']})"
+            else:
+                msg = f"Invalid element identifier in configuration file {Path(node.start_mark.name).name}, line {yaml_line}: {d['type']}"
             logger.error(msg)
             self.__class__._config_error = True
             return None
