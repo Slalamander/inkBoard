@@ -12,7 +12,10 @@ permissions:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    environment: release
+    # environment: release
+    environment:
+      name: pypi
+      url: https://pypi.org/project/inkBoard/
     permissions:
       id-token: write
     steps:
