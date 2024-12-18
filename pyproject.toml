@@ -12,6 +12,7 @@ authors = [
 ]
 description = "inkBoard aims to provide PSSM based dashboards in an easy, but flexible way"
 readme = "README.md"
+license = {file = "LICENSE"}
 requires-python = ">=3.9"
 keywords = ["gui", "pixels", "interface", "MaterialDesignIcon", "mdi icons", "dashboards", "dashboarding",]
 classifiers = [
