@@ -170,7 +170,7 @@ class IntegrationLoader:
 
             manifest = int_dir / "manifest.json"
             if not manifest.exists():
-                _LOGGER.warning(f"Integration folder {int_dir} is missing the manifest.json file.")
+                _LOGGER.error(f"Integration folder {int_dir} is missing the manifest.json file.")
                 continue
 
             with open(manifest) as f:
@@ -185,7 +185,7 @@ class IntegrationLoader:
                 cls._installed_integrations[int_dir.name] = int_dir
                 cls._integration_modules[int_dir.name] = name
             else:
-                _LOGGER.warning(f"Integrations are required to have a config_entry key {int_dir.name} does not")
+                _LOGGER.error(f"Integrations are required to have a config_entry key {int_dir.name} does not")
                 continue
 
     @classmethod
@@ -216,7 +216,7 @@ class IntegrationLoader:
                 progress_func(progress, f"Importing integration {integration}")
             module = cls._import_integration(name)
             if not module:
-                _LOGGER.warning(f"Unable to successfully import integration {integration} from {name}")
+                _LOGGER.error(f"Unable to successfully import integration {integration} from {name}")
             else:
                 cls._imported_modules[integration] = module
         
@@ -257,7 +257,7 @@ class IntegrationLoader:
                 raise exce
 
         if not hasattr(module,"async_setup") and not hasattr(module,"setup"):
-            _LOGGER.warning(f"Integration {integration} is missing the required setup function")
+            _LOGGER.error(f"Integration {integration} is missing the required setup function")
             return
 
         return module
