@@ -1,5 +1,5 @@
 ##The publish workflow fails if the version is not new from the latest upload to testpypi
-name: Publish Python 🐍 distribution 📦 to TestPyPI
+name: Build on push and publish to TesetPyPi
 
 on: push
 
