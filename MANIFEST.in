@@ -1,3 +1,5 @@
+prune files*
+
 graft ./inkBoard/files
 
 prune ./inkBoard/platforms/*/
