@@ -249,7 +249,6 @@ class IntegrationLoader:
                 return
             try:
                 module = importlib.util.module_from_spec(spec)
-                # spec.loader.exec_module(module)
                 module = importlib.import_module(name)
             except Exception as exce:
                 msg = f"Error importing integration {integration}: {exce}"
@@ -267,8 +266,6 @@ class IntegrationLoader:
         integration_objects = {}
         
         config = core.config
-        screen = core.screen
-
         if not cls._imported_modules:
             return {}
 
