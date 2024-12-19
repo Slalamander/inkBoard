@@ -469,14 +469,15 @@ class BaseInstaller:
 
         platform = name
         requirements = platform_conf["requirements"]
-        res = self.pip_install_packages(*requirements, no_input=self._skip_confirmations)
+        if requirements:
+            res = self.pip_install_packages(*requirements, no_input=self._skip_confirmations)
 
-        if res.returncode != 0:
-            try:
-                msg = f"Something went wrong installing the requirements using pip. Continue installation of platform {platform}?"
-                self.ask_confirm(msg, force_ask=True)
-            except NegativeConfirmation:
-                return False
+            if res.returncode != 0:
+                try:
+                    msg = f"Something went wrong installing the requirements using pip. Continue installation of platform {platform}?"
+                    self.ask_confirm(msg, force_ask=True)
+                except NegativeConfirmation:
+                    return False
 
         for opt_req, reqs in platform_conf.get("optional_requirements", {}).items():
             with suppress(NegativeConfirmation):
@@ -511,12 +512,12 @@ class BaseInstaller:
         if requirements:
             res = self.pip_install_packages(*requirements, no_input=self._skip_confirmations)
 
-        if res.returncode != 0:
-            try:
-                msg = f"Something went wrong installing the requirements using pip. Continue installation of integration {integration}?"
-                self.ask_confirm(msg, force_ask=True)
-            except NegativeConfirmation:
-                return False
+            if res.returncode != 0:
+                try:
+                    msg = f"Something went wrong installing the requirements using pip. Continue installation of integration {integration}?"
+                    self.ask_confirm(msg, force_ask=True)
+                except NegativeConfirmation:
+                    return False
 
         for opt_req, reqs in manifest.get("optional_requirements", {}).items():
             with suppress(NegativeConfirmation):
@@ -580,7 +581,6 @@ class BaseInstaller:
                 warn = True
                 _LOGGER.warning(f"{required_for} requirment for PSSM's version not met: {v}")
 
-        ib_requirements["platforms"] = ["dummy_platform"]
         for platform in ib_requirements.get('platforms', []):
             req_vers = None
             if c := get_comparitor_string(platform):
@@ -638,6 +638,9 @@ class BaseInstaller:
         subprocess.CompletedProcess
             The result of the subprocess.run function
         """
+
+        if not packages:
+            return
 
         if no_input:
             args = [sys.executable, '-m', 'pip', '--no-input', 'install', *packages]
@@ -741,15 +744,16 @@ class PackageInstaller(BaseInstaller):
         with zipfile.ZipFile(file) as zip_file:
             self.__zip_file = zip_file
             zip_path = zipfile.Path(zip_file)
-            with zip_file.open(packageidfiles["package"]) as f:
+            # with zip_file.open(packageidfiles["package"]) as f:
                 ##This section is used to determine compatibility of the package and the installed modules
-                package_info: PackageDict = json.load(f)
+            f = zip_file.open(packageidfiles["package"])
+            package_info: PackageDict = json.load(f)
 
             vers_msg = ""
-            if not (v := parse_version(package_info["versions"]["inkBoard"])) > InkboardVersion:
+            if not (v := parse_version(package_info["versions"]["inkBoard"])) >= InkboardVersion:
                 vers_msg = vers_msg + f"Package was made with a newer version of inkBoard ({v}). Installed is {InkboardVersion}."
             
-            if (v := parse_version(package_info["versions"]["PythonScreenStackManager"])) > PSSMVersion:
+            if (v := parse_version(package_info["versions"]["PythonScreenStackManager"])) >= PSSMVersion:
                 vers_msg = vers_msg + f"Package was made on with a newer version of PSSM ({v}). Installed is {PSSMVersion}."
             
             if vers_msg:
@@ -781,6 +785,8 @@ class PackageInstaller(BaseInstaller):
                         try:
                             _LOGGER.info(f"Installing platform {platform_folder.name}")
                             self._install_platform_zipinfo(zip_file.getinfo(platform_folder.at))
+                        except NegativeConfirmation:
+                            pass
                         except Exception as exce:
                             _LOGGER.error(f"Could not install platform {platform_folder.name}", exc_info=exce)
                 _LOGGER.info("Platforms installed")
@@ -806,7 +812,7 @@ class PackageInstaller(BaseInstaller):
                 self.extract_zip_folder(zip_file.getinfo((zip_path / "configuration").at),
                                         allow_overwrite=True, just_contents=True)
 
-                self.install_config_requirements(Path.cwd(), self._skip_confirmations, self._confirmation_function)
+                self.install_config_requirements(Path.cwd())
 
             _LOGGER.info("Package succesfully installed")
             return
@@ -914,10 +920,10 @@ class PackageInstaller(BaseInstaller):
         platform_zippath = zipfile.Path(self.__zip_file, platform_info.filename)
         platform = platform_zippath.name 
 
-        with self.__zip_file.open(f"{platform_info.filename}{packageidfiles['platform']}") as f:
-            platform_conf: platformjson = json.load(f)
-            platform_version = parse_version(platform_conf['version'])
-
+        # with self.__zip_file.open(f"{platform_info.filename}{packageidfiles['platform']}") as f:
+        f = self.__zip_file.open(f"{platform_info.filename}{packageidfiles['platform']}")
+        platform_conf: platformjson = json.load(f)
+        platform_version = parse_version(platform_conf['version'])
 
         install = True
         ib_requirements = platform_conf["inkboard_requirements"]
@@ -957,16 +963,17 @@ class PackageInstaller(BaseInstaller):
         assert integration_info.is_dir(),"Integrations must be a directory"
 
         integration_zippath = zipfile.Path(self.__zip_file, integration_info.filename)
-        integration = integration_zippath.name 
+        integration = integration_zippath.name
 
-        with self.__zip_file.open(f"{integration_info.filename}{packageidfiles['integration']}") as f:
-            integration_conf: manifestjson = json.load(f)
-            integration_version = parse_version(integration_conf['version'])
+        manifestpath = integration_zippath / packageidfiles['integration']
+        f = manifestpath.open()
+        integration_conf: manifestjson = json.load(f)
+        integration_version = parse_version(integration_conf['version'])
 
         install = True
-        ib_requirements = integration_conf["inkboard_requirements"]
+        ib_requirements = integration_conf.get("inkboard_requirements",{})
 
-        if not self.check_inkboard_requirements(ib_requirements, f"Integration {integration}"):
+        if ib_requirements and not self.check_inkboard_requirements(ib_requirements, f"Integration {integration}"):
             msg = f"inkBoard requirements for integration {integration} are not met (see logs). Continue installing?"
             self.ask_confirm(msg)
 
@@ -1055,7 +1062,7 @@ class PackageInstaller(BaseInstaller):
         _LOGGER.info(f"Gathering inkBoard zip packages in {Path.cwd()}")
 
         packs = {}
-        for file in Path("testconfig").glob('*.zip'):
+        for file in Path.cwd().glob('*.zip'):
             if file.suffix != ".zip":
                 continue
 
