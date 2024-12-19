@@ -333,7 +333,6 @@ class IntegrationLoader:
         cls._pending_setups = {}
 
         config = core.config
-        screen = core.screen
 
         coro_list = set()
         for integration, module in cls._imported_modules.items():

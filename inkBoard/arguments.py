@@ -16,11 +16,6 @@ try:
 except ModuleNotFoundError:
     pass
 
-##Use sys.argv to check if -D is present
-##Import designer argument and use as parent? Do check how that'd print in the help message
-##Make it a subparser. Similar to how esphome runs multiple things from there?
-##Yep, can also be extended to have one for i.e. config validation
-
 def pop_base_args(args) -> dict:
     "Returns a dict with the base argparse arguments removed (i.e. anything that is not command)"
     d = vars(args).copy()
@@ -47,12 +42,10 @@ def command_designer(args):
 
 def command_install(args):
     from .packaging import command_install
-    d = pop_base_args(args)
     return command_install(**pop_base_args(args))
 
 def command_pack(args):
     from .packaging import create_config_package
-    # from inkBoard import core as CORE
     return create_config_package(**pop_base_args(args))
 
 

@@ -7,19 +7,13 @@ freeze_support()
 
 import logging
 from typing import Union, TYPE_CHECKING
-from types import ModuleType
-import importlib
 from pathlib import Path
 import asyncio
-import tracemalloc
 import sys
-import os
 import concurrent.futures
 
 import inkBoard
 from inkBoard import constants as const, bootstrap, loaders
-from inkBoard.helpers import DeviceError, ScreenError, reload_full_module
-
 from PythonScreenStackManager.exceptions import ReloadWarning, FullReloadWarning
 
 if TYPE_CHECKING:
@@ -53,7 +47,6 @@ async def run_inkBoard(config_file):
             await asyncio.sleep(0)
             _LOGGER.info("Closing down inkBoard")
             ##Check if it is needed to close
-            # return await asyncio.shield(bootstrap.stop_core(CORE))
             return bootstrap.stop_core(CORE)
         except Exception as exce:
             _LOGGER.error(f"Something unexpected went wrong running inkBoard: {exce}")
@@ -84,6 +77,7 @@ def main():
     return run()
 
 if __name__ == "__main__":
+    from inkBoard.arguments import args, PRE_CORE_ACTIONS, POST_CORE_ACTIONS
     sys.exit(main())
 
 

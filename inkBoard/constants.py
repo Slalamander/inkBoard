@@ -2,8 +2,6 @@
 from typing import TYPE_CHECKING, Union
 import tracemalloc
 from pathlib import Path
-
-from mdi_pil import MDI_WEATHER_ICONS
 import importlib.util
 
 from . import __version__

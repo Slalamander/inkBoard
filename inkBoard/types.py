@@ -1,6 +1,6 @@
 "Types for inkBoard"
 
-from typing import TYPE_CHECKING, TypedDict
+from typing import TypedDict
 
 class inkboardrequirements(TypedDict):
     "Dict for indicating inkBoard related requirements for platform.json or manifest.json"

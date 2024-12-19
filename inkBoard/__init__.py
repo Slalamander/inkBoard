@@ -1,11 +1,10 @@
 ###Inkboard
 
-from types import TracebackType, MappingProxyType
-from typing import Callable, TYPE_CHECKING, Literal, Any, Union
-import __main__
+from types import MappingProxyType
+from typing import TYPE_CHECKING, Literal, Any, Union
 from . import logging as ib_logging
 
-__version__ = "0.2.2"   ##Version is in __init__, since the constants imported from mdi_pil which caused an error when building.
+__version__ = "0.2.2"
 "inkBoard version"
 
 

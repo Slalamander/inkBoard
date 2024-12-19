@@ -272,7 +272,6 @@ class Packager:
                     for dir in subfolders:
                         dir_path = os.path.join(foldername, dir)
                         zip_file.write(dir_path, os.path.relpath(dir_path, tempdir))
-            ##What to put in
 
             self.report_progress("Done", f"Package created: {zipname}", 100)
             _LOGGER.info(f"Package created: {zipname}")

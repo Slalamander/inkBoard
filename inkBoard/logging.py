@@ -1,10 +1,9 @@
 "Logging classes for inkBoard."
 
-import asyncio
 import logging
 import logging.handlers
 from pathlib import Path
-from typing import Any, Optional, TYPE_CHECKING, Union, Literal
+from typing import Any, Optional, TYPE_CHECKING
 from functools import partial, partialmethod
 from contextlib import suppress
 from dataclasses import asdict

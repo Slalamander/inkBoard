@@ -1,11 +1,9 @@
 "Functions to get an inkBoard config set up."
 
-import importlib.util
 from typing import *
 import asyncio
 import importlib
 from pathlib import Path
-from types import MappingProxyType
 
 import inkBoard
 from inkBoard import constants as const, loaders, arguments
