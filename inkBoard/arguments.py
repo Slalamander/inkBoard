@@ -5,16 +5,13 @@ import argparse
 from . import constants as const
 from .logging import LOG_LEVELS
 
-DESIGNER_MOD = False #To indicate if the designer is installed
+DESIGNER_MOD = const.DESIGNER_INSTALLED
 
-try:
+if const.DESIGNER_INSTALLED:
     ##For this: ensure the designer can be imported without the window being build etc.
     ##i.e. move a lot of the init into a runner file
     import inkBoarddesigner
-    DESIGNER_MOD = True
     designer_version = inkBoarddesigner.__version__
-except ModuleNotFoundError:
-    pass
 
 def pop_base_args(args) -> dict:
     "Returns a dict with the base argparse arguments removed (i.e. anything that is not command)"

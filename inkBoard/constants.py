@@ -17,8 +17,11 @@ DESIGNER_INSTALLED: bool = False
 DESIGNER_FOLDER: Union[None,Path] = None
 
 if s := importlib.util.find_spec("inkBoarddesigner"):
-    DESIGNER_INSTALLED = True
-    DESIGNER_FOLDER = Path(s.origin).parent
+    try:
+        DESIGNER_FOLDER = Path(s.origin).parent
+        DESIGNER_INSTALLED = True
+    except:
+        pass
 
 
 FuncExceptions = (TypeError, KeyError, IndexError, OSError, RuntimeError)
