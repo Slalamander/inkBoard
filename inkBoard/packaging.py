@@ -750,7 +750,7 @@ class PackageInstaller(BaseInstaller):
             package_info: PackageDict = json.load(f)
 
             vers_msg = ""
-            if not (v := parse_version(package_info["versions"]["inkBoard"])) >= InkboardVersion:
+            if (v := parse_version(package_info["versions"]["inkBoard"])) >= InkboardVersion:
                 vers_msg = vers_msg + f"Package was made with a newer version of inkBoard ({v}). Installed is {InkboardVersion}."
             
             if (v := parse_version(package_info["versions"]["PythonScreenStackManager"])) >= PSSMVersion:
