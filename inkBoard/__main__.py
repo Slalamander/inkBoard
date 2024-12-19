@@ -15,6 +15,7 @@ import concurrent.futures
 import inkBoard
 from inkBoard import constants as const, bootstrap, loaders
 from PythonScreenStackManager.exceptions import ReloadWarning, FullReloadWarning
+from inkBoard.arguments import args, PRE_CORE_ACTIONS, POST_CORE_ACTIONS
 
 if TYPE_CHECKING:
     from inkBoard import core as CORE
@@ -23,9 +24,6 @@ if TYPE_CHECKING:
 
 _LOGGER = inkBoard.getLogger(__name__)
 importer_thread = concurrent.futures.ThreadPoolExecutor(None,const.IMPORTER_THREADPOOL)
-
-if __name__ == "__main__":
-    from inkBoard.arguments import args, PRE_CORE_ACTIONS, POST_CORE_ACTIONS
 
 async def run_inkBoard(config_file):
     "Runs inkBoard from the passed config file"
@@ -80,6 +78,3 @@ def main():
 
 if __name__ == "__main__":
     sys.exit(main())
-
-
-        
