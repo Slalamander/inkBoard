@@ -5,7 +5,7 @@ yaml safeloader classes for the inkBoard config
 import sys
 import logging
 from types import MappingProxyType
-from typing import Final, TYPE_CHECKING
+from typing import TYPE_CHECKING
 from string import Template
 from pathlib import Path
 

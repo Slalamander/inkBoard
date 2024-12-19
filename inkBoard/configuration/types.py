@@ -5,7 +5,7 @@ from typing import *
 from pathlib import Path
 from dataclasses import dataclass
 
-from inkBoard.helpers import add_optional_keys, add_required_keys
+from inkBoard.helpers import add_required_keys
 from inkBoard.logging import LOG_LEVELS
 
 from .const import INKBOARD_FOLDER

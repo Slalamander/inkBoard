@@ -3,12 +3,10 @@ This module takes care of building a dashboard from a config layout.
 Its functions can also be called for custom dashboards.
 """
 
-import sys
-import yaml
 import logging
 from typing import TYPE_CHECKING
 
-from ..configuration.loaders import MainConfigLoader, const as yaml_const
+from ..configuration.loaders import const as yaml_const
 from ..helpers import DashboardError
 
 from .loader import DashboardLoader
@@ -115,14 +113,15 @@ def get_main_layout(dash_config: "config.configuration"):
     return Layout(layout)
 
 def _add_ha_defaults():
-    from inkBoard.integrations import imported_modules
-    if "HomeAssistantClient" not in imported_modules:
+    from inkBoard.core import integration_loader
+    imported_modules = integration_loader.imported_integrations
+    ha_integration = "homeassistant_client"
+    if ha_integration  not in imported_modules:
         return
     
     import importlib
 
-    ha_module = imported_modules["HomeAssistantClient"]
-    
+    ha_module = integration_loader._imported_modules[ha_integration]    
     ha_parser = importlib.import_module(".parser",ha_module.__package__)
 
     ha_elements = getattr(ha_parser,"element_dict",{})

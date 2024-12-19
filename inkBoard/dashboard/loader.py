@@ -2,11 +2,9 @@
 The yaml loader that parses the dashboard config (element types and the like)
 """
 
-import sys
 import yaml
 import logging
-from typing import TYPE_CHECKING, Callable, Literal
-from types import MappingProxyType
+from typing import Callable, Literal
 from pathlib import Path
 
 from PythonScreenStackManager import elements
@@ -47,7 +45,6 @@ class DashboardLoader(loaders.BaseSafeLoader):
     def __init__(self, stream = None):
         if stream != None:
             super().__init__(stream)
-            # msg = f"DashboardLoader cannot be used with a yaml stream, only with direct nodes"
 
     def parse_element_type(self, elt_type: str, validator: Callable[[Literal["Element_class"],Literal["Requested_type"]],None] = validate_general) -> elements.Element:
         

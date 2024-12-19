@@ -13,7 +13,7 @@ import yaml
 
 from .types import MainEntry
 
-from ..helpers import classproperty, ConfigError
+from ..helpers import ConfigError
 
 from . import const
 from .types import *

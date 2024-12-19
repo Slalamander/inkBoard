@@ -1,11 +1,10 @@
 "Core modules and objects for running inkBoard instances"
 
 from typing import TYPE_CHECKING, Literal, Final, Optional, Any, Callable
-from types import MappingProxyType, ModuleType
+from types import MappingProxyType
 import logging
 from pathlib import Path
 from datetime import datetime as dt
-import sys
 
 import inkBoard
 from inkBoard import constants as const

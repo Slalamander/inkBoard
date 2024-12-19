@@ -4,15 +4,10 @@ A basedevice needed to run inkBoard. Mainly an extension from the pssm basedevic
 
 from abc import abstractmethod
 from typing import Optional
-from dataclasses import dataclass, asdict
 import asyncio
 
 from functools import cached_property
 from collections import namedtuple
-
-# from inkBoard.PythonScreenStackManager.pssm_types import *
-# from PythonScreenStackManager import tools
-# from PythonScreenStackManager.devices import PSSMdevice, DeviceFeatures
 
 import inkBoard
 from PythonScreenStackManager.pssm_types import *
@@ -65,7 +60,6 @@ class BaseDevice(PSSMdevice):
     @classproperty
     def platform(cls) -> str:
         "The device platform"
-        # return self.__class__.__module__.split('.')[-1]
         mod = cls.__module__.split('.')
         if mod[-1] == "device":
             return mod[-2]
@@ -139,10 +133,6 @@ class Device(BaseDevice):
 
     @property
     def battery(self) -> BaseBattery: return
-
-    
-
-
 
 def create_emulatorjson_init(device: type[Device]):
     """Updates the platform's emulator.json file with the parameters from the device's __init__ function.
