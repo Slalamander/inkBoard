@@ -330,7 +330,7 @@ class Packager:
         
         _LOGGER.info(f"Copying platform {platform} from {platform_folder} to package")
 
-        manual_files = {"readme.md", "install.md", "installation.md"}
+        manual_files = {"readme.md", "install.md", "installation.md", "package_files"}
         manual_dir = (tempdir / "configuration") if (tempdir / "configuration").exists() else tempdir
 
         for file in platform_folder.iterdir():
@@ -340,10 +340,16 @@ class Packager:
             manual_files.add(file.name)
             
             _LOGGER.debug(f"Copying platform manual file {file}")
-            shutil.copy2(
-                src = file,
-                dst = manual_dir
-            )
+            if file.is_dir():
+                shutil.copytree(
+                    src=file,
+                    dst = manual_dir
+                )
+            else:
+                shutil.copy2(
+                    src = file,
+                    dst = manual_dir
+                )
 
         ignore_func = partial(self.ignore_files, platform_folder.parent, ignore_in_baseparent_folder = manual_files | DESIGNER_FILES )
         _LOGGER.debug("Copying platform folder")
