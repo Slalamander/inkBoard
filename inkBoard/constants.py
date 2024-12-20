@@ -47,6 +47,8 @@ IMPORTER_THREADPOOL = "inkboard-import-threadpool"
 INKBOARD_FOLDER = Path(__file__).parent.resolve()
 "Absolute path to the folder containing the inkBoard module"
 
+FEATURE_CONNECTION = "FEATURE_CONNECTION"
+
 DEFAULT_CONFIG = "./configuration.yaml"
 "The default name to use for the config file"
 
