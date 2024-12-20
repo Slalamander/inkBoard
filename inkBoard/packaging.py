@@ -209,6 +209,7 @@ def install_packages(file: Union[str, Path] = None, no_input: bool = False):
         else:
             print(f"Found {len(packages)} packages that can be installed")
         for package in packages:
+            ##Add a confirmation message for each file.
             PackageInstaller(package, skip_confirmations=no_input, confirmation_function=confirm_input).install()
         return 0
 
