@@ -15,6 +15,7 @@ from PythonScreenStackManager import tools
 from PythonScreenStackManager.devices import PSSMdevice, DeviceFeatures, \
                                     Battery as BaseBattery, Backlight as BaseBacklight, Network as BaseNetwork
 from PythonScreenStackManager.devices.const import FEATURES, _attr_list, DeviceFeatures
+import inkBoard.constants
 
 from ..helpers import function_parameter_dict
 
@@ -22,7 +23,7 @@ _LOGGER = inkBoard.getLogger(__name__)
 
 class FEATURES(FEATURES):
 
-    FEATURE_CONNECTION = "FEATURE_CONNECTION"
+    FEATURE_CONNECTION = inkBoard.constants.FEATURE_CONNECTION
     "Subfeature of network, indicates the device is able to manage the network connection (i.e. disconnect, connect, etc.)"
 
 _attr_list = _attr_list.copy()   ##Copying so the original is not altered
@@ -89,9 +90,9 @@ class BaseDevice(PSSMdevice):
 
         return
 
-    def _set_screen(self, ScreenInstance):
+    def _set_screen(self):
 
-        super()._set_screen(ScreenInstance)
+        super()._set_screen()
 
         if self.has_feature(FEATURES.FEATURE_POWER):
             self.Screen.add_shorthand_function("power-off", tools.wrap_to_tap_action(self.power_off))
