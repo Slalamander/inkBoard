@@ -196,7 +196,7 @@ def create_emulatorjson_features(device: Device):
 
     _LOGGER.info("Updating device features in emulator.json")
 
-    device_folder = Path(inspect.getfile(device)).parent
+    device_folder = Path(inspect.getfile(device.__class__)).parent
     platform_file = device_folder / "emulator.json"
 
     if platform_file.exists():
@@ -208,7 +208,7 @@ def create_emulatorjson_features(device: Device):
 
     _LOGGER.info("Writing to emulator.json")
     with open(platform_file, "w") as f:
-        cur_conf.update({"features", device._features._asdict()})
+        cur_conf.update({"features": device._features._asdict()})
         json.dump(cur_conf, f, indent=4)
 
     return
