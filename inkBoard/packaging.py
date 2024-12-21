@@ -348,7 +348,7 @@ class Packager:
             else:
                 shutil.copy2(
                     src = file,
-                    dst = manual_dir
+                    dst = manual_dir / "files"
                 )
 
         ignore_func = partial(self.ignore_files, platform_folder.parent, ignore_in_baseparent_folder = manual_files | DESIGNER_FILES )
