@@ -218,10 +218,15 @@ class Packager:
     """Takes care of creating inkBoard packages from configs
     """
 
-    def __init__(self, core: "CORE", progress_func: Callable[[str,str, float],None] = None):
+    def __init__(self, core: "CORE", folder: Union[str,Path] = None, progress_func: Callable[[str,str, float],None] = None):
         self.CORE = core
         self.config = core.config
-        self.base_folder = core.config.baseFolder
+        if folder:
+            if isinstance(folder,str): folder = Path(folder)
+            assert folder.is_dir(), "Folder must be a directory"
+            self.base_folder = folder
+        else:
+            self.base_folder = core.config.baseFolder
         self._copied_yamls = set()
         self.__progress_func = progress_func
     
@@ -263,6 +268,7 @@ class Packager:
 
             self.report_progress("Zip File", "Creating Package zipfile", 75)
             _LOGGER.info("Creating package zip file")
+
             zipname = self.base_folder / f'{package_name}.zip'
             with zipfile.ZipFile(zipname, 'w') as zip_file:
                 for foldername, subfolders, filenames in os.walk(tempdir):
@@ -337,18 +343,18 @@ class Packager:
             if file.name.lower() not in manual_files:
                 continue
 
-            manual_files.add(file.name)
-            
             _LOGGER.debug(f"Copying platform manual file {file}")
             if file.is_dir():
                 shutil.copytree(
-                    src=file,
-                    dst = manual_dir
+                    src = file,
+                    dst = manual_dir / "files",
+                    dirs_exist_ok=True
                 )
             else:
+                manual_files.add(file.name)
                 shutil.copy2(
                     src = file,
-                    dst = manual_dir / "files"
+                    dst = manual_dir
                 )
 
         ignore_func = partial(self.ignore_files, platform_folder.parent, ignore_in_baseparent_folder = manual_files | DESIGNER_FILES )
