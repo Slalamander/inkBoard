@@ -4,7 +4,7 @@ from types import MappingProxyType
 from typing import TYPE_CHECKING, Literal, Any, Union
 from . import logging as ib_logging
 
-__version__ = "0.2.7.dev1"
+__version__ = "0.2.7.dev2"
 "inkBoard version"
 
 
