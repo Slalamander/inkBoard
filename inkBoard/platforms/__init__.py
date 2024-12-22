@@ -46,7 +46,8 @@ def get_device(config : "configuration", core: "CORE") -> Device:
             platform_path = config.baseFolder / platform_path
         _LOGGER.info(f"Looking for custom device at {platform_path}")
         platform_name = platform_path.name
-        platform_package = f"{platform_package}.{platform_name}"
+    
+    platform_package = f"{platform_package}.{platform_name}"
     
 
     if not platform_path.exists() or not platform_path.is_dir():
