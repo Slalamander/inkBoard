@@ -58,6 +58,7 @@ class StylesEntry(TypedDict):
     """
     Dataclass for styling options, used to set custom colours, define default fonts and certain icon styles.
     TypedDict, so can hold any entries, to allow integrations to also define styles.
+    Since the new Style model is not implemented yet, this entry does nothing at the moment.
     """
 
     menu_header_color: 'pssm.ColorType'
@@ -213,8 +214,6 @@ class ScreenEntry(_BaseConfigEntry):
     "Any keyword arguments to send along with calls to the on_interact functions"
 
 
-
-
 @dataclass(frozen=True)
 class HomeAssistantEntry(TypedDict):
     "Dict with settings required for the home assistant client"
@@ -263,7 +262,6 @@ class LoggerEntry(_BaseConfigEntry):
 
     log_to_file: Union[MappingProxyType[str,Any],Literal[False],None] = False
     "Settings for logging to a file. This setting is ignored when running in the designer."
-
 
 
 class MainEntry(TypedDict):
