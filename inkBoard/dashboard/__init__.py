@@ -86,8 +86,10 @@ def get_main_layout(dash_config: "config.configuration"):
 
     layout = []
 
-    if dash_config.get("main_tabs",None):
+    if "main_tabs" in dash_config:
         main_elt = dash_config["main_tabs"]
+    else:
+        main_elt = None
 
     if "statusbar" in dash_config:
         statusbar_conf = dash_config["statusbar"]
