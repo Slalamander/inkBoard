@@ -167,8 +167,6 @@ class config(metaclass=configMeta):
         self.__styles = StylesEntry(**__full_config.get("styles",{}))
         self.__logger = LoggerEntry(**__full_config.get("logger",{}))
 
-
-
         try:
             designer : DesignerEntry = DesignerEntry(**__full_config.get("designer",{}))
         except TypeError as exce:
