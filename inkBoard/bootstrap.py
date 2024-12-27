@@ -162,12 +162,12 @@ async def setup_core(config_file, integration_loader: "loaders.IntegrationLoader
     CORE.custom_functions = import_custom_functions(CORE)
     import_custom_elements(CORE)
 
+    setup_styles(CORE)
+
     CORE.device = await setup_device(CORE)
 
     CORE.screen = await setup_screen(CORE)
     CORE.screen.add_shorthand_function_group("custom", CORE.parse_custom_function)
-
-    setup_styles(CORE)
 
     if CORE.integration_loader:
         CORE.integration_objects = await CORE.integration_loader.async_setup_integrations(CORE)
