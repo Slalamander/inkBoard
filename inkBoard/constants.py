@@ -28,7 +28,7 @@ FuncExceptions = (TypeError, KeyError, IndexError, OSError, RuntimeError)
 "General exceptions to catch when calling functions like update. Usage  in try statements as `except FuncExceptions:`"
 
 RAISE : bool = False
-"If true, some errors which are only logged in situations like interaction handling and trigger functions are now raised. Also enables memory allocation tracing."
+"DEPRECATED. If true, some errors which are only logged in situations like interaction handling and trigger functions are now raised. Also enables memory allocation tracing."
 
 if RAISE:
     # os.environ["PYTHONTRACEMALLOC"] = "1"
