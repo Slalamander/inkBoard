@@ -201,3 +201,11 @@ class classproperty(Generic[T]):
         if cls is None:
             cls = type(obj)
         return self.method(cls)
+    
+def loop_exception_handler(loop, context):
+
+    _LOGGER.error(context["message"])
+
+    if "task" in context:
+        t = context["task"]
+        return
