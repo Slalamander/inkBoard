@@ -12,9 +12,11 @@ import asyncio
 import sys
 import concurrent.futures
 
+from PythonScreenStackManager.exceptions import ReloadWarning, FullReloadWarning
+
 import inkBoard
 from inkBoard import constants as const, bootstrap, loaders
-from PythonScreenStackManager.exceptions import ReloadWarning, FullReloadWarning
+from inkBoard.helpers import QuitInkboard
 from inkBoard.arguments import args, PRE_CORE_ACTIONS, POST_CORE_ACTIONS
 
 if TYPE_CHECKING:
@@ -44,7 +46,7 @@ async def run_inkBoard(config_file):
         except ReloadWarning:
             await asyncio.sleep(0)
             bootstrap.reload_core(CORE)
-        except (SystemExit, KeyboardInterrupt):
+        except (SystemExit, KeyboardInterrupt, QuitInkboard):
             await asyncio.sleep(0)
             _LOGGER.info("Closing down inkBoard")
             ##Check if it is needed to close
