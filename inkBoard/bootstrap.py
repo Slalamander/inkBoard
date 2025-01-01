@@ -4,10 +4,11 @@ from typing import *
 import asyncio
 import importlib
 from pathlib import Path
+from contextlib import suppress
 
 import inkBoard
 from inkBoard import constants as const, loaders, arguments
-from inkBoard.helpers import DeviceError, ScreenError, ConfigError, reload_full_module
+from inkBoard.helpers import DeviceError, ScreenError, ConfigError, QuitInkboard, reload_full_module
 import inkBoard.loaders
 from inkBoard.logging import setup_logging
 import PythonScreenStackManager as PSSM
@@ -203,6 +204,8 @@ def _shutdown_core(core: "CORE", reload_ = False):
     "Shuts down the core object and optionally reloads the necessary modules"
     
     _LOGGER.info("Shutting down inkBoard core")
+    if not hasattr(core,"screen"):
+        return
 
     for task in asyncio.all_tasks(core.screen.mainLoop):
         if task == asyncio.current_task(core.screen.mainLoop):
@@ -235,9 +238,10 @@ def reload_core(core: "CORE", full_reload: bool = False):
         PSSM.pssm._reset()
         reload_mods = list(const.FULL_RELOAD_MODULES)
 
-        if inkBoard.platforms.__name__ not in core.device.__module__:
-            idx = reload_mods.index(inkBoard.platforms.__name__)
-            reload_mods.insert(idx+1, core.device.__module__)
+        with suppress(AttributeError):
+            if inkBoard.platforms.__name__ not in core.device.__module__:
+                idx = reload_mods.index(inkBoard.platforms.__name__)
+                reload_mods.insert(idx+1, core.device.__module__)
 
             ##Reload integrations here? ##Yeah, can be done via the loader list.
 
