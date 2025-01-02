@@ -42,19 +42,19 @@ async def run_inkBoard(config_file):
             await bootstrap.run_core(CORE)
         except FullReloadWarning:
             await asyncio.sleep(0)
-            bootstrap.reload_core(CORE, full_reload=True)
+            await bootstrap.reload_core(CORE, full_reload=True)
         except ReloadWarning:
             await asyncio.sleep(0)
-            bootstrap.reload_core(CORE)
+            await bootstrap.reload_core(CORE)
         except (SystemExit, KeyboardInterrupt, QuitInkboard):
             await asyncio.sleep(0)
             _LOGGER.info("Closing down inkBoard")
             ##Check if it is needed to close
-            return bootstrap.stop_core(CORE)
+            return await bootstrap.stop_core(CORE)
         except Exception as exce:
             _LOGGER.error(f"Something unexpected went wrong running inkBoard: {exce}")
             _LOGGER.warning("Attempting graceful shutdown")
-            return bootstrap.stop_core(CORE)
+            return await bootstrap.stop_core(CORE)
         
         await asyncio.sleep(0)
 

@@ -200,7 +200,7 @@ async def run_core(core: "CORE"):
                     return_exceptions=False)
     return await L  #@IgnoreExceptions
 
-def _shutdown_core(core: "CORE", reload_ = False):
+def _shutdown_core(core: "CORE"):
     "Shuts down the core object and optionally reloads the necessary modules"
     
     _LOGGER.info("Shutting down inkBoard core")
@@ -212,7 +212,7 @@ def _shutdown_core(core: "CORE", reload_ = False):
             continue
         task.cancel()
 
-def reload_core(core: "CORE", full_reload: bool = False):
+async def reload_core(core: "CORE", full_reload: bool = False):
     """Reloads the core object and required modules so it can be set up fresh again.
 
     Parameters
@@ -223,7 +223,8 @@ def reload_core(core: "CORE", full_reload: bool = False):
         A full reload reloads all modules that affect printing, i.e. PSSM, non custom integrations, platforms, etc. by default False
     """    
 
-    _shutdown_core(core,full_reload)
+    _shutdown_core(core)
+    await core.integration_loader.async_stop_integrations(core)
 
     if not full_reload:
         PSSM.pssm._reset()
@@ -255,9 +256,10 @@ def reload_core(core: "CORE", full_reload: bool = False):
     return
 
 
-def stop_core(core: "CORE"):
+async def stop_core(core: "CORE"):
     try:
-        _shutdown_core(core,False)
+        _shutdown_core(core)
+        await core.integration_loader.async_stop_integrations(core)
     except Exception as exce:
         print(f"inkBoard did not shutdown gracefully: {exce}")
         return 1
