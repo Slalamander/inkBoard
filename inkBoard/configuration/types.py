@@ -51,8 +51,8 @@ class InkboardEntry(_BaseConfigEntry):
     integrations : Union[Literal["all"],tuple] = ()
     "List with integrations to load, if they do not have a config key defined (i.e. for custom elements)"
 
-    integration_start_time : 'pssm.DurationType' = -1
-    "Maximum time to allow integrations to run their start tasks before inkBoard continues to printing. Gets parsed to seconds. Keep in mind that setting this may cause issues with integrations. Default is -1 (No maximum time.)"
+    integration_start_time : 'pssm.DurationType' = 30
+    "Maximum time to allow integrations to run their start tasks before inkBoard continues to printing. Gets parsed to seconds, set to -1 for to wait until everything is set up. Keep in mind that setting this may cause issues with integrations. Default is 30."
 
 class StylesEntry(TypedDict):
     """
