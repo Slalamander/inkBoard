@@ -110,7 +110,7 @@ class StylesEntry(TypedDict):
 
 @dataclass(frozen=True)
 class FolderEntry(_BaseConfigEntry):
-    """
+    """DEPRECATED, will not be allowed to be set 
     Dataclass with the folders inkBoard will look in for custom files. 
     NOT defined in the config, as all folders should have constant names. However, this is used to set the correct Paths when running configs from different folders.
     Eventually it will be made possible however to define these in a way to use custom folders from elsewhere, such that when developing a new dashboard, old files do not need to be changed immediately. However, this option will only be available for the emulator most likely.
@@ -213,6 +213,7 @@ class ScreenEntry(_BaseConfigEntry):
     on_interact_data: MappingProxyType = MappingProxyType({})
     "Any keyword arguments to send along with calls to the on_interact functions"
 
+##Add a unittest or something that checks if this corresponds to the __init__
 
 @dataclass(frozen=True)
 class HomeAssistantEntry(TypedDict):
