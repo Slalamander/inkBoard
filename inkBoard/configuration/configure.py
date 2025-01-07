@@ -148,6 +148,8 @@ class config(metaclass=configMeta):
 
         self.__full_config = __full_config
 
+        self.__substitutions = MappingProxyType(BaseSafeLoader._substitutions)
+
         ##Maybe do a few more assertions or some validation to check if the required keys are present?
 
         self.__folders = set_folders(__full_config, self.__baseFolder)
@@ -222,6 +224,10 @@ class config(metaclass=configMeta):
     def configuration(self) -> MainEntry:
         "The mappingproxy dict that was build by reading out the configuration file."
         return self.__full_config
+
+    @property
+    def substitutions(self) -> MappingProxyType:
+        return self.__substitutions
 
     @property
     def folders(self) -> FolderEntry:
