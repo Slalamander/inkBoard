@@ -24,7 +24,10 @@ _LOGGER = inkBoard.getLogger(__name__)
 class FEATURES(FEATURES):
 
     FEATURE_CONNECTION = inkBoard.constants.FEATURE_CONNECTION
-    "Subfeature of network, indicates the device is able to manage the network connection (i.e. disconnect, connect, etc.)"
+    """Subfeature of network, indicates the device is able to manage the network connection (i.e. disconnect, connect, etc.
+
+    The feature is a work in progress, so no shorthand functions are provided yet.
+    """
 
 _attr_list = _attr_list.copy()   ##Copying so the original is not altered
 _attr_list.extend([y for x, y in FEATURES.__dict__.items() if not x.startswith("_")])
@@ -32,10 +35,9 @@ _DeviceTuple = namedtuple("_DeviceTuple", _attr_list, defaults=(False,)* len(_at
 
 
 class InkboardDeviceFeatures(_DeviceTuple, DeviceFeatures, FEATURES):
-    """Class for indicating which features the device has. 
-    
-    Pass all the features using the constants from the `FEATURES` class.
-    Do not interface with this class directly, but use `device.has_feature(FEATURES.FEATURE_{})` instead.
+    """The features available for inkBoard devices.
+
+    During runtime, the function ``device.has_feature("some_feature")`` can be used to check if a device has a certain feature.
     """
 
     def __new__(cls, *features: str, **kwargs):
@@ -104,11 +106,27 @@ class BaseConnectionNetwork(BaseNetwork):
 
     @abstractmethod
     async def async_connect(self, ssid: str = None, password: str = None):
-        """Base async method to connect to a network."""
+        """Connects to a wifi network
+
+        Parameters
+        ----------
+        ssid : str, optional
+            Network to connect to, by default None
+        password : str, optional
+            Password to use for connecting, by default None
+        """
         return
 
     def connect(self, ssid: str = None, password: str = None):
-        "Connects to a wifi network"
+        """Connects to a wifi network
+
+        Parameters
+        ----------
+        ssid : str, optional
+            Network to connect to, by default None
+        password : str, optional
+            Password to use for connecting, by default None
+        """
         asyncio.create_task(self.async_connect(ssid,password))
 
     @abstractmethod

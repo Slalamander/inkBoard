@@ -10,7 +10,7 @@ import sys
 
 from .. import constants as const
 
-from .basedevice import BaseDevice, Device, FEATURES
+from .basedevice import BaseDevice, Device, FEATURES, InkboardDeviceFeatures
 from .validate import validate_device
 
 if const.DESIGNER_INSTALLED:
