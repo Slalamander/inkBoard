@@ -148,7 +148,7 @@ class config(metaclass=configMeta):
 
         self.__full_config = __full_config
 
-        self.__substitutions = MappingProxyType(BaseSafeLoader._substitutions)
+        self.__substitutions = MappingProxyType(getattr(BaseSafeLoader,"_substitutions", {}))
 
         ##Maybe do a few more assertions or some validation to check if the required keys are present?
 
