@@ -193,44 +193,44 @@ class DeviceEntry(TypedDict):
 add_required_keys(DeviceEntry, {"platform"})
 deviceMapDefaults = MappingProxyType({"model": None})
 
-@dataclass(frozen=True)
-class ScreenEntry(_BaseConfigEntry):
-    """
-    Map for values having to do with the screen, like interaction or how it is shown.
-    """
+# @dataclass(frozen=True)
+# class ScreenEntry(_BaseConfigEntry):
+#     """
+#     Map for values having to do with the screen, like interaction or how it is shown.
+#     """
     
-    poll_interval: Union['pssm.DurationType',int, float] = "1min"
-    "The amount of time in between polling different attributes, like the Network status."
+#     poll_interval: Union['pssm.DurationType',int, float] = "1min"
+#     "The amount of time in between polling different attributes, like the Network status."
 
-    close_popup_time: Union[float,'pssm.DurationType', int] = "1min"
-    "Default time in which popups will automatically close"
+#     close_popup_time: Union[float,'pssm.DurationType', int] = "1min"
+#     "Default time in which popups will automatically close"
 
-    background: Union[str, 'pssm.ColorType', None] = INKBOARD_FOLDER / "files" / "images" / "default_background.png"
-    "Main background of the screen. Can be a color, or an image. If None, the default device background is assumed."
+#     background: Union[str, 'pssm.ColorType', None] = INKBOARD_FOLDER / "files" / "images" / "default_background.png"
+#     "Main background of the screen. Can be a color, or an image. If None, the default device background is assumed."
 
-    background_fit: Literal["contain", "cover", "crop", "resize"] = "cover"
-    "Method to use to fit the background onto the screen"
+#     background_fit: Literal["contain", "cover", "crop", "resize"] = "cover"
+#     "Method to use to fit the background onto the screen"
 
-    background_fit_arguments: MappingProxyType = MappingProxyType({})
-    "Any keyword arguments to pass to the background fit method. Refer to the PIL docs for the arguments for each method"
+#     background_fit_arguments: MappingProxyType = MappingProxyType({})
+#     "Any keyword arguments to pass to the background fit method. Refer to the PIL docs for the arguments for each method"
 
-    backlight_behaviour: Optional[Literal["Manual", "On Interact", "Always"]] = None
-    "Behaviour of the device's backlight (if applicable)"
+#     backlight_behaviour: Optional[Literal["Manual", "On Interact", "Always"]] = None
+#     "Behaviour of the device's backlight (if applicable)"
 
-    backlight_time_on: Union['pssm.DurationType',int, float] = "1min"
-    "If backlight_behaviour is 'On Interact', this value determines how long the backlight stays on for after the last interaction, by default None"
+#     backlight_time_on: Union['pssm.DurationType',int, float] = "1min"
+#     "If backlight_behaviour is 'On Interact', this value determines how long the backlight stays on for after the last interaction, by default None"
 
-    touch_debounce_time: 'pssm.DurationType' = '1ms'
-    "Time to wait before a touch is considered valid"
+#     touch_debounce_time: 'pssm.DurationType' = '1ms'
+#     "Time to wait before a touch is considered valid"
 
-    minimum_hold_time: 'pssm.DurationType' = '0.5s'
-    "Minimum time required to consider a touch as held, instead of tapped"
+#     minimum_hold_time: 'pssm.DurationType' = '0.5s'
+#     "Minimum time required to consider a touch as held, instead of tapped"
 
-    on_interact: Union[Callable[[MappingProxyType, 'pssm.PSSMScreen', 'pssm.CoordType'], None], bool,None] = None
-    "Function called whenever a valid touch is registered"
+#     on_interact: Union[Callable[[MappingProxyType, 'pssm.PSSMScreen', 'pssm.CoordType'], None], bool,None] = None
+#     "Function called whenever a valid touch is registered"
 
-    on_interact_data: MappingProxyType = MappingProxyType({})
-    "Any keyword arguments to send along with calls to the on_interact functions"
+#     on_interact_data: MappingProxyType = MappingProxyType({})
+#     "Any keyword arguments to send along with calls to the on_interact functions"
 
 @dataclass(frozen=True)
 class ScreenEntry(_BaseConfigEntry):
@@ -239,7 +239,7 @@ class ScreenEntry(_BaseConfigEntry):
     The screen manages the dashboard and handles the connection between it and the device.
     """
 
-    background : Union[str, pssm.ColorType] = pssm_const.DEFAULT_BACKGROUND
+    background : Union[str, pssm.ColorType] = "inkboard-background"
     "The background of the dashboard. Can be an image file or a solid color."
 
     background_fit : Literal["contain", "cover", "crop", "resize"] = "cover"
