@@ -66,6 +66,7 @@ def build_config_elements(config : "config", core: "CORE"):
                     continue
             elif conf_key == "main_tabs":
                 try:
+                    conf_res.setdefault("id", "inkboard-main-tab-pages")
                     conf_res = TabPages(**conf_res)
                 except TypeError as e:
                     _LOGGER.error(f"Error in the config for {conf_key}: {e}. Check if the initial arguments were defined correctly.")
