@@ -17,7 +17,7 @@ from PythonScreenStackManager.elements import Layout, TabPages, StatusBar
 if TYPE_CHECKING:
     from inkBoard import config, core as CORE
 
-logger = logging.getLogger(__name__)
+_LOGGER = logging.getLogger(__name__)
 
 def build_config_elements(config : "config", core: "CORE"):
     """
@@ -61,14 +61,14 @@ def build_config_elements(config : "config", core: "CORE"):
                     status_conf["element"] = statusbar
                     conf_res = status_conf
                 except TypeError as e:
-                    logger.error(f"Error in the config for {conf_key}: {e}. Check if the initial arguments were defined correctly.")
+                    _LOGGER.error(f"Error in the config for {conf_key}: {e}. Check if the initial arguments were defined correctly.")
                     DashboardLoader._config_error = True
                     continue
             elif conf_key == "main_tabs":
                 try:
                     conf_res = TabPages(**conf_res)
                 except TypeError as e:
-                    logger.error(f"Error in the config for {conf_key}: {e}. Check if the initial arguments were defined correctly.")
+                    _LOGGER.error(f"Error in the config for {conf_key}: {e}. Check if the initial arguments were defined correctly.")
                     DashboardLoader._config_error = True
                     continue
                 
@@ -78,7 +78,7 @@ def build_config_elements(config : "config", core: "CORE"):
         raise DashboardError("Error parsing configuration for the dashboard. See the logs for more information.") #@IgnoreExceptions
     return dash_conf
 
-def get_main_layout(dash_config: "config.configuration"):
+def get_main_layout(dash_config: "config.configuration", core: "CORE"):
     """
     Builds the main layout element based on the settings in the configuration.
     Returns the main layout element. Unless otherwise specified in the config, this will return the tab element made from the tabs key, and the statusbar, if specified
@@ -86,7 +86,11 @@ def get_main_layout(dash_config: "config.configuration"):
 
     layout = []
 
-    if "main_tabs" in dash_config:
+    if core.config.inkBoard.main_element:
+        main_elt = core.config.inkBoard.main_element
+        if main_elt not in core.screen.elementRegister:
+            raise DashboardError(f'No element with the id "{main_elt}" has been registered.')
+    elif "main_tabs" in dash_config:
         main_elt = dash_config["main_tabs"]
     else:
         main_elt = None

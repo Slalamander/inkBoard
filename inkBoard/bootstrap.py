@@ -117,7 +117,7 @@ def setup_dashboard_config(core: "CORE") -> "elements.Layout":
 
     config = core.config
     dash_conf = dashboard.build_config_elements(config, core)
-    main_layout = dashboard.get_main_layout(dash_conf)
+    main_layout = dashboard.get_main_layout(dash_conf, core)
 
     return main_layout
 

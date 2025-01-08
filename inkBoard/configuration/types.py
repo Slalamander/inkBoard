@@ -45,15 +45,23 @@ class InkboardEntry(_BaseConfigEntry):
     name : str
     "The name to give the instance. Used for i.e. the name of the Device in Home Assistant"
 
-    date_format : str = "%-d-%m-%Y"
+    main_element : str = None
+    """The id of the element to use as a the main element.
+    
+    If not set, the ``main_tabs`` will be used, which is the default.
     """
-    Default format to use when representing dates. Default may be device/region specific.
+
+    date_format : str = "%-d-%m-%Y"
+    """Default format to use when representing dates.
+    
+    Default may be device/region specific.
     This site can help giving your the correct format string from a date: https://www.dateformatgenerator.com/?lang=Python&q=17-09-2013 
     """
 
     time_format : str = "%H:%M"
-    """
-    Default format to use when representing time. Default may be device/region specific.
+    """Default format to use when representing time.
+    
+    Default may be device/region specific.
     This site can help giving your the correct format string from a time: https://www.dateformatgenerator.com/?lang=Python&q=11%3A11
     """
 
