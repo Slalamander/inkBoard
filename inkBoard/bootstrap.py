@@ -99,6 +99,7 @@ def setup_styles(core: "CORE"):
     pssm.pssm.styles.Style.add_color_shorthand(**const.INKBOARD_COLORS)
 
     pssm.constants.SHORTHAND_ICONS["inkboard"] = const.INKBOARD_ICON
+    pssm.constants.SHORTHAND_ICONS["inkboard-background"] = const.INKBOARD_BACKGROUND
 
     if config.styles:
         pssm.pssm.styles.Style.add_color_shorthand(**config.styles.get("shorthand_colors",{}))

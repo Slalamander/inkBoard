@@ -67,6 +67,7 @@ INKBOARD_COLORS = {
 }
 
 INKBOARD_ICON = INKBOARD_FOLDER / "files/icons/inkboard.ico"
+INKBOARD_BACKGROUND = INKBOARD_FOLDER / "files/images/default_background.png"
 
 ##See https://developers.home-assistant.io/docs/core/entity/weather#forecast-data
 ##Not included: is_daytime, condition
