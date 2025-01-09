@@ -9,7 +9,8 @@ The system is designed with extendability in mind, such that new platforms can e
 
 # Documentation
 
-WIP
+The documentation is hosted on readthedocs:
+https://inkboard-documentation.readthedocs.io/en/latest/
 
 # Examples
 
