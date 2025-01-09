@@ -115,15 +115,6 @@ class DashboardLoader(loaders.BaseSafeLoader):
         
         try:
             elt = elt_type(**d)
-        except TypeError as e:
-            yaml_line = node.start_mark.line
-            elt_str = type_str
-            if "id" in d:
-                elt_str = f"[{elt_str}: {d['id']}]"
-            msg = f"Error constructing element {type_str} in configuration file {node.start_mark.name}, line {yaml_line}: {e}"
-            logger.error(msg)
-            self.__class__._config_error = True
-            return None
         except DuplicateElementError as e:
             yaml_line = node.start_mark.line
             if "id" in d:
@@ -131,6 +122,15 @@ class DashboardLoader(loaders.BaseSafeLoader):
                 msg = f"An element with id {elt_id} has already been registered. Duplicate element is located in configuration file {node.start_mark.name}, line {yaml_line}."
             else:
                 msg = f"Element {type_str} in configuration file {node.start_mark.name}, line {yaml_line} got a duplicate ID: {e}"
+            logger.error(msg)
+            self.__class__._config_error = True
+            return None
+        except Exception as e:
+            yaml_line = node.start_mark.line
+            elt_str = type_str
+            if "id" in d:
+                elt_str = f"[{elt_str}: {d['id']}]"
+            msg = f"Error constructing element {type_str} in configuration file {node.start_mark.name}, line {yaml_line}: {e}"
             logger.error(msg)
             self.__class__._config_error = True
             return None
