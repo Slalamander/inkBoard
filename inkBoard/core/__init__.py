@@ -12,7 +12,7 @@ from inkBoard.arguments import args
 
 from . import util  ##Depending on how stuff moves around, may need to import util somewhere else?
 
-logger = logging.getLogger(__name__)
+_LOGGER = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from PythonScreenStackManager.pssm.screen import PSSMScreen
@@ -63,7 +63,7 @@ def add_integration_config_key(key : str, folder : Path):
     """    
     if key in _INTEGRATION_KEYS:
         int_mod = _INTEGRATION_KEYS[key].__module__
-        logger.error(f"{key} is already used for a the config of a different integration: {int_mod}")
+        _LOGGER.error(f"{key} is already used for a the config of a different integration: {int_mod}")
     else:
         _INTEGRATION_KEYS[key] = folder
 
@@ -83,7 +83,7 @@ def add_element_parser(identifier : str, parser : Callable[[str],"Element"]):
         The function that parses the element. Should return the class, not an instance of the element.
     """    
     if identifier in _ELEMENT_PARSERS:
-        logger.error(f"Element identifier {identifier} is already registered")
+        _LOGGER.error(f"Element identifier {identifier} is already registered")
         return
     
     _ELEMENT_PARSERS[identifier] = parser
@@ -99,5 +99,8 @@ def parse_custom_function(name: str, attr: str, options = {}) -> Optional[Callab
     """
 
     parse_string = name.lower()
+    if parse_string not in custom_functions:
+        _LOGGER.error(f"No custom function called {parse_string}")
+        return
     return custom_functions[parse_string]
 

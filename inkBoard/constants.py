@@ -28,7 +28,7 @@ FuncExceptions = (TypeError, KeyError, IndexError, OSError, RuntimeError)
 "General exceptions to catch when calling functions like update. Usage  in try statements as `except FuncExceptions:`"
 
 RAISE : bool = False
-"If true, some errors which are only logged in situations like interaction handling and trigger functions are now raised. Also enables memory allocation tracing."
+"DEPRECATED. If true, some errors which are only logged in situations like interaction handling and trigger functions are now raised. Also enables memory allocation tracing."
 
 if RAISE:
     # os.environ["PYTHONTRACEMALLOC"] = "1"
@@ -67,6 +67,7 @@ INKBOARD_COLORS = {
 }
 
 INKBOARD_ICON = INKBOARD_FOLDER / "files/icons/inkboard.ico"
+INKBOARD_BACKGROUND = INKBOARD_FOLDER / "files/images/default_background.png"
 
 ##See https://developers.home-assistant.io/docs/core/entity/weather#forecast-data
 ##Not included: is_daytime, condition

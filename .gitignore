@@ -1,4 +1,5 @@
 .venv
+build
 __pycache__/
 venv
 .eggs

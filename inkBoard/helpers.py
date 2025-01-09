@@ -3,6 +3,7 @@ Small library with helper functions for inkBoard, that could not be included in 
 Does not import anything from pssm or integration yet, and is mainly meant to supplement some small useful functions.
 """
 import typing   ##Need to import typing to evaluate union strings (those are converted to typing.Union[...])
+import asyncio
 from typing import TYPE_CHECKING
 from typing import TypedDict, Generic, TypeVar, Callable, Union, Literal
 from types import ModuleType
@@ -201,3 +202,13 @@ class classproperty(Generic[T]):
         if cls is None:
             cls = type(obj)
         return self.method(cls)
+    
+def loop_exception_handler(loop, context):
+
+    asyncio.BaseEventLoop.default_exception_handler(loop, context)
+
+    # _LOGGER.error(context["message"])
+
+    # if "task" in context:
+    #     t = context["task"]
+    #     return

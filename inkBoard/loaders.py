@@ -454,6 +454,35 @@ class IntegrationLoader:
                     if t.exception() != None:
                         _LOGGER.error(f"Integration {t.get_name()} ran into an error while running: {t.exception()}")
 
+
+    @classmethod
+    async def async_stop_integrations(cls, core: "CORE"):
+        "Calls the stop function on all imported integrations"
+
+        for integration, module in cls._imported_modules.items():
+            setup_res = core.integration_objects.get(integration,None)
+
+            module : "sys.ModuleType"
+            stop_func = None
+            if hasattr(module,"async_stop"):
+                stop_func = module.async_stop
+            elif hasattr(module,"stop"):
+                stop_func = module.stop
+            else:
+                return
+
+            if not isinstance(stop_func,Callable):
+                _LOGGER.error(f"{integration} does not have a valid setup function, not importing")
+                continue
+
+            try:
+                if asyncio.iscoroutinefunction(stop_func):
+                    await stop_func(core, setup_res)
+                else:
+                    stop_func(core, setup_res)
+            except:
+                _LOGGER.exception(f"Unable to stop integration {integration}")
+
     @classmethod
     def _reset(cls):
         cls._integration_keys: dict[str,str] = {}

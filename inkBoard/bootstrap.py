@@ -4,10 +4,11 @@ from typing import *
 import asyncio
 import importlib
 from pathlib import Path
+from contextlib import suppress
 
 import inkBoard
 from inkBoard import constants as const, loaders, arguments
-from inkBoard.helpers import DeviceError, ScreenError, ConfigError, reload_full_module
+from inkBoard.helpers import DeviceError, ScreenError, ConfigError, QuitInkboard, reload_full_module
 import inkBoard.loaders
 from inkBoard.logging import setup_logging
 import PythonScreenStackManager as PSSM
@@ -98,6 +99,7 @@ def setup_styles(core: "CORE"):
     pssm.pssm.styles.Style.add_color_shorthand(**const.INKBOARD_COLORS)
 
     pssm.constants.SHORTHAND_ICONS["inkboard"] = const.INKBOARD_ICON
+    pssm.constants.SHORTHAND_ICONS["inkboard-background"] = const.INKBOARD_BACKGROUND
 
     if config.styles:
         pssm.pssm.styles.Style.add_color_shorthand(**config.styles.get("shorthand_colors",{}))
@@ -116,7 +118,7 @@ def setup_dashboard_config(core: "CORE") -> "elements.Layout":
 
     config = core.config
     dash_conf = dashboard.build_config_elements(config, core)
-    main_layout = dashboard.get_main_layout(dash_conf)
+    main_layout = dashboard.get_main_layout(dash_conf, core)
 
     return main_layout
 
@@ -162,12 +164,12 @@ async def setup_core(config_file, integration_loader: "loaders.IntegrationLoader
     CORE.custom_functions = import_custom_functions(CORE)
     import_custom_elements(CORE)
 
+    setup_styles(CORE)
+
     CORE.device = await setup_device(CORE)
 
     CORE.screen = await setup_screen(CORE)
     CORE.screen.add_shorthand_function_group("custom", CORE.parse_custom_function)
-
-    setup_styles(CORE)
 
     if CORE.integration_loader:
         CORE.integration_objects = await CORE.integration_loader.async_setup_integrations(CORE)
@@ -197,19 +199,21 @@ async def run_core(core: "CORE"):
     L = asyncio.gather(
                     *coros,
                     return_exceptions=False)
-    return await L  #@IgnoreExceptions
+    return await L  #@IgnoreException
 
-def _shutdown_core(core: "CORE", reload_ = False):
+def _shutdown_core(core: "CORE"):
     "Shuts down the core object and optionally reloads the necessary modules"
     
     _LOGGER.info("Shutting down inkBoard core")
+    if not hasattr(core,"screen"):
+        return
 
     for task in asyncio.all_tasks(core.screen.mainLoop):
         if task == asyncio.current_task(core.screen.mainLoop):
             continue
         task.cancel()
 
-def reload_core(core: "CORE", full_reload: bool = False):
+async def reload_core(core: "CORE", full_reload: bool = False):
     """Reloads the core object and required modules so it can be set up fresh again.
 
     Parameters
@@ -220,7 +224,8 @@ def reload_core(core: "CORE", full_reload: bool = False):
         A full reload reloads all modules that affect printing, i.e. PSSM, non custom integrations, platforms, etc. by default False
     """    
 
-    _shutdown_core(core,full_reload)
+    _shutdown_core(core)
+    await core.integration_loader.async_stop_integrations(core)
 
     if not full_reload:
         PSSM.pssm._reset()
@@ -235,9 +240,10 @@ def reload_core(core: "CORE", full_reload: bool = False):
         PSSM.pssm._reset()
         reload_mods = list(const.FULL_RELOAD_MODULES)
 
-        if inkBoard.platforms.__name__ not in core.device.__module__:
-            idx = reload_mods.index(inkBoard.platforms.__name__)
-            reload_mods.insert(idx+1, core.device.__module__)
+        with suppress(AttributeError):
+            if inkBoard.platforms.__name__ not in core.device.__module__:
+                idx = reload_mods.index(inkBoard.platforms.__name__)
+                reload_mods.insert(idx+1, core.device.__module__)
 
             ##Reload integrations here? ##Yeah, can be done via the loader list.
 
@@ -251,9 +257,10 @@ def reload_core(core: "CORE", full_reload: bool = False):
     return
 
 
-def stop_core(core: "CORE"):
+async def stop_core(core: "CORE"):
     try:
-        _shutdown_core(core,False)
+        _shutdown_core(core)
+        await core.integration_loader.async_stop_integrations(core)
     except Exception as exce:
         print(f"inkBoard did not shutdown gracefully: {exce}")
         return 1

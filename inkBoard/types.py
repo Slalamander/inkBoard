@@ -19,7 +19,10 @@ class inkboardrequirements(TypedDict):
 
 
 class platformjson(TypedDict):
-    "Type hinting for platform.json file"
+    """Base dict that should be gathered from a platform.json file
+
+    Used to indicate the platforms version, requirements and the like.
+    """
 
     version: str
     "Version string. Use x.x.x for versioning"
