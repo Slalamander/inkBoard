@@ -133,7 +133,7 @@ class _CORE:
     @classproperty
     def integrationLoader(cls) -> "IntegrationLoader":
         "Object responsible for loading integrations"
-        return cls._integration_loader
+        return cls._integrationLoader
     
     @classproperty
     def integrationObjects(cls) -> MappingProxyType[Literal["integration_entry"],Any]:
@@ -141,10 +141,18 @@ class _CORE:
         return cls._integrationObjects
 
     @classproperty
+    def customElements(cls) -> MappingProxyType[str,"Element"]:
+        return cls._customElements
+
+    @classproperty
     def customFunction(cls) -> MappingProxyType[str,Callable]:
         return cls._customFunctions
     
-    
     def _reset(cls):
         "Resets the inkBoard core for a new run"
+        del(cls._config)
         del(cls._screen)
+        del(cls._device)
+        del(cls._integrationLoader)
+        del(cls._integrationObjects)
+        del(cls._customFunctions)
