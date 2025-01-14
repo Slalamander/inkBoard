@@ -2,6 +2,7 @@
 
 from typing import TYPE_CHECKING, Literal, Final, Optional, Any, Callable
 from types import MappingProxyType
+from functools import cached_property
 import logging
 from pathlib import Path
 from datetime import datetime as dt
@@ -9,6 +10,8 @@ from datetime import datetime as dt
 import inkBoard
 from inkBoard import constants as const
 from inkBoard.arguments import args
+
+from PythonScreenStackManager.tools import classproperty
 
 from . import util  ##Depending on how stuff moves around, may need to import util somewhere else?
 
@@ -38,7 +41,7 @@ integration_loader: "IntegrationLoader"
 "Object responsible for loading integrations"
 
 integration_objects: Final[MappingProxyType[Literal["integration_entry"],Any]]
-"Objects returned by integrations"
+
 
 custom_functions: MappingProxyType[str,Callable]
 "Functions in the custom/functions folder of the config"
@@ -104,3 +107,44 @@ def parse_custom_function(name: str, attr: str, options = {}) -> Optional[Callab
         return
     return custom_functions[parse_string]
 
+
+class _CORE:
+
+    @cached_property
+    def DESIGNER_RUN() -> bool:
+        from inkBoard import arguments
+        return arguments.command == arguments.COMMAND_DESIGNER
+    
+    @classproperty
+    def screen(cls) -> "PSSMScreen":
+        "The screen instance managing the screen stack"
+        return cls._screen
+    
+    @classproperty
+    def device(cls) -> "BaseDevice":
+        "The device object managing bindings to the device"
+        return cls._device
+    
+    @classproperty
+    def config(cls) -> "configuration":
+        "The config object from the currently loaded configuration"
+        return cls._config
+    
+    @classproperty
+    def integrationLoader(cls) -> "IntegrationLoader":
+        "Object responsible for loading integrations"
+        return cls._integration_loader
+    
+    @classproperty
+    def integrationObjects(cls) -> MappingProxyType[Literal["integration_entry"],Any]:
+        "Objects returned by integrations, like client instances."
+        return cls._integrationObjects
+
+    @classproperty
+    def customFunction(cls) -> MappingProxyType[str,Callable]:
+        return cls._customFunctions
+    
+    
+    def _reset(cls):
+        "Resets the inkBoard core for a new run"
+        del(cls._screen)
