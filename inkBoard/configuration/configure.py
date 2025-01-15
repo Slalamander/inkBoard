@@ -185,6 +185,9 @@ class config(metaclass=configMeta):
     def __getitem__(self, item: str):
         return self.configuration[item]
     
+    def __contains__(self, item):
+        return item in self.configuration
+
     @overload
     def get(self, key, /):
         ...
