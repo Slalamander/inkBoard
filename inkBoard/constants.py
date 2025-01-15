@@ -69,6 +69,9 @@ INKBOARD_COLORS = {
 INKBOARD_ICON = INKBOARD_FOLDER / "files/icons/inkboard.ico"
 INKBOARD_BACKGROUND = INKBOARD_FOLDER / "files/images/default_background.png"
 
+
+DEFAULT_MAIN_TABS_NAME = "inkboard-main-tab-pages"
+
 ##See https://developers.home-assistant.io/docs/core/entity/weather#forecast-data
 ##Not included: is_daytime, condition
 MDI_FORECAST_ICONS : dict = {

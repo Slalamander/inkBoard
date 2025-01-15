@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING
 
 from ..configuration.loaders import const as yaml_const
 from ..helpers import DashboardError
+from ..constants import DEFAULT_MAIN_TABS_NAME
 
 from .loader import DashboardLoader
 from .validate import validator_dict
@@ -66,7 +67,7 @@ def build_config_elements(config : "config", core: "CORE"):
                     continue
             elif conf_key == "main_tabs":
                 try:
-                    conf_res.setdefault("id", "inkboard-main-tab-pages")
+                    conf_res.setdefault("id", DEFAULT_MAIN_TABS_NAME)
                     conf_res = TabPages(**conf_res)
                 except TypeError as e:
                     _LOGGER.error(f"Error in the config for {conf_key}: {e}. Check if the initial arguments were defined correctly.")
@@ -123,7 +124,7 @@ def _add_ha_defaults():
     from inkBoard.core import integration_loader
     imported_modules = integration_loader.imported_integrations
     ha_integration = "homeassistant_client"
-    if ha_integration  not in imported_modules:
+    if ha_integration not in imported_modules:
         return
     
     import importlib
