@@ -100,6 +100,8 @@ BaseSafeLoader.add_constructor("!include", include_constructor)
 
 class MainConfigLoader(BaseSafeLoader):
     
+    _dashboardNodes = {}
+
     def __init__(self, stream):
         self._top_node = True
         super().__init__(stream)
@@ -123,7 +125,9 @@ class MainConfigLoader(BaseSafeLoader):
 
                 elif key_node.value in const.DASHBOARD_KEYS:
                     _LOGGER.verbose(f"dashboard node is {value_node}")
-                    d[key_node.value] = value_node
+                    # d[key_node.value] = value_node
+                    parse_later[key_node.value] = value_node
+                    self._dashboardNodes[key_node.value] = value_node
                 else:
                     parse_later[key_node.value] = value_node
 

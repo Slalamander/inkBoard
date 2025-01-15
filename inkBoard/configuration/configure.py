@@ -138,6 +138,9 @@ class config(metaclass=configMeta):
 
         __full_config : MainEntry = read_config(file_path)
 
+        self._dashboardNodes = MappingProxyType(MainConfigLoader._dashboardNodes)
+        MainConfigLoader._dashboardNodes = {}
+
         missing = []
         for entry in const.REQUIRED_KEYS:
             if entry not in __full_config:

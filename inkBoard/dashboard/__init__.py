@@ -29,7 +29,7 @@ def build_config_elements(config : "config", core: "CORE"):
     ##main_element or smth needs to be defined somewhere. I think under inkBoard. -> either use a main_tabs key, or simply tabs and take that as default
     ##Default should be None.
 
-    conf = dict(config.configuration)
+    conf = dict(config._dashboardNodes)
 
     DashboardLoader._CORE = core
 
