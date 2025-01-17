@@ -26,7 +26,7 @@ if TYPE_CHECKING:
 
     from inkBoard.loaders import IntegrationLoader
 
-IMPORT_TIME = dt.now().strftime("%H:%M:%S")
+IMPORT_TIME = dt.now().isoformat()
 
 config: "configuration"
 "The config object from the currently loaded configuration"
