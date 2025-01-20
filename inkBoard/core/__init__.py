@@ -110,11 +110,40 @@ def parse_custom_function(name: str, attr: str, options = {}) -> Optional[Callab
 
 class _CORE:
 
+    _START_TIME: str
+
+    def __init__(self):
+        ##The __init__ 
+
+        cls = self.__class__
+        assert not hasattr(cls._START_TIME), "CORE has already been set up"
+
+        cls._START_TIME = dt.now().isoformat()
+        return
+    
+    def _reset(cls):    ##Maybe change this for __del__
+        "Resets the inkBoard core for a new run"
+        del(cls._config)
+        del(cls._screen)
+        del(cls._device)
+        del(cls._integrationLoader)
+        del(cls._integrationObjects)
+        del(cls._customFunctions)
+
+    #region
     @cached_property
     def DESIGNER_RUN() -> bool:
         from inkBoard import arguments
         return arguments.command == arguments.COMMAND_DESIGNER
     
+    @classproperty
+    def START_TIME(cls) -> str:
+        """The time the CORE object was setup
+
+        Timestring in isoformat.
+        """
+        return cls._START_TIME
+
     @classproperty
     def screen(cls) -> "PSSMScreen":
         "The screen instance managing the screen stack"
@@ -147,12 +176,5 @@ class _CORE:
     @classproperty
     def customFunction(cls) -> MappingProxyType[str,Callable]:
         return cls._customFunctions
+    #endregion
     
-    def _reset(cls):
-        "Resets the inkBoard core for a new run"
-        del(cls._config)
-        del(cls._screen)
-        del(cls._device)
-        del(cls._integrationLoader)
-        del(cls._integrationObjects)
-        del(cls._customFunctions)
