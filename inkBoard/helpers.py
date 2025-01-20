@@ -207,8 +207,9 @@ def loop_exception_handler(loop, context):
 
     asyncio.BaseEventLoop.default_exception_handler(loop, context)
 
-    # _LOGGER.error(context["message"])
+    ##Hopefully this comment does not end up lost but:
+    ##Create custom event loop policy that always returns the screen's mainloop
+    ##That way, asyncio.get_event_loop() will always return the screen loop
+    ##however, does maybe provide some issues with functions being called outside of the eventloop
+    ##See documentation: https://docs.python.org/3/library/asyncio-policy.html#custom-policies
 
-    # if "task" in context:
-    #     t = context["task"]
-    #     return
