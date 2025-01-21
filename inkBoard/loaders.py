@@ -469,7 +469,7 @@ class IntegrationLoader:
             elif hasattr(module,"stop"):
                 stop_func = module.stop
             else:
-                return
+                continue
 
             if not isinstance(stop_func,Callable):
                 _LOGGER.error(f"{integration} does not have a valid setup function, not importing")
