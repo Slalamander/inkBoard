@@ -200,6 +200,12 @@ def install_internal(install_type: str, name:str, no_input: bool = False):
 
 def install_packages(file: Union[str, Path] = None, no_input: bool = False):
     
+    ##https://gist.github.com/oculushut/193a7c2b6002d808a791
+    ##Found this gist, that may allow downloading files from github
+    ##Would make installing integrations and platforms A LOT more user friendly
+    ##Especially when simply needing to update
+    ##Better yet, see this code: https://github.com/fbunaren/GitHubFolderDownloader
+    ##Only relies on requests. That is a library I am a-okay with implementing
     if file:
         return PackageInstaller(file, skip_confirmations=no_input, confirmation_function=confirm_input).install()
     else:
