@@ -38,7 +38,8 @@ try:
 except ModuleNotFoundError:
     from pkg_resources import parse_version
 
-
+ZIP_COMPRESSION = zipfile.ZIP_BZIP2
+ZIP_COMPRESSION_LEVEL = 9
 
 _LOGGER = inkBoard.getLogger(__name__)
 
@@ -276,7 +277,7 @@ class Packager:
             _LOGGER.info("Creating package zip file")
 
             zipname = self.base_folder / f'{package_name}.zip'
-            with zipfile.ZipFile(zipname, 'w') as zip_file:
+            with zipfile.ZipFile(zipname, 'w', ZIP_COMPRESSION, compresslevel=ZIP_COMPRESSION_LEVEL) as zip_file:
                 for foldername, subfolders, filenames in os.walk(tempdir):
                     _LOGGER.verbose(f"Zipping contents of folder {foldername}")
                     for filename in filenames:
