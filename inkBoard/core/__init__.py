@@ -134,7 +134,7 @@ class _CORE:
     @cached_property
     def DESIGNER_RUN() -> bool:
         from inkBoard import arguments
-        return arguments.command == arguments.COMMAND_DESIGNER
+        return arguments.parse_args().command == arguments.COMMAND_DESIGNER
     
     @classproperty
     def START_TIME(cls) -> str:

@@ -7,7 +7,7 @@ from pathlib import Path
 from contextlib import suppress
 
 import inkBoard
-from inkBoard import constants as const, loaders, arguments
+from inkBoard import constants as const, loaders
 from inkBoard.helpers import DeviceError, ScreenError, ConfigError, QuitInkboard, reload_full_module
 import inkBoard.loaders
 from inkBoard.logging import setup_logging
@@ -150,7 +150,7 @@ async def setup_core(config_file, integration_loader: "loaders.IntegrationLoader
             "custom.integrations" : config_folder / "custom" / "integrations",
             inkBoard.integrations.__package__: Path(inkBoard.integrations.__path__[0]) 
             }
-        if arguments.DESIGNER_MOD:
+        if const.DESIGNER_INSTALLED:
             folders[inkBoarddesigner.integrations.__package__] = Path(inkBoarddesigner.integrations.__path__[0])
         CORE.integration_loader.get_integrations(folders)
     
