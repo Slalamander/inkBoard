@@ -8,7 +8,8 @@ from contextlib import suppress
 
 import inkBoard
 from inkBoard import constants as const, loaders
-from inkBoard.helpers import DeviceError, ScreenError, ConfigError, QuitInkboard, reload_full_module
+from inkBoard.helpers import DeviceError, ScreenError, ConfigError, QuitInkboard
+from inkBoard.util import reload_full_module
 import inkBoard.loaders
 from inkBoard.logging import setup_logging
 import PythonScreenStackManager as PSSM

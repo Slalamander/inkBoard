@@ -93,7 +93,7 @@ def check_required_keys(typeddict : ph, checkdict : dict, log_start : str):
     return missing
 
 ##May move some things of these to a util module
-def reload_full_module(module: Union[str,ModuleType], exclude: list[str] = []):    
+def _reload_full_module(module: Union[str,ModuleType], exclude: list[str] = []):    
     """Reloads the module and all it's submodules presently imported
 
     Keep in mind reloading imports the module, so things can behave unexpectedly, especially if order matters.

@@ -12,7 +12,9 @@ from types import MappingProxyType
 from pathlib import Path
 
 import inkBoard
-from inkBoard.helpers import classproperty, reload_full_module
+from inkBoard.helpers import classproperty
+from inkBoard.util import reload_full_module
+from inkBoard import util
 import inkBoard.integrations
 
 if TYPE_CHECKING:
@@ -103,7 +105,7 @@ def load_custom_elements(core: "CORE"):
         else:
             mod = importlib.import_module(m.name,)
 
-        elt_dict = core.util.get_module_elements(mod)
+        elt_dict = util.get_module_elements(mod)
         for name, elt in elt_dict.items():
             if name in elts:
                 _LOGGER.warning(f"A custom function with the name {name} is already registered.")

@@ -35,3 +35,35 @@ def get_module_elements(module: ModuleType) -> dict[str,"Element"]:
             element_dict[name] = cls
 
     return element_dict
+
+def reload_full_module(module: Union[str,ModuleType], exclude: list[str] = []):    
+    """Reloads the module and all it's submodules presently imported
+
+    Keep in mind reloading imports the module, so things can behave unexpectedly, especially if order matters.
+    Generally be careful using this, reloading does not mean imports in none reloaded modules are refreshed, which can cause issuess when i.e. calling `isinstance`
+    
+    Parameters
+    ----------
+    module : Union[str,ModuleType]
+        The base module to reload.
+    exclude : list[str]
+        List with module names that do not get excluded. Names need to match in full.
+    """    
+    if isinstance(module, ModuleType):
+        module = module.__package__
+    
+    if isinstance(exclude,str):
+        exclude = [exclude]
+
+    mod_list = [x for x in sys.modules.copy() if x.startswith(module) and not x in exclude]
+    for mod_name in mod_list:
+        mod = sys.modules[mod_name]
+        try:
+            importlib.reload(mod)
+        except ModuleNotFoundError:
+            _LOGGER.error(f"Could not reload module {mod_name}")
+    
+    for mod_name in mod_list:
+        sys.modules.pop(mod_name)
+    
+    return
