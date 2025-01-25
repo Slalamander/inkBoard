@@ -4,10 +4,17 @@ This module (should) not contain functions etc. that are mainly useful when writ
 """
 
 import inspect
+import sys
+import importlib
 from types import ModuleType
 from pathlib import Path
+from typing import Union
+
+import inkBoard
 
 from PythonScreenStackManager.elements import Element
+
+_LOGGER = inkBoard.getLogger(__name__)
 
 def get_module_elements(module: ModuleType) -> dict[str,"Element"]:
     """
