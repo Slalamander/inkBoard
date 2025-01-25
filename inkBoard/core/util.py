@@ -1,38 +1,40 @@
 
-import inspect
-from types import ModuleType
-from pathlib import Path
+from inkBoard.util import *
 
-from PythonScreenStackManager.elements import Element
+# import inspect
+# from types import ModuleType
+# from pathlib import Path
 
-##In core since it needs to be reloaded when pssm reloads
-def get_module_elements(module: ModuleType) -> dict[str,"Element"]:
-    """
-    Creates a dict with all the valid elements in a module to use in element parsers, for example
+# from PythonScreenStackManager.elements import Element
 
-    Parameters
-    ----------
-    module : ModuleType
-        The module to inspect. It is asserted to be a python module
+# ##In core since it needs to be reloaded when pssm reloads
+# def get_module_elements(module: ModuleType) -> dict[str,"Element"]:
+#     """
+#     Creates a dict with all the valid elements in a module to use in element parsers, for example
 
-    Returns
-    -------
-    dict[str,`Element`]
-        A dict with the names users can use as type in the yaml config, and the actual class is represents
-    """    
+#     Parameters
+#     ----------
+#     module : ModuleType
+#         The module to inspect. It is asserted to be a python module
 
-    ##See if this can be rewritten to ensure it does not need to be imported everytime.
-    ##Probably just add an import for Element in there.
-    # from PythonScreenStackManager.elements import Element #Just to prevent any preliminary imports, don't import it globally
-    assert inspect.ismodule(module), "Module must be a module type"
+#     Returns
+#     -------
+#     dict[str,`Element`]
+#         A dict with the names users can use as type in the yaml config, and the actual class is represents
+#     """    
 
-    element_dict = {}
-    for name, cls in inspect.getmembers(module, inspect.isclass):
-        if (module.__name__ in cls.__module__
-            and issubclass(cls,Element) 
-            and not inspect.isabstract(cls) 
-            and name[0] != "_"):
-            element_dict[name] = cls
+#     ##See if this can be rewritten to ensure it does not need to be imported everytime.
+#     ##Probably just add an import for Element in there.
+#     # from PythonScreenStackManager.elements import Element #Just to prevent any preliminary imports, don't import it globally
+#     assert inspect.ismodule(module), "Module must be a module type"
 
-    return element_dict
+#     element_dict = {}
+#     for name, cls in inspect.getmembers(module, inspect.isclass):
+#         if (module.__name__ in cls.__module__
+#             and issubclass(cls,Element) 
+#             and not inspect.isabstract(cls) 
+#             and name[0] != "_"):
+#             element_dict[name] = cls
+
+#     return element_dict
 
