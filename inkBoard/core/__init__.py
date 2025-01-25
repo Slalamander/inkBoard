@@ -53,25 +53,25 @@ _INTEGRATION_KEYS = {}
 _INTEGRATION_OBJECTS = {}
 _ELEMENT_PARSERS = {}
 
-def add_integration_config_key(key : str, folder : Path):
-    """
-    Adds the key that is connected to an integration and the import function. Will call the import_func if the key is present in the config.
+# def add_integration_config_key(key : str, folder : Path):
+#     """
+#     Adds the key that is connected to an integration and the import function. Will call the import_func if the key is present in the config.
 
-    Parameters
-    ----------
-    key : str
-        The key that users can use in their config file to load in the integration
-    folder : Callable
-        The function that handles the processing of data under said key.
-    """    
-    if key in _INTEGRATION_KEYS:
-        int_mod = _INTEGRATION_KEYS[key].__module__
-        _LOGGER.error(f"{key} is already used for a the config of a different integration: {int_mod}")
-    else:
-        _INTEGRATION_KEYS[key] = folder
+#     Parameters
+#     ----------
+#     key : str
+#         The key that users can use in their config file to load in the integration
+#     folder : Callable
+#         The function that handles the processing of data under said key.
+#     """    
+#     if key in _INTEGRATION_KEYS:
+#         int_mod = _INTEGRATION_KEYS[key].__module__
+#         _LOGGER.error(f"{key} is already used for a the config of a different integration: {int_mod}")
+#     else:
+#         _INTEGRATION_KEYS[key] = folder
 
-def get_integration_config_keys() -> MappingProxyType[str,Callable]:
-    return MappingProxyType(_INTEGRATION_KEYS)
+# def get_integration_config_keys() -> MappingProxyType[str,Callable]:
+#     return MappingProxyType(_INTEGRATION_KEYS)
 
 def add_element_parser(identifier : str, parser : Callable[[str],"Element"]):
     """
@@ -111,6 +111,7 @@ def parse_custom_function(name: str, attr: str, options = {}) -> Optional[Callab
 class _CORE:
 
     _START_TIME: str
+    _elementParsers: dict[str,Callable]
 
     def __init__(self):
         
@@ -119,6 +120,10 @@ class _CORE:
         assert not hasattr(cls,"_START_TIME"), "CORE has already been set up"
 
         cls._START_TIME = dt.now().isoformat()
+        cls._elementParsers = {}
+        if not hasattr(cls,"_DESIGNER_RUN"):
+            cls._DESIGNER_RUN = parse_args().command == const.COMMAND_DESIGNER
+
         return
     
     def _reset(cls):    ##Maybe change this for __del__
@@ -129,13 +134,15 @@ class _CORE:
         del(cls._integrationLoader)
         del(cls._integrationObjects)
         del(cls._customFunctions)
+        del(cls._elementParsers)
 
     #region
-    @cached_property
-    def DESIGNER_RUN() -> bool:
+    @classproperty
+    def DESIGNER_RUN(cls) -> bool:
         ##may change this to simply returning a variable that is set in main
-        from inkBoard import arguments
-        return arguments.parse_args().command == arguments.COMMAND_DESIGNER
+        # from inkBoard import arguments
+        # return arguments.parse_args().command == arguments.COMMAND_DESIGNER
+        return cls._DESIGNER_RUN
     
     @classproperty
     def START_TIME(cls) -> str:
@@ -180,5 +187,40 @@ class _CORE:
     @classproperty
     def customFunction(cls) -> MappingProxyType[str,Callable]:
         return cls._customFunctions
+    
+    @classproperty
+    def elementParsers(cls) -> MappingProxyType[str,Callable]:
+        "Returns the registered element parsers"
+        return MappingProxyType(cls._elementParsers)
     #endregion
+
+    @classmethod
+    def add_element_parser(cls, identifier : str, parser : Callable[[str],"Element"]):
+        """
+        Adds a parser function for custom elements. The identifier should be unique, and cannot be custom.
+
+        Parameters
+        ----------
+        identifier : str
+            An identifier string that indicates the element is parsed via this parser.
+            Does not need the ':'
+        parser : Callable[[str],&quot;Element&quot;]
+            The function that parses the element. Should return the class, not an instance of the element.
+        """    
+        if identifier in cls._elementParsers:
+            _LOGGER.error(f"Element identifier {identifier} is already registered")
+            return
+        
+        cls._elementParsers[identifier] = parser
+
+    @classmethod
+    def parse_custom_function(cls, name: str, attr: str, options = {}) -> Optional[Callable]:
+        """Parses a string to a function from the custom functions package. 
+        """
+
+        parse_string = name.lower()
+        if parse_string not in cls._custom_functions:
+            _LOGGER.error(f"No custom function called {parse_string}")
+            return
+        return cls._custom_functions[parse_string]
     
