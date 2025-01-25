@@ -116,7 +116,7 @@ class _CORE:
         
 
         cls = self.__class__
-        assert not hasattr(cls._START_TIME), "CORE has already been set up"
+        assert not hasattr(cls,"_START_TIME"), "CORE has already been set up"
 
         cls._START_TIME = dt.now().isoformat()
         return
@@ -144,6 +144,9 @@ class _CORE:
         Timestring in isoformat.
         """
         return cls._START_TIME
+    
+    @classproperty
+    def IMPORT_TIME(cls): return cls.START_TIME
 
     @classproperty
     def screen(cls) -> "PSSMScreen":
