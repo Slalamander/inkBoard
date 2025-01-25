@@ -17,7 +17,7 @@ from PythonScreenStackManager.exceptions import ReloadWarning, FullReloadWarning
 import inkBoard
 from inkBoard import constants as const, bootstrap, loaders
 from inkBoard.helpers import QuitInkboard
-from inkBoard.arguments import args, PRE_CORE_ACTIONS, POST_CORE_ACTIONS
+from inkBoard.arguments import parse_args, PRE_CORE_ACTIONS, POST_CORE_ACTIONS
 
 if TYPE_CHECKING:
     from inkBoard import core as CORE
@@ -27,14 +27,31 @@ if TYPE_CHECKING:
 _LOGGER = inkBoard.getLogger(__name__)
 importer_thread = concurrent.futures.ThreadPoolExecutor(None,const.IMPORTER_THREADPOOL)
 
-async def run_inkBoard(config_file):
+async def run_inkBoard(configuration: Union[str,Path],
+                    command: str = "run"):
+    """Runs inkBoard from the passed config file
+
+    Parameters
+    ----------
+    configuration : Union[str,Path]
+        The configuration file to run from
+    command : str, optional
+        The command inkBoard is being run with, by default "run"
+        This is only used if the command is an action to be run after setting up a core object
+
+    Returns
+    -------
+    _type_
+        _description_
+    """    
+
     "Runs inkBoard from the passed config file"
 
     while True:
-        CORE = await bootstrap.setup_core(config_file, loaders.IntegrationLoader)
+        CORE = await bootstrap.setup_core(configuration, loaders.IntegrationLoader)
         
-        if args.command in POST_CORE_ACTIONS:
-            return POST_CORE_ACTIONS[args.command](args)
+        if command in POST_CORE_ACTIONS:
+            return POST_CORE_ACTIONS[command](parse_args())
         
         await bootstrap.start_core(CORE)
         
@@ -58,25 +75,28 @@ async def run_inkBoard(config_file):
         
         await asyncio.sleep(0)
 
-def run():
-    "Starts the main eventloop and runs inkBoard. This function is blocking"
-    res = asyncio.run(run_inkBoard(args.configuration),
+def run(args):
+    """Starts the main eventloop and runs inkBoard.
+    This function is blocking"""
+    res = asyncio.run(run_inkBoard(args.configuration, args.command),
             debug=_LOGGER.getEffectiveLevel() <= logging.DEBUG)
     return res
 
 def run_config(config_file: Union[Path,str]):
-    "Starts the main eventloop and runs inkBoard, using the given config file. This function is blocking"
+    """Starts the main eventloop and runs inkBoard, using the given config file.
+    This function is blocking"""
     return asyncio.run(run_inkBoard(config_file),
                         debug=_LOGGER.getEffectiveLevel() <= logging.DEBUG)
 
 def main():
+    args = parse_args()
     inkBoard.logging.init_logging(args.logs, args.quiet, args.verbose)
 
     if args.command in PRE_CORE_ACTIONS:
         return PRE_CORE_ACTIONS[args.command](args)
     
     ##Maybe make a core folder similar to ESPhome, to hold things like the config file, screen instance etc.
-    return run()
+    return run(args)
 
 if __name__ == "__main__":
     sys.exit(main())

@@ -9,7 +9,7 @@ from datetime import datetime as dt
 
 import inkBoard
 from inkBoard import constants as const
-from inkBoard.arguments import args
+from inkBoard.arguments import parse_args
 
 from PythonScreenStackManager.tools import classproperty
 
@@ -47,7 +47,7 @@ custom_functions: MappingProxyType[str,Callable]
 "Functions in the custom/functions folder of the config"
 
 
-DESIGNER_RUN : bool = args.command == const.COMMAND_DESIGNER
+DESIGNER_RUN : bool = parse_args().command == const.COMMAND_DESIGNER
 
 _INTEGRATION_KEYS = {}
 _INTEGRATION_OBJECTS = {}
