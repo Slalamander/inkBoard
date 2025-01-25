@@ -16,7 +16,7 @@ import inkBoard.platforms
 
 _LOGGER = inkBoard.getLogger(__name__)
 
-if arguments.DESIGNER_MOD:
+if const.DESIGNER_INSTALLED:
     import inkBoarddesigner.integrations
 
 if TYPE_CHECKING:
