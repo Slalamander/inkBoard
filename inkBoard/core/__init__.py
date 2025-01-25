@@ -113,7 +113,7 @@ class _CORE:
     _START_TIME: str
 
     def __init__(self):
-        ##The __init__ 
+        
 
         cls = self.__class__
         assert not hasattr(cls._START_TIME), "CORE has already been set up"
@@ -133,6 +133,7 @@ class _CORE:
     #region
     @cached_property
     def DESIGNER_RUN() -> bool:
+        ##may change this to simply returning a variable that is set in main
         from inkBoard import arguments
         return arguments.parse_args().command == arguments.COMMAND_DESIGNER
     
