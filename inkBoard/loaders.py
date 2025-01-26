@@ -19,10 +19,11 @@ import inkBoard.integrations
 
 if TYPE_CHECKING:
     from inkBoard import core as CORE
+    from PythonScreenStackManager.elements import Element
 
 _LOGGER = inkBoard.getLogger(__name__)
 
-def load_custom_functions(core: "CORE"):
+def load_custom_functions(core: "CORE") -> MappingProxyType(str, Callable):
     "Imports the modules from custom functions and constructs the dict holding them."
 
     ##Move this to loader (where integrationloader will be put too.)
@@ -75,9 +76,9 @@ def load_custom_functions(core: "CORE"):
     ##yeah. Do indeed add imported modules to the core, but directly importing from other things is fine too.
 
     ##Generally for updating integrations etc: need to stop the problem anyways to install them so eh.
-    return funcs
+    return MappingProxyType(funcs)
 
-def load_custom_elements(core: "CORE"):
+def load_custom_elements(core: "CORE") -> MappingProxyType[str, "Element"]:
     "Loads elements present in the custom/elements folder, and constructs a dict with them."
 
     try:
@@ -113,7 +114,7 @@ def load_custom_elements(core: "CORE"):
                 continue
             elts[name] = elt  
 
-    return elts
+    return MappingProxyType(elts)
 
 
 class IntegrationLoader:
