@@ -223,7 +223,7 @@ class _CORE(metaclass=COREMETA):
     customElements : MappingProxyType[str,"Element"]
 
     @classproperty
-    def customFunction(cls) -> MappingProxyType[str,Callable]:
+    def customFunctions(cls) -> MappingProxyType[str,Callable]:
         return cls._customFunctions
     customFunctions : MappingProxyType[str,Callable]
     
@@ -259,10 +259,10 @@ class _CORE(metaclass=COREMETA):
         """
 
         parse_string = name.lower()
-        if parse_string not in cls._custom_functions:
+        if parse_string not in cls._customFunctions:
             _LOGGER.error(f"No custom function called {parse_string}")
             return
-        return cls._custom_functions[parse_string]
+        return cls._customFunctions[parse_string]
 
 
 
