@@ -11,7 +11,7 @@ import inkBoard
 from inkBoard import constants as const
 from inkBoard.arguments import parse_args
 
-from PythonScreenStackManager.tools import classproperty
+from PythonScreenStackManager.pssm.util import classproperty, ClassPropertyMetaClass
 
 from . import util  ##Depending on how stuff moves around, may need to import util somewhere else?
 
@@ -108,7 +108,7 @@ def parse_custom_function(name: str, attr: str, options = {}) -> Optional[Callab
     return custom_functions[parse_string]
 
 
-class _CORE:
+class _CORE(metaclass=ClassPropertyMetaClass):
 
     _START_TIME: str
     _elementParsers: dict[str,Callable]
@@ -123,10 +123,21 @@ class _CORE:
         cls._elementParsers = {}
         if not hasattr(cls,"_DESIGNER_RUN"):
             cls._DESIGNER_RUN = parse_args().command == const.COMMAND_DESIGNER
+        ##As is, the current classproperty I have written actually does allow overwriting (setting) the property
+        ##may have two options: implement core as a singleton, or fix classmethod
+        ##thing is, if not fixing it, the problem may arise later on too in, i.e. element classes
+        ##I see one way of perhaps doing it: overwriting __setattr__ for the class to intercept it
+        ##At the __set_owner__ stage I believe -> would give issues for classes since that is called on instance level
+        ##So I think a metaclass would somehow need to be put on it...
 
+        ##check if it is possible to just do that with elements tbh
+        ##And check if classes that are not elements implement that
+
+        ##So: add the metaclass thingy, but for elements the __setattr__ will be overwritten
         return
     
-    def _reset(cls):    ##Maybe change this for __del__
+    @classmethod
+    def _reset(cls):
         "Resets the inkBoard core for a new run"
         del(cls._config)
         del(cls._screen)
@@ -139,9 +150,6 @@ class _CORE:
     #region
     @classproperty
     def DESIGNER_RUN(cls) -> bool:
-        ##may change this to simply returning a variable that is set in main
-        # from inkBoard import arguments
-        # return arguments.parse_args().command == arguments.COMMAND_DESIGNER
         return cls._DESIGNER_RUN
     
     @classproperty
@@ -151,6 +159,7 @@ class _CORE:
         Timestring in isoformat.
         """
         return cls._START_TIME
+    START_TIME : str
     
     @classproperty
     def IMPORT_TIME(cls): return cls.START_TIME
@@ -159,39 +168,47 @@ class _CORE:
     def screen(cls) -> "PSSMScreen":
         "The screen instance managing the screen stack"
         return cls._screen
+    screen : "PSSMScreen"
     
     @classproperty
     def device(cls) -> "BaseDevice":
         "The device object managing bindings to the device"
         return cls._device
+    device : "BaseDevice"
     
     @classproperty
     def config(cls) -> "configuration":
         "The config object from the currently loaded configuration"
         return cls._config
+    config : "configuration"
     
     @classproperty
     def integrationLoader(cls) -> "IntegrationLoader":
         "Object responsible for loading integrations"
         return cls._integrationLoader
+    integrationLoader : "IntegrationLoader"
     
     @classproperty
     def integrationObjects(cls) -> MappingProxyType[Literal["integration_entry"],Any]:
         "Objects returned by integrations, like client instances."
         return cls._integrationObjects
+    integrationObjects : MappingProxyType[Literal["integration_entry"],Any]
 
     @classproperty
     def customElements(cls) -> MappingProxyType[str,"Element"]:
         return cls._customElements
+    customElements : MappingProxyType[str,"Element"]
 
     @classproperty
     def customFunction(cls) -> MappingProxyType[str,Callable]:
         return cls._customFunctions
+    customFunctions : MappingProxyType[str,Callable]
     
     @classproperty
     def elementParsers(cls) -> MappingProxyType[str,Callable]:
         "Returns the registered element parsers"
         return MappingProxyType(cls._elementParsers)
+    elementParsers : MappingProxyType[str,Callable]
     #endregion
 
     @classmethod
