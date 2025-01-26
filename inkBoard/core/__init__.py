@@ -1,11 +1,12 @@
 "Core modules and objects for running inkBoard instances"
 
 from typing import TYPE_CHECKING, Literal, Final, Optional, Any, Callable
-from types import MappingProxyType
+from types import MappingProxyType, MemberDescriptorType
 from functools import cached_property
 import logging
 from pathlib import Path
 from datetime import datetime as dt
+from contextlib import suppress
 
 import inkBoard
 from inkBoard import constants as const
@@ -47,7 +48,8 @@ custom_functions: MappingProxyType[str,Callable]
 "Functions in the custom/functions folder of the config"
 
 
-DESIGNER_RUN : bool = parse_args().command == const.COMMAND_DESIGNER
+# DESIGNER_RUN : bool = parse_args().command == const.COMMAND_DESIGNER
+False
 
 _INTEGRATION_KEYS = {}
 _INTEGRATION_OBJECTS = {}
@@ -107,8 +109,21 @@ def parse_custom_function(name: str, attr: str, options = {}) -> Optional[Callab
         return
     return custom_functions[parse_string]
 
+class COREMETA(ClassPropertyMetaClass):
 
-class _CORE(metaclass=ClassPropertyMetaClass):
+    def __setattr__(self, attr, value):
+        if attr not in self.__slots__:
+            raise AttributeError(f"Setting CORE attribute {attr} is not allowed")
+        return super(ClassPropertyMetaClass, self).__setattr__(attr, value)
+
+class _CORE(metaclass=COREMETA):
+
+    __slots__ = (
+        "_START_TIME", "_DESIGNER_RUN",
+        "_config", "_screen", "_device",
+        "_integrationLoader", "_integrationObjects",
+        "_customFunctions", "_customElements", "_elementParsers"
+    )
 
     _START_TIME: str
     _elementParsers: dict[str,Callable]
@@ -116,13 +131,15 @@ class _CORE(metaclass=ClassPropertyMetaClass):
     def __init__(self):
         
 
-        cls = self.__class__
-        assert not hasattr(cls,"_START_TIME"), "CORE has already been set up"
+        cls = type(self)
+        assert isinstance(cls._START_TIME, MemberDescriptorType),  "CORE has already been set up"
 
         cls._START_TIME = dt.now().isoformat()
+        p = cls._START_TIME
         cls._elementParsers = {}
         if not hasattr(cls,"_DESIGNER_RUN"):
             cls._DESIGNER_RUN = parse_args().command == const.COMMAND_DESIGNER
+        
         ##As is, the current classproperty I have written actually does allow overwriting (setting) the property
         ##may have two options: implement core as a singleton, or fix classmethod
         ##thing is, if not fixing it, the problem may arise later on too in, i.e. element classes
@@ -139,13 +156,12 @@ class _CORE(metaclass=ClassPropertyMetaClass):
     @classmethod
     def _reset(cls):
         "Resets the inkBoard core for a new run"
-        del(cls._config)
-        del(cls._screen)
-        del(cls._device)
-        del(cls._integrationLoader)
-        del(cls._integrationObjects)
-        del(cls._customFunctions)
-        del(cls._elementParsers)
+        for attr in cls.__slots__:
+            if attr == "_DESIGNER_RUN": continue
+            with suppress(AttributeError):
+                delattr(cls, attr)
+        
+        _LOGGER.error("Cleaned all attributes")
 
     #region
     @classproperty
