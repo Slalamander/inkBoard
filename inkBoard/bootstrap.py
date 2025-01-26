@@ -47,6 +47,7 @@ def import_custom_elements(core: "CORE") -> dict[str, "elements.Element"]:
         return elts[elt_str]
 
     core.add_element_parser("custom", parser)
+    core._customElements = elts
     return
 
 def setup_base_config(config_file) -> "config":
