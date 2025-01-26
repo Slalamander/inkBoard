@@ -2,6 +2,11 @@
 
 from typing import TypedDict
 
+from .core import _CORE
+
+coretype = type[_CORE]
+
+
 class inkboardrequirements(TypedDict):
     "Dict for indicating inkBoard related requirements for platform.json or manifest.json"
 

@@ -10,6 +10,7 @@ from pathlib import Path
 from PythonScreenStackManager import elements
 from PythonScreenStackManager.pssm.screen import DuplicateElementError
 
+from inkBoard import util
 from .. import core as CORE
 from ..configuration import loaders, const
 
@@ -21,7 +22,7 @@ logger = logging.getLogger(__package__)
 ##Reload before building then. -> should be fine since it is not interfaced with
 
 ##This should be fine to do here since it imports from PSSM
-default_elements = CORE.util.get_module_elements(elements)
+default_elements = util.get_module_elements(elements)
 
 #elements that are part of the default pack, i.e. parsed without an identifier
 
@@ -56,7 +57,7 @@ class DashboardLoader(loaders.BaseSafeLoader):
             return default_elements[elt_type]
         else:
             idf, elt_type_str = elt_type.split(":")
-            parsers = self._CORE.get_element_parsers()
+            parsers = self._CORE.elementParsers
             if idf not in parsers:
                 msg = f"No integration registered the element identifier {idf}"
                 logger.error(msg)

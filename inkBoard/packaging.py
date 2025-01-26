@@ -380,7 +380,7 @@ class Packager:
         tempdir = Path(tempdir)
 
         ##Filter out integrations from the custom folder
-        all_integrations = self.CORE.integration_loader.imported_integrations
+        all_integrations = self.CORE.integrationLoader.imported_integrations
 
         _LOGGER.info("Copying all non custom integrations to package")
         for integration, location in all_integrations.items():

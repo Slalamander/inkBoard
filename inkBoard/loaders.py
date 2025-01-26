@@ -339,7 +339,7 @@ class IntegrationLoader:
         coro_list = set()
         for integration, module in cls._imported_modules.items():
             pkg = module.__package__
-            setup_res = core.integration_objects.get(integration,None)
+            setup_res = core.integrationObjects.get(integration,None)
 
             if hasattr(module, "async_start"):
                 if not asyncio.iscoroutinefunction(module.async_start):
@@ -421,7 +421,7 @@ class IntegrationLoader:
         for integration, module in cls._imported_modules.items():
 
             pkg = module.__package__
-            setup_res = core.integration_objects.get(integration,None)
+            setup_res = core.integrationObjects.get(integration,None)
 
             if hasattr(module, "async_run"):
                 if not asyncio.iscoroutinefunction(module.async_run):
@@ -462,7 +462,7 @@ class IntegrationLoader:
         "Calls the stop function on all imported integrations"
 
         for integration, module in cls._imported_modules.items():
-            setup_res = core.integration_objects.get(integration,None)
+            setup_res = core.integrationObjects.get(integration,None)
 
             module : "sys.ModuleType"
             stop_func = None

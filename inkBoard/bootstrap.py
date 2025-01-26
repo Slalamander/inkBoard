@@ -7,13 +7,16 @@ from pathlib import Path
 from contextlib import suppress
 
 import inkBoard
-from inkBoard import constants as const, loaders
+import inkBoard.platforms
+import inkBoard.loaders
+
+from inkBoard import constants as const, loaders, core as CORE
 from inkBoard.helpers import DeviceError, ScreenError, ConfigError, QuitInkboard
 from inkBoard.util import reload_full_module
-import inkBoard.loaders
 from inkBoard.logging import setup_logging
+from inkBoard.types import coretype
+
 import PythonScreenStackManager as PSSM
-import inkBoard.platforms
 
 _LOGGER = inkBoard.getLogger(__name__)
 
@@ -25,6 +28,7 @@ if TYPE_CHECKING:
     from PythonScreenStackManager import pssm, elements
     from inkBoard import config, core as CORE, platforms
 
+# CORE = inkBoard.core
 
 def import_custom_functions(core: "CORE") -> dict[str,Callable]:
     "Imports the modules from custom functions and constructs the dict holding them."
@@ -126,7 +130,7 @@ def setup_dashboard_config(core: "CORE") -> "elements.Layout":
 async def setup_integration_loader(core: "CORE"):
     "Sets up the integration loader attached to the core object."
 
-    loader = core.integration_loader
+    loader = core.integrationLoader
 
     obj = await loader.async_setup_integrations(core)
     return obj
@@ -134,7 +138,10 @@ async def setup_integration_loader(core: "CORE"):
 async def setup_core(config_file, integration_loader: "loaders.IntegrationLoader" = None) -> "CORE":
     "Sets up the core module for running inkBoard, everything up to starting."
     
-    from inkBoard import core as CORE
+    # from inkBoard import core as CORE
+    # from inkBoard import core
+    c = CORE()
+    # CORE()
 
     assert Path(config_file).exists(), f"{config_file} does not exist"
     p = Path(config_file)
@@ -143,37 +150,40 @@ async def setup_core(config_file, integration_loader: "loaders.IntegrationLoader
     config_folder = Path(config_file).parent
 
     if integration_loader != None:
-        assert not hasattr(CORE,"integration_loader"), "inkBoard core already has an integration loader defined"
-        CORE.integration_loader = integration_loader
+        assert not hasattr(CORE,"integrationLoader"), "inkBoard core already has an integration loader defined"
+        CORE._integrationLoader = integration_loader
     
-    if CORE.integration_loader:
+    if hasattr(CORE,"integrationLoader"):
         folders = {
             "custom.integrations" : config_folder / "custom" / "integrations",
             inkBoard.integrations.__package__: Path(inkBoard.integrations.__path__[0]) 
             }
         if const.DESIGNER_INSTALLED:
             folders[inkBoarddesigner.integrations.__package__] = Path(inkBoarddesigner.integrations.__path__[0])
-        CORE.integration_loader.get_integrations(folders)
+        CORE.integrationLoader.get_integrations(folders)
     
-    CORE.config = setup_base_config(config_file)
+    CORE._config = setup_base_config(config_file)
 
     setup_logging(CORE)
 
-    if CORE.integration_loader:
-        CORE.integration_loader.import_integrations(CORE)
+    if hasattr(CORE,"integrationLoader"):
+    # if CORE.integrationLoader:
+        ##This should be throwing an error for now
+        ##Since I should figure out how to make hasattr return False if a private attribute is not set yet
+        CORE.integrationLoader.import_integrations(CORE)
 
-    CORE.custom_functions = import_custom_functions(CORE)
+    CORE._customFunctions = import_custom_functions(CORE)
     import_custom_elements(CORE)
 
     setup_styles(CORE)
 
-    CORE.device = await setup_device(CORE)
+    CORE._device = await setup_device(CORE)
 
-    CORE.screen = await setup_screen(CORE)
+    CORE._screen = await setup_screen(CORE)
     CORE.screen.add_shorthand_function_group("custom", CORE.parse_custom_function)
 
-    if CORE.integration_loader:
-        CORE.integration_objects = await CORE.integration_loader.async_setup_integrations(CORE)
+    if hasattr(CORE,"integrationLoader"):
+        CORE._integrationObjects = await CORE.integrationLoader.async_setup_integrations(CORE)
 
     main_layout = setup_dashboard_config(CORE)
 
@@ -186,16 +196,16 @@ async def start_core(core: "CORE"):
 
     core.screen.start_batch_writing()
 
-    if core.integration_loader:
-        await core.integration_loader.async_start_integrations(core)
+    if hasattr(CORE,"integrationLoader"):
+        await core.integrationLoader.async_start_integrations(core)
 
 async def run_core(core: "CORE"):
     "Runs the inkBoard core. Generally call after `setup_core` and `start_core`"
 
     coros = [core.screen.async_start_screen_printing(), core.screen._eStop]
 
-    if core.integration_loader:
-        coros.append(core.integration_loader.run_integrations(core))
+    if core.integrationLoader:
+        coros.append(core.integrationLoader.run_integrations(core))
     
     L = asyncio.gather(
                     *coros,
@@ -226,7 +236,7 @@ async def reload_core(core: "CORE", full_reload: bool = False):
     """    
 
     _shutdown_core(core)
-    await core.integration_loader.async_stop_integrations(core)
+    await core.integrationLoader.async_stop_integrations(core)
 
     if not full_reload:
         PSSM.pssm._reset()
@@ -252,16 +262,16 @@ async def reload_core(core: "CORE", full_reload: bool = False):
             _LOGGER.debug(f"Reloading module {mod}")
             reload_full_module(mod)
 
-        core.integration_loader._reload_imports = True
+        core.integrationLoader._reload_imports = True
 
-    del inkBoard.core
+    core._reset()
     return
 
 
 async def stop_core(core: "CORE"):
     try:
         _shutdown_core(core)
-        await core.integration_loader.async_stop_integrations(core)
+        await core.integrationLoader.async_stop_integrations(core)
     except Exception as exce:
         print(f"inkBoard did not shutdown gracefully: {exce}")
         return 1

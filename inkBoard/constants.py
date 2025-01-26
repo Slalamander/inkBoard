@@ -94,8 +94,8 @@ MDI_FORECAST_ICONS : dict = {
 
 
 BASE_RELOAD_MODULES = (
-    f"{__package__}.core",
-    "custom"
+    # f"{__package__}.core",
+    "custom",
 )
 
 FULL_RELOAD_MODULES = [
