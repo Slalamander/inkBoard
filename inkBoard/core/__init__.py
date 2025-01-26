@@ -113,8 +113,15 @@ class COREMETA(ClassPropertyMetaClass):
 
     def __setattr__(self, attr, value):
         if attr not in self.__slots__:
-            raise AttributeError(f"Setting CORE attribute {attr} is not allowed")
+            raise AttributeError(f"Setting CORE attribute {attr} is not allowed")   #@IgnoreExceptions
         return super(ClassPropertyMetaClass, self).__setattr__(attr, value)
+    
+    def __getattribute__(self, name):
+        val = super().__getattribute__(name)
+        if isinstance(val,MemberDescriptorType):
+            raise AttributeError
+        return val
+    
 
 class _CORE(metaclass=COREMETA):
 
@@ -125,17 +132,17 @@ class _CORE(metaclass=COREMETA):
         "_customFunctions", "_customElements", "_elementParsers"
     )
 
-    _START_TIME: str
+    # _START_TIME: str
     _elementParsers: dict[str,Callable]
 
     def __init__(self):
         
 
         cls = type(self)
-        assert isinstance(cls._START_TIME, MemberDescriptorType),  "CORE has already been set up"
+        assert not hasattr(cls, "_START_TIME") or isinstance(cls._START_TIME, MemberDescriptorType),  "CORE has already been set up"
 
         cls._START_TIME = dt.now().isoformat()
-        p = cls._START_TIME
+
         cls._elementParsers = {}
         if not hasattr(cls,"_DESIGNER_RUN"):
             cls._DESIGNER_RUN = parse_args().command == const.COMMAND_DESIGNER
@@ -256,4 +263,6 @@ class _CORE(metaclass=COREMETA):
             _LOGGER.error(f"No custom function called {parse_string}")
             return
         return cls._custom_functions[parse_string]
-    
+
+
+
