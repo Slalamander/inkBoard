@@ -296,39 +296,7 @@ class ScreenEntry(_BaseConfigEntry):
 
     Requires ``backlight_behaviour`` to be ``On Interact``, otherwise does nothing.
     If ``None``, the value will be left to the device and/or remain unchanged.
-    """    
-
-
-##Add a unittest or something that checks if this corresponds to the __init__
-init_args = inspect.signature(PSSMScreen.__init__)
-param_names = [param for param in init_args.parameters]
-
-fields = dataclasses.fields(ScreenEntry)
-field_names = [field.name for field in fields]
-
-for param in init_args.parameters.values():
-    if param.name in {"self", "device"}:
-        continue
-    if param.name not in field_names:
-        _LOGGER.warning(f"ScreenEntry is missing parameter {param.name}")
-        continue
-    else:
-        for field in fields:
-            if field.name == param.name:
-                break
-    if param.annotation != field.type:
-        
-        _LOGGER.warning(f"ScreenEntry field {field.name} does not match the annotation of the parameter")
-    
-    if param.default == param.empty:
-        if field.default != dataclasses._MISSING_TYPE:
-            _LOGGER.warning(f"ScreenEntry {field.name} is not required but it should be")
-    # elif param.default != field.default:
-    #     _LOGGER.warning(f"ScreenEntry {field.name} has the wrong default value. Should be {param.default}")
-
-for field in field_names:
-    if field not in param_names:
-        _LOGGER.warning(f"Illegal field in ScreenEntry: {field}")
+    """
 
 
 @dataclass(frozen=True)
