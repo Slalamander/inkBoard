@@ -38,4 +38,11 @@ def test_core_setup():
     CORE._reset()
     CORE()
 
-    # CORE._reset()
+def test_core_attributeget():
+
+    with pytest.raises(AttributeError):
+        ##Ensure an AttributeError is thrown when accessing unset properties
+        CORE._config
+
+    with pytest.raises(AttributeError):
+        CORE.config
