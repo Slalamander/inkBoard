@@ -290,3 +290,7 @@ class FileLogEntry(TypedDict):
     Otherwise, they're put in a logs folder within the config directory
     """
 
+##Todos for logging:
+##Setup socketlogger within the api extension
+##Add setting to handle std out logging (via a terminal key)
+##Handle log queue being set up every time a reload is called
