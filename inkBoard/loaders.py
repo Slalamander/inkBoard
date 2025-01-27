@@ -23,7 +23,7 @@ if TYPE_CHECKING:
 
 _LOGGER = inkBoard.getLogger(__name__)
 
-def load_custom_functions(core: "CORE") -> MappingProxyType(str, Callable):
+def load_custom_functions(core: "CORE") -> MappingProxyType[str, Callable]:
     "Imports the modules from custom functions and constructs the dict holding them."
 
     ##Move this to loader (where integrationloader will be put too.)
