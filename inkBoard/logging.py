@@ -3,7 +3,7 @@
 import logging
 import logging.handlers
 from pathlib import Path
-from typing import Any, Optional, TYPE_CHECKING
+from typing import Any, Optional, TYPE_CHECKING, TypedDict
 from functools import partial, partialmethod
 from contextlib import suppress
 from dataclasses import asdict
@@ -190,12 +190,23 @@ def overwrite_basicConfig(core: "CORE", config: "LoggerEntry"):
 def setup_filehandler(core: "CORE", config: "LoggerEntry"):
     "Sets up the rotating filderhandler logs"
 
+    if isinstance(logging.root.handlers[0], InkBoardQueueHandler):
+        queue_hdlr = logging.root.handlers[0]
+        for hdlr in queue_hdlr.listener.handlers:
+            ##Remove any rotating file handlers if present
+            ##For decent workings, also with reloading, I think it's best to create a childclass to handle file logging
+            ##As a singleton, so it can basically persist across reloads
+            if isinstance(hdlr, logging.handlers.RotatingFileHandler):
+                hdlr.close()
+                logging.root.removeHandler(hdlr)
+    
     if isinstance(config.log_to_file, (dict,MappingProxyType)):
-        fileconf = config.log_to_file
+        fileconf = dict(config.log_to_file)
     else:
         fileconf = {}
     
-    fileconf.setdefault("backupCount", 5)
+    fileconf.setdefault("backup_count", 5)
+    fileconf["backupCount"] = fileconf.pop("backup_count")
     fileconf.setdefault("filename", "inkboard.log") ##Default filename: logs -> but resolve to config folder.
     if isinstance(fileconf["filename"], str):
         name = fileconf["filename"]
@@ -222,6 +233,7 @@ def setup_filehandler(core: "CORE", config: "LoggerEntry"):
     fileconf["filename"] = filename
     file_handler = logging.handlers.RotatingFileHandler(**fileconf)
     file_handler.setFormatter(BaseFormatter())
+    
     if do_rollover:
         file_handler.doRollover()
 
@@ -262,6 +274,19 @@ def setup_logging(core: "CORE"):
         queue, *migrated_handlers, respect_handler_level=True)
     queue_handler.listener = listener
     
-    listener.handlers
-
+    ##Determine how to deal with this inbetween reloads since it will likekly set up multiple queues like this
     listener.start()
+
+
+class FileLogEntry(TypedDict):
+    "Entries that can be used for the ``log_to_file`` logging entry"
+
+    backup_count : int = 5
+    "Maximum number of logs to retain"
+
+    filename : str = "inkBoard.log"
+    """Base name of the logs.
+    If a path, this will also determine the folder the logs will be put in.
+    Otherwise, they're put in a logs folder within the config directory
+    """
+
