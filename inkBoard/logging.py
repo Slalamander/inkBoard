@@ -291,6 +291,7 @@ class FileLogEntry(TypedDict):
     """
 
 ##Todos for logging:
-##Setup socketlogger within the api extension
+##Setup socketlogger within the api extension -> no, not socketlogger, use httphandler probably?
+##I'm still not fully sure what the best way to set up network logging is tbh
 ##Add setting to handle std out logging (via a terminal key)
 ##Handle log queue being set up every time a reload is called
