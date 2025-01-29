@@ -254,6 +254,44 @@ class _CORE(metaclass=COREMETA):
         cls._elementParsers[identifier] = parser
 
     @classmethod
+    def parse_element(cls, element_str : str) -> type["Element"]:
+        """Parses elements registered by integrations or present in the custom elements folder
+
+        Does not parse elements from the default pssm library
+
+        Parameters
+        ----------
+        element_str : str
+            The string to parse, must be setup as {identifier}:{element_type}
+
+        Returns
+        -------
+        type[Element]
+            The element class parsed from the string
+
+        Raises
+        ------
+        KeyError
+            Raised if the string is invalid or something else went wrong
+        """
+        if not ":" in element_str:
+            msg = f"A custom element string must be structured as {{identifier}}:{{element_type}}"
+            _LOGGER.error(msg)
+            raise KeyError(msg)
+        
+        identifier, elt_type = element_str.split(":",1)
+        if identifier not in cls._elementParsers:
+            msg = f"No identifier {identifier} found"
+            _LOGGER.error(msg)
+            raise KeyError(msg)
+        
+        try:
+            parser = cls._elementParsers[elt_type]
+            return parser(elt_type)
+        except Exception as exce:
+            raise KeyError from exce
+
+    @classmethod
     def parse_custom_function(cls, name: str, attr: str, options = {}) -> Optional[Callable]:
         """Parses a string to a function from the custom functions package. 
         """
