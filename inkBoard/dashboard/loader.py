@@ -60,7 +60,7 @@ class DashboardLoader(loaders.BaseSafeLoader):
             parsers = self._CORE.elementParsers
             if idf not in parsers:
                 msg = f"No integration registered the element identifier {idf}"
-                logger.error(msg)
+                # logger.error(msg)
                 raise SyntaxWarning(msg)
             else:
                 parser = parsers[idf]
