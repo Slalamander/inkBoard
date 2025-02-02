@@ -46,3 +46,5 @@ def test_core_attributeget():
 
     with pytest.raises(AttributeError):
         CORE.config
+
+##Need to add a test to verify that an imported version updates maybe
