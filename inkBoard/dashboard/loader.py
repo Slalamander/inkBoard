@@ -96,7 +96,7 @@ class DashboardLoader(loaders.BaseSafeLoader):
                 msg = f"Invalid element type '{d['type']}' (id {d['id']}) in configuration file {Path(node.start_mark.name).name}, line {yaml_line}"
             else:
                 msg = f"Invalid element type '{d['type']}' in configuration file {Path(node.start_mark.name).name}, line {yaml_line}"
-            logger.error(msg)
+            logger.error(msg, exc_info=True)
             self.__class__._config_error = True
             return None
         except SyntaxWarning:
@@ -105,7 +105,7 @@ class DashboardLoader(loaders.BaseSafeLoader):
                 msg = f"Invalid element identifier in configuration file {Path(node.start_mark.name).name}, line {yaml_line}: {d['type']}  (id {d['id']})"
             else:
                 msg = f"Invalid element identifier in configuration file {Path(node.start_mark.name).name}, line {yaml_line}: {d['type']}"
-            logger.error(msg)
+            logger.error(msg, exc_info=True)
             self.__class__._config_error = True
             return None
         
@@ -123,7 +123,7 @@ class DashboardLoader(loaders.BaseSafeLoader):
                 msg = f"An element with id {elt_id} has already been registered. Duplicate element is located in configuration file {node.start_mark.name}, line {yaml_line}."
             else:
                 msg = f"Element {type_str} in configuration file {node.start_mark.name}, line {yaml_line} got a duplicate ID: {e}"
-            logger.error(msg)
+            logger.error(msg, exc_info=True)
             self.__class__._config_error = True
             return None
         except Exception as e:
@@ -132,7 +132,7 @@ class DashboardLoader(loaders.BaseSafeLoader):
             if "id" in d:
                 elt_str = f"[{elt_str}: {d['id']}]"
             msg = f"Error constructing element {type_str} in configuration file {node.start_mark.name}, line {yaml_line}: {e}"
-            logger.error(msg)
+            logger.error(msg, exc_info=True)
             self.__class__._config_error = True
             return None
         return elt
