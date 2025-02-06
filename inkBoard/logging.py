@@ -251,16 +251,9 @@ def setup_filehandler(core: "CORE", config: "LoggerEntry"):
     ##Check is performed for non custom too, but those folder will have just been made if not already there
     assert filename.parent.absolute().exists(), "Logging to custom locations requires the folder to exist"
 
-    do_rollover = False
-    if filename.exists():
-        do_rollover = True
-
     fileconf["filename"] = filename
     file_handler = LogFileHandler(**fileconf)
     file_handler.setFormatter(BaseFormatter())
-    
-    if do_rollover:
-        file_handler.doRollover()
 
     logging.root.addHandler(file_handler)
 
