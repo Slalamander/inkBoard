@@ -1,7 +1,6 @@
 "Logging classes for inkBoard."
 
 import logging
-import logging._checkLevel
 import logging.handlers
 from pathlib import Path
 from typing import Any, Optional, TYPE_CHECKING, Union, TypedDict
@@ -208,7 +207,6 @@ def overwrite_basicConfig(core: "CORE", config: "LoggerEntry"):
     new_style = base_args.get("style", "%")
     new_formatter = logging.Formatter(new_format, new_datefmt, new_style)
     BaseFormatter.formatter = new_formatter
-
 
 def setup_filehandler(core: "CORE", config: "LoggerEntry"):
     "Sets up the rotating filderhandler logs"
