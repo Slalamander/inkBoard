@@ -1,9 +1,10 @@
 "Logging classes for inkBoard."
 
 import logging
+import logging._checkLevel
 import logging.handlers
 from pathlib import Path
-from typing import Any, Optional, TYPE_CHECKING, TypedDict
+from typing import Any, Optional, TYPE_CHECKING, Union, TypedDict
 from functools import partial, partialmethod
 from contextlib import suppress
 from dataclasses import asdict
@@ -140,6 +141,28 @@ class InkBoardQueueHandler(logging.handlers.QueueHandler):
         self.listener.stop()
         self.listener = None
 
+class LogFileHandler(logging.handlers.RotatingFileHandler):
+    """Class that handles logging to log files for inkBoard
+    """    
+
+    def __init__(self, filename, mode = "a", maxBytes = 0, backupCount = 0, encoding = None, errors = None, level: Union[int,str] = None):
+        super().__init__(filename, mode, maxBytes, backupCount, encoding, True, errors)
+        
+        if level == None:
+            level = logging.root.level
+        elif isinstance(level,str):
+            level = level.upper()
+        self.setLevel(level)
+
+        if not isinstance(filename,Path): filename = Path(filename)
+        if filename.exists():
+            self.doRollover()
+
+    def filter(self, record):
+        if record.levelno < self.level:
+            return False
+        return super().filter(record)
+
 streamhandler = logging.StreamHandler()
 streamhandler.setFormatter(ColorFormatter(log_format, log_dateformat))
 
@@ -195,8 +218,10 @@ def setup_filehandler(core: "CORE", config: "LoggerEntry"):
         for hdlr in queue_hdlr.listener.handlers:
             ##Remove any rotating file handlers if present
             ##For decent workings, also with reloading, I think it's best to create a childclass to handle file logging
-            ##As a singleton, so it can basically persist across reloads
-            if isinstance(hdlr, logging.handlers.RotatingFileHandler):
+            ##As a singleton, so it can basically persist across reloads -> no, removing it and instantiating is better also to change the config.
+
+            ##Also, make that class have a custom logging level, and also give an option to not log error tracebacks
+            if isinstance(hdlr, LogFileHandler):
                 hdlr.close()
                 logging.root.removeHandler(hdlr)
     
@@ -231,7 +256,7 @@ def setup_filehandler(core: "CORE", config: "LoggerEntry"):
         do_rollover = True
 
     fileconf["filename"] = filename
-    file_handler = logging.handlers.RotatingFileHandler(**fileconf)
+    file_handler = LogFileHandler(**fileconf)
     file_handler.setFormatter(BaseFormatter())
     
     if do_rollover:
@@ -289,6 +314,12 @@ class FileLogEntry(TypedDict):
     If a path, this will also determine the folder the logs will be put in.
     Otherwise, they're put in a logs folder within the config directory
     """
+
+    level : Union[str,int] = None
+    """The minimum level of logs to log to the file
+
+    If left at None, it will be set to the same level as the base logger.
+    """    
 
 ##Todos for logging:
 ##Setup socketlogger within the api extension -> no, not socketlogger, use httphandler probably?
