@@ -33,11 +33,8 @@ FATAL = logging.FATAL
 
 LOG_LEVELS = ("NOTSET", "VERBOSE", "DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL")
 
-
-
 log_format = '%(asctime)s [%(levelname)s %(name)s %(funcName)s, line %(lineno)s]: %(message)s'
 log_dateformat = '%d-%m-%Y %H:%M:%S'
-
 
 class ANSICOLORS:
     GRAY = "\x1b[38;5;247m"
@@ -75,8 +72,6 @@ class BaseLogger(logging.Logger):
     def verbose(self, msg, *args, exc_info = None, stack_info = False, stacklevel = 1, extra = None):
         "Logs a message at VERBOSE level (below DEBUG)"
         return self.log(VERBOSE, msg, *args, exc_info = None, stack_info = False, stacklevel = 1, extra = None)
-
-
 
 class BaseFormatter(logging.Formatter):
     
