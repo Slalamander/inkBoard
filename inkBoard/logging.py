@@ -182,20 +182,29 @@ class LogFileHandler(logging.handlers.RotatingFileHandler):
             return False
         return super().filter(record)
 
-class LocalhostStreamHandler(logging.handlers.SocketHandler):
+class LocalhostSocketHandler(logging.handlers.SocketHandler):
     
     def __init__(self, port):
         super().__init__('localhost', port)
         self.added = False
+        self.level = 5
 
     def addToHandlers(self):
         add_handler(self)
+        # logging.root.addHandler(self)
         self.added = True
 
     def close(self):
         super().close()
         remove_handler(self)
     
+    def format(self, record):
+        if self.formatter:
+            fmt = self.formatter
+        else:
+            fmt = streamhandler.formatter
+        return fmt.format(record)
+
     def emit(self, record):
         try:
             s = self.format(record)
