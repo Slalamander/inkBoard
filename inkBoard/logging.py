@@ -229,7 +229,6 @@ def init_logging(log_level: str = None, quiet: bool = False, verbose: bool = Fal
     
     Done before setting up queue handler, such that messages printed before reading the config are also logged.
     """
-    logging.root.setLevel(NOTSET)
     logging.setLoggerClass(BaseLogger)
 
     logging.addLevelName(VERBOSE, "VERBOSE")
@@ -330,6 +329,7 @@ def setup_logging(core: "CORE"):
     ##Remote logging: setup later
     ##Need more knowledge on best practices, as well as knowing what is the best way to set up server/client for general connections
 
+    logging.root.setLevel(NOTSET)
     streamhandler.setLevel(config.level)
     for log_name, level in config.logs:
         logging.getLogger(log_name).setLevel(level)
