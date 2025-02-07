@@ -328,7 +328,7 @@ def setup_logging(core: "CORE"):
     queue = Queue()
     queue_handler = InkBoardQueueHandler(queue)
 
-    if logging.root.handlers:
+    if len(logging.root.handlers) == 1 and isinstance(logging.root.handlers[0], InkBoardQueueHandler):
         raise RuntimeWarning("Adding multiple root loggers may be bad (assuming both are Queue handlers)")
     else:
         logging.root.addHandler(queue_handler)
