@@ -8,6 +8,7 @@ from functools import partial, partialmethod
 from contextlib import suppress
 from dataclasses import asdict
 from types import MappingProxyType
+import struct
 
 try:
     # Python 3.7 and newer, fast reentrant implementation
@@ -205,12 +206,21 @@ class LocalhostSocketHandler(logging.handlers.SocketHandler):
             fmt = streamhandler.formatter
         return fmt.format(record)
 
-    def emit(self, record):
-        try:
-            s = self.format(record)
-            self.send(s.encode())
-        except Exception:
-            self.handleError(record)
+    # def emit(self, record):
+    #     try:
+            
+
+    #         self.send(s.encode())
+    #     except Exception:
+    #         self.handleError(record)
+
+    def makePickle(self, record):
+        s = self.format(record).encode()
+        slen = struct.pack(">L", len(s))
+        return slen + s
+
+
+        # return super().makePickle(record)
 
     def send(self, s):
         if not self.added:
@@ -338,23 +348,24 @@ def setup_logging(core: "CORE"):
     queue_handler = InkBoardQueueHandler(queue)
 
     if len(logging.root.handlers) == 1 and isinstance(logging.root.handlers[0], InkBoardQueueHandler):
-        raise RuntimeWarning("Adding multiple root loggers may be bad (assuming both are Queue handlers)")
+        # raise RuntimeWarning("Adding multiple root loggers may be bad (assuming both are Queue handlers)")
+        return
     else:
         logging.root.addHandler(queue_handler)
 
-    migrated_handlers: list[logging.Handler] = []
-    for handler in logging.root.handlers[:]:
-        if handler is queue_handler:
-            continue
-        logging.root.removeHandler(handler)
-        migrated_handlers.append(handler)
+        migrated_handlers: list[logging.Handler] = []
+        for handler in logging.root.handlers[:]:
+            if handler is queue_handler:
+                continue
+            logging.root.removeHandler(handler)
+            migrated_handlers.append(handler)
 
-    listener = logging.handlers.QueueListener(
-        queue, *migrated_handlers, respect_handler_level=True)
-    queue_handler.listener = listener    
-    
-    ##Determine how to deal with this inbetween reloads since it will likekly set up multiple queues like this
-    listener.start()
+        listener = logging.handlers.QueueListener(
+            queue, *migrated_handlers, respect_handler_level=True)
+        queue_handler.listener = listener    
+        
+        ##Determine how to deal with this inbetween reloads since it will likekly set up multiple queues like this
+        listener.start()
 
 
 class FileLogEntry(TypedDict):
