@@ -62,6 +62,31 @@ class LogFormats:
 
 _LOGGER = logging.getLogger(__name__)
 
+def get_handlers() -> list[logging.Handler]:
+    if logging.root.handlers and isinstance(logging.root.handlers[0], InkBoardQueueHandler):
+        queue_hdlr = logging.root.handlers[0]
+        return queue_hdlr.listener.handlers
+    else:
+        return logging.root.handlers
+    
+def add_handler(handler: logging.Handler):
+    ##in the root addHandler, some stuff happens regarding locks etc.
+    ##So stuff may act up? will see
+    if logging.root.handlers and isinstance(logging.root.handlers[0], InkBoardQueueHandler):
+        queue_hdlr = logging.root.handlers[0]
+        queue_hdlr.listener.handlers = (*queue_hdlr.listener.handlers, handler) ##Euh where/how to add these?
+    else:
+        logging.root.addHandler(handler)
+
+def remove_handler(handler: logging.Handler):
+    if logging.root.handlers and isinstance(logging.root.handlers[0], InkBoardQueueHandler):
+        handlers = list(get_handlers())
+        if handler in handlers:
+            handlers.remove(handler)
+            listener = logging.root.handlers[0].listener
+            listener.handlers = tuple(handlers)
+    else:
+        logging.root.removeHandler(handler)
 
 class BaseLogger(logging.Logger):
     "Logger class with the verbose function defined for type hinting purposes"
@@ -156,6 +181,36 @@ class LogFileHandler(logging.handlers.RotatingFileHandler):
         if record.levelno < self.level:
             return False
         return super().filter(record)
+
+class LocalhostStreamHandler(logging.handlers.SocketHandler):
+    
+    def __init__(self, port):
+        super().__init__('localhost', port)
+        self.added = False
+
+    def addToHandlers(self):
+        add_handler(self)
+        self.added = True
+
+    def close(self):
+        super().close()
+        remove_handler(self)
+    
+    def emit(self, record):
+        try:
+            s = self.format(record)
+            self.send(s.encode())
+        except Exception:
+            self.handleError(record)
+
+    def send(self, s):
+        if not self.added:
+            if self in get_handlers():
+                self.added = True
+            else:
+                _LOGGER.warning("Cannot send logs before being added to handlers")
+                return
+        return super().send(s)    
 
 streamhandler = logging.StreamHandler()
 streamhandler.setFormatter(ColorFormatter(log_format, log_dateformat))
@@ -272,7 +327,11 @@ def setup_logging(core: "CORE"):
 
     queue = Queue()
     queue_handler = InkBoardQueueHandler(queue)
-    logging.root.addHandler(queue_handler)
+
+    if logging.root.handlers:
+        raise RuntimeWarning("Adding multiple root loggers may be bad (assuming both are Queue handlers)")
+    else:
+        logging.root.addHandler(queue_handler)
 
     migrated_handlers: list[logging.Handler] = []
     for handler in logging.root.handlers[:]:
@@ -283,7 +342,7 @@ def setup_logging(core: "CORE"):
 
     listener = logging.handlers.QueueListener(
         queue, *migrated_handlers, respect_handler_level=True)
-    queue_handler.listener = listener
+    queue_handler.listener = listener    
     
     ##Determine how to deal with this inbetween reloads since it will likekly set up multiple queues like this
     listener.start()
