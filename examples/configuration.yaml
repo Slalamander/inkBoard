@@ -8,7 +8,7 @@ screen:
   poll_interval: 10   ##Amount of seconds between polling various device features
 
 inkBoard:
-  name: "Test6"
+  name: "example"
   date_format: "%A %d %B %Y" #"%A %d %B %Y"  #Date format datetime format string. Defaults to "%d-%m-%Y"
   time_format: "%H:%M" #Time format in datetime format string. Defaults to %H:%M
   integration_start_time: -1 #Time to wait for integrations to start, before moving on to running the dashboard. -1 means wait until they are all finished.
