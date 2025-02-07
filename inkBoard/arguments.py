@@ -38,8 +38,8 @@ def command_designer(args):
     inkBoarddesigner.run_designer(args)
 
 def command_install(args):
-    from .packaging import command_install
-    return command_install(**pop_base_args(args))
+    from .packaging import run_install_command
+    return run_install_command(**pop_base_args(args))
 
 def command_pack(args):
     from .packaging import create_config_package

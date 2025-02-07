@@ -187,7 +187,7 @@ def create_core_package(core: "CORE", name: str = None, pack_all: bool = False, 
     return 0
 
 
-def command_install(file: str, name: str, no_input: bool):
+def run_install_command(file: str, name: str, no_input: bool):
     ##Add functionality to installer for internal installs (platforms and integrations)
     ##Usage: install [platform/integration] [name]
 
