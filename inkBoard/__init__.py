@@ -23,7 +23,6 @@ if TYPE_CHECKING:
 def getLogger(name: Union[str,None] = None) -> ib_logging.BaseLogger:
     """Convenience method to get a logger with type hinting for additional levels like verbose.
     
-    logging docstr:
     Return a logger with the specified name, creating it if necessary.
     If no name is specified, return the root logger.
     """
