@@ -29,6 +29,10 @@ def command_version(*args):
         print(f"inkBoard designer Version: {designer_version}")
     return 0
 
+def command_logs(args):
+    from ._logger import run_logger
+    return run_logger(**pop_base_args(args))
+
 def command_designer(args):
     if not DESIGNER_MOD:
         print("Running inkBoard designer require the inkBoard designer to be installed")
