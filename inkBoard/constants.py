@@ -36,6 +36,7 @@ if RAISE:
 
 COMMAND_VERSION = "version"
 COMMAND_DESIGNER = "designer"
+COMMAND_LOGS = "logs"
 COMMAND_RUN = "run"
 COMMAND_PACK = "pack"
 COMMAND_INSTALL = "install"
