@@ -34,10 +34,9 @@ def run_localhost_logger(*args):
                 chunk = self.connection.recv(slen)
                 while len(chunk) < slen:
                     chunk = chunk + self.connection.recv(slen - len(chunk))
-                obj = self.unPickle(chunk)
-                # record = logging.makeLogRecord(obj)
-                print(obj)
-                # self.handleLogRecord(record)
+                
+                s = chunk.decode()
+                print(s)
 
         def unPickle(self, data):
             return pickle.loads(data)
@@ -70,7 +69,12 @@ def run_localhost_logger(*args):
 
     tcpserver = LogRecordSocketReceiver()
     print('About to start TCP server...')
-    tcpserver.serve_until_stopped()
+    try:
+        tcpserver.serve_until_stopped()
+    except Exception as exce:
+        print(exce)
+    finally:
+        print("TCP server stopped...")
     return
 
 def run_logger(*args):
