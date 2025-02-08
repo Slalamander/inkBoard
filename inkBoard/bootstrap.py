@@ -29,8 +29,6 @@ if TYPE_CHECKING:
     from PythonScreenStackManager import pssm, elements
     from inkBoard import config, core as CORE, platforms
 
-# CORE = inkBoard.core
-
 def import_custom_functions(core: "CORE") -> dict[str,Callable]:
     "Imports the modules from custom functions and constructs the dict holding them."
 
@@ -143,6 +141,7 @@ async def setup_core(config_file, integration_loader: "loaders.IntegrationLoader
     # from inkBoard import core as CORE
     # from inkBoard import core
     c = CORE()
+    print("core is set up")
     # CORE()
 
     assert Path(config_file).exists(), f"{config_file} does not exist"
@@ -241,7 +240,8 @@ async def reload_core(core: "CORE", full_reload: bool = False):
     """    
 
     _shutdown_core(core, is_reload=True)
-    await core.integrationLoader.async_stop_integrations(core)
+    if hasattr(core,"integrationLoader"):
+        await core.integrationLoader.async_stop_integrations(core)
 
     if not full_reload:
         PSSM.pssm._reset()
@@ -276,7 +276,8 @@ async def reload_core(core: "CORE", full_reload: bool = False):
 async def stop_core(core: "CORE"):
     try:
         _shutdown_core(core)
-        await core.integrationLoader.async_stop_integrations(core)
+        if hasattr(core, "integrationLoader"):
+            await core.integrationLoader.async_stop_integrations(core)
     except Exception as exce:
         print(f"inkBoard did not shutdown gracefully: {exce}")
         return 1
