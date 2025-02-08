@@ -15,6 +15,7 @@ from inkBoard.helpers import DeviceError, ScreenError, ConfigError, QuitInkboard
 from inkBoard.util import reload_full_module
 from inkBoard.logging import setup_logging
 from inkBoard.types import coretype
+from inkBoard.async_ import is_reload_shielded_task
 
 import PythonScreenStackManager as PSSM
 
@@ -213,7 +214,7 @@ async def run_core(core: "CORE"):
                     return_exceptions=False)
     return await L  #@IgnoreException
 
-def _shutdown_core(core: "CORE"):
+def _shutdown_core(core: "CORE", is_reload: bool = False):
     "Shuts down the core object and optionally reloads the necessary modules"
     
     _LOGGER.info("Shutting down inkBoard core")
@@ -221,7 +222,10 @@ def _shutdown_core(core: "CORE"):
         return
 
     for task in asyncio.all_tasks(core.screen.mainLoop):
-        if task == asyncio.current_task(core.screen.mainLoop):
+        if (
+            task == asyncio.current_task(core.screen.mainLoop)
+            or (is_reload and is_reload_shielded_task(task))
+            ):
             continue
         task.cancel()
 
@@ -236,7 +240,7 @@ async def reload_core(core: "CORE", full_reload: bool = False):
         A full reload reloads all modules that affect printing, i.e. PSSM, non custom integrations, platforms, etc. by default False
     """    
 
-    _shutdown_core(core)
+    _shutdown_core(core, is_reload=True)
     await core.integrationLoader.async_stop_integrations(core)
 
     if not full_reload:
