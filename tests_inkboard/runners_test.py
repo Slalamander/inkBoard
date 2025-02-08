@@ -5,6 +5,8 @@ from pathlib import Path
 
 from inkBoard import core as CORE, bootstrap, async_
 
+CORE._DESIGNER_RUN = False
+
 @pytest.mark.asyncio
 async def test_reload_safe_tasks():
     # print("Testing reload")
