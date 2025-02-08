@@ -53,7 +53,8 @@ def command_pack(args):
 PRE_CORE_ACTIONS = {
     const.COMMAND_VERSION: command_version,
     const.COMMAND_DESIGNER: command_designer,
-    const.COMMAND_INSTALL: command_install
+    const.COMMAND_INSTALL: command_install,
+    const.COMMAND_LOGS: command_logs
 }
 "Action that can/have to be run before creating the CORE object"
 
@@ -134,11 +135,15 @@ def parse_args():
 
     parser_install.add_argument('--no-input', help="Disables any input prompts that are deemed optional", action='store_true')
 
+    parser_logs = subparsers.add_parser(
+        const.COMMAND_LOGS, help="Provided connections to instance logs"
+    )
+
     parser.add_argument(
         "--version",
         action="version",
         version=f"Version: {const.__version__}",
-        help="Prints the inkBoard version and exit.",
+        help="Prints the inkBoard version and exits.",
     )
 
     return parser.parse_args()
