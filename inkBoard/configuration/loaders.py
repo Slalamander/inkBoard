@@ -16,7 +16,9 @@ try:
     from yaml import CSafeLoader as FastestAvailableSafeLoader
 except ImportError:
     pass
-    
+
+from inkBoard.helpers import YAMLNodeDict
+
 from . import const
 
 if TYPE_CHECKING:
@@ -146,4 +148,5 @@ class MainConfigLoader(BaseSafeLoader):
             d = super().construct_mapping(node, deep)
         #Not returning mappingproxies, as it leads to quite some difficulties
         #I.e. JSON not wanting to dump stuff when it is a MappingProxy.
+        d = YAMLNodeDict(d, node)
         return d
