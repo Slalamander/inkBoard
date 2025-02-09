@@ -12,7 +12,7 @@ from types import MappingProxyType
 from pathlib import Path
 
 import inkBoard
-from inkBoard.helpers import classproperty
+from inkBoard.decorators import classproperty
 from inkBoard.util import reload_full_module
 from inkBoard import util
 import inkBoard.integrations

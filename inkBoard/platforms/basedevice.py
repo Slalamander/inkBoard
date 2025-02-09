@@ -17,7 +17,7 @@ from PythonScreenStackManager.devices import PSSMdevice, DeviceFeatures, \
 from PythonScreenStackManager.devices.const import FEATURES, _attr_list, DeviceFeatures
 import inkBoard.constants
 
-from ..helpers import function_parameter_dict
+from ..util import function_parameter_dict
 
 _LOGGER = inkBoard.getLogger(__name__)
 
