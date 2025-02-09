@@ -185,14 +185,18 @@ class LogFileHandler(logging.handlers.RotatingFileHandler):
 
 class LocalhostSocketHandler(logging.handlers.SocketHandler):
     
-    def __init__(self, port):
+    def __init__(self, port, level : Union[int,str] = None):
         super().__init__('localhost', port)
         self.added = False
-        self.level = 5
 
+        if level == None:
+            level = streamhandler.level
+        elif type(level) == str:
+            level = level.upper()
+        self.setLevel(level)
+        
     def addToHandlers(self):
         add_handler(self)
-        # logging.root.addHandler(self)
         self.added = True
 
     def close(self):
@@ -206,21 +210,10 @@ class LocalhostSocketHandler(logging.handlers.SocketHandler):
             fmt = streamhandler.formatter
         return fmt.format(record)
 
-    # def emit(self, record):
-    #     try:
-            
-
-    #         self.send(s.encode())
-    #     except Exception:
-    #         self.handleError(record)
-
     def makePickle(self, record):
         s = self.format(record).encode()
         slen = struct.pack(">L", len(s))
         return slen + s
-
-
-        # return super().makePickle(record)
 
     def send(self, s):
         if not self.added:
@@ -348,7 +341,6 @@ def setup_logging(core: "CORE"):
     queue_handler = InkBoardQueueHandler(queue)
 
     if len(logging.root.handlers) == 1 and isinstance(logging.root.handlers[0], InkBoardQueueHandler):
-        # raise RuntimeWarning("Adding multiple root loggers may be bad (assuming both are Queue handlers)")
         return
     else:
         logging.root.addHandler(queue_handler)
