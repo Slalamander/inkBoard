@@ -11,6 +11,7 @@ import logging
 import sys
 import importlib
 from contextlib import suppress
+from pathlib import Path
 
 from inkBoard import core as CORE
 from PythonScreenStackManager.exceptions import ShorthandNotFound
@@ -115,7 +116,9 @@ class YAMLNodeDict(dict):
     """Dict used in yaml parsing
 
     Should be a drop in replacement for normal dicts, but it also has a reference to where in the YAML documents it came from.
-    This allows for clearer logging, for example
+    This allows for clearer logging, for example.
+
+    Has an overwritten __repr__ method that returns it as the filename + line numbers
 
     Parameters
     ----------
@@ -131,21 +134,69 @@ class YAMLNodeDict(dict):
         self._end_mark = node.end_mark
         return
 
-class ParsedAction:
+    def __repr__(self):
+        return self.format_marks(self._start_mark, self._end_mark)
+    
+    @staticmethod
+    def format_marks(start_mark : "yaml.Mark", end_mark : "yaml.Mark" = None) -> str:
+        """Formats a yaml mark to a string similar as in logging
 
-    def __init__(self, action : Union[Callable, str, dict]):
+        Parameters
+        ----------
+        start_mark : yaml.Mark
+            The start mark to use
+        end_mark : yaml.Mark, optional
+            The end mark to use, by default None
+
+        Returns
+        -------
+        str
+        """        
+
+        f = Path(start_mark.name).name
+        if end_mark:
+            return f"{f} lines {start_mark.line}-{end_mark.line}"
+        else:
+            return f"{f} line {start_mark.line}"
+
+class ParsedAction:
+    """Helper to aid in parsing actions shorthands and dicts
+
+    Actions can be passed as any of the valid types, and the object and inkBoard take care of parsing.
+    The action should not be called before the CORE is starting, since them being parsed by then is not a given.
+
+    Parameters
+    ----------
+    action : Union[Callable, str, dict]
+        The action to parse. The ``map`` key is not used, otherwise the same syntax as element actions apply.
+    yamlmarks : tuple[&quot;yaml.Mark&quot;, &quot;yaml.Mark&quot;], optional
+        start and optionally end_mark of the yaml entry, by default ()
+        used for logging
+    """
+
+
+    _notParsed : set["ParsedAction"] = set()
+
+    def __init__(self, action : Union[Callable, str, dict], yamlmarks : tuple["yaml.Mark", "yaml.Mark"] = ()):
 
         self._action = None
         self._parsed = False
-        if isinstance(action,Callable):
-            self._action = action
-        else:
-            self._action_to_parse = action
+        self.yamlstr = None
+
+        if yamlmarks:
+            self.yamlstr = YAMLNodeDict.format_marks(*yamlmarks)
 
         if isinstance(action, (Callable,str)):
+            if isinstance(action,Callable):
+                self._action = action
+            else:
+                self._action_to_parse = action
+
             self._data = {}
             self._options = {}
         else:
+            if isinstance(action,YAMLNodeDict):
+                self.yamlstr = str(action)
             action = dict(action)   ##Also allows being passed MappingProxies
             action_val = action.pop("action")
             if callable(action_val):
@@ -158,6 +209,8 @@ class ParsedAction:
 
         if hasattr(CORE,"screen"):
             self._parse_action()
+        else:
+            self._notParsed.add(self)
         
 
     def __call__(self, *args, **kwargs):
@@ -176,6 +229,31 @@ class ParsedAction:
             try:
                 self._action = CORE.screen.parse_shorthand_function(self._action_to_parse, self._options)
             except ShorthandNotFound as exce:
-                _LOGGER.error(f"Unable to parse from {self._action}")
+
+                msg = f"Unable to parse from {self._action}"
+                if self.yamlstr:
+                    _LOGGER.error(msg, extra={"YAML": self.yamlstr})
+                else:
+                    _LOGGER.error(msg)
+                raise
 
         self._parsed = True
+        self._notParsed.remove(self)
+
+    @classmethod
+    def parse_actions(cls) -> bool:
+        """Parses the actions for all yet unparsed instances
+
+        Returns
+        -------
+        bool
+            If every instance parsed successfully
+        """
+
+        errored = False
+        for p in cls._notParsed:
+            try:
+                p._parse_action()
+            except ShorthandNotFound:
+                errored = True
+        return errored
