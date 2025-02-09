@@ -12,6 +12,7 @@ import inkBoard.loaders
 
 from inkBoard import constants as const, loaders, CORE
 from inkBoard.helpers import DeviceError, ScreenError, ConfigError, QuitInkboard
+from inkBoard.helpers import ParsedAction
 from inkBoard.util import reload_full_module
 from inkBoard.logging import setup_logging
 from inkBoard.types import coretype
@@ -27,7 +28,7 @@ if const.DESIGNER_INSTALLED:
 if TYPE_CHECKING:
     import inkBoard
     from PythonScreenStackManager import pssm, elements
-    from inkBoard import config, core as CORE, platforms
+    from inkBoard import config, CORE, platforms
 
 def import_custom_functions(core: "CORE") -> dict[str,Callable]:
     "Imports the modules from custom functions and constructs the dict holding them."
@@ -189,6 +190,8 @@ async def setup_core(config_file, integration_loader: "loaders.IntegrationLoader
     main_layout = setup_dashboard_config(CORE)
 
     await CORE.screen.async_add_element(main_layout, skipPrint=True)
+
+    ParsedAction.parse_actions()
 
     return CORE
 
