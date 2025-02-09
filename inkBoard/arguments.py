@@ -3,7 +3,6 @@ Handles command line arguments for inkboard
 """
 import argparse
 from . import constants as const
-from .logging import LOG_LEVELS
 
 DESIGNER_MOD = const.DESIGNER_INSTALLED
 
@@ -71,7 +70,7 @@ def parse_args():
 
     base_parser = argparse.ArgumentParser(add_help=False)
     base_parser.add_argument('--logs',default=None,
-                        choices=LOG_LEVELS, help='set log level manually, takes precedent over the --quiet and --verbose flags. If None are set, it defaults to WARNING')    
+                        choices=const.LOG_LEVELS, help='set log level manually, takes precedent over the --quiet and --verbose flags. If None are set, it defaults to WARNING')    
     base_parser.add_argument('-q', '--quiet', action='store_true', dest='quiet',
                         help="Disables all inkBoard logs")
     base_parser.add_argument('-v', '--verbose', action='store_true', dest='verbose',

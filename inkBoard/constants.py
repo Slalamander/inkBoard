@@ -24,6 +24,9 @@ if s := importlib.util.find_spec("inkBoarddesigner"):
         pass
 
 
+
+LOG_LEVELS = ("NOTSET", "VERBOSE", "DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL")
+
 FuncExceptions = (TypeError, KeyError, IndexError, OSError, RuntimeError)
 "General exceptions to catch when calling functions like update. Usage  in try statements as `except FuncExceptions:`"
 

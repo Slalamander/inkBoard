@@ -12,6 +12,9 @@ import struct
 
 import yaml
 
+from inkBoard.helpers import YAMLNodeDict
+from inkBoard.constants import LOG_LEVELS
+
 try:
     # Python 3.7 and newer, fast reentrant implementation
     # without task tracking (not needed for that when logging)
@@ -34,7 +37,6 @@ ERROR = logging.ERROR
 CRITICAL = logging.CRITICAL
 FATAL = logging.FATAL
 
-LOG_LEVELS = ("NOTSET", "VERBOSE", "DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL")
 
 # log_format = '%(asctime)s [%(levelname)s %(name)s %(funcName)s, line %(lineno)s %(YAML)s] %(message)s'
 
