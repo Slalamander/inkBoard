@@ -134,19 +134,30 @@ class MainConfigLoader(BaseSafeLoader):
                     parse_later[key_node.value] = value_node
 
             for node_name, value_node in parse_later.items():
-                    if isinstance(value_node,yaml.ScalarNode):
-                        val = self.construct_scalar(value_node)
-                    elif isinstance(value_node, yaml.SequenceNode):
-                        val = self.construct_sequence(value_node)
-                    elif isinstance(value_node, yaml.MappingNode):
-                        val = super().construct_mapping(value_node)
-                    else:
-                        _LOGGER.warning(f"Unknown node type {value_node}")
+                if isinstance(value_node,yaml.ScalarNode):
+                    val = self.construct_scalar(value_node)
+                elif isinstance(value_node, yaml.SequenceNode):
+                    val = self.construct_sequence(value_node)
+                elif isinstance(value_node, yaml.MappingNode):
+                    # val = YAMLNodeDict(self.construct_mapping(value_node, deep), node)
+                    val = self.construct_mapping(value_node, deep)
+                else:
+                    _LOGGER.warning(f"Unknown node type {value_node}")
 
-                    d[node_name] = val
+                d[node_name] = val
+            yaml_dict = YAMLNodeDict(d, node)
         else:
-            d = super().construct_mapping(node, deep)
+            yaml_dict = YAMLNodeDict(super().construct_mapping(node, deep),node)
         #Not returning mappingproxies, as it leads to quite some difficulties
         #I.e. JSON not wanting to dump stuff when it is a MappingProxy.
-        d = YAMLNodeDict(d, node)
-        return d
+
+        return yaml_dict
+    
+    def get_single_data(self):
+        return super().get_single_data()
+    
+    # def construct_object(self, node, deep=False):
+    #     obj = super().construct_object(node, deep)
+    #     if type(obj) == dict:
+    #         obj = YAMLNodeDict(obj,node)
+    #     return obj
