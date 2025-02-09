@@ -27,7 +27,7 @@ import PythonScreenStackManager as PSSM
 
 
 if TYPE_CHECKING:
-    from inkBoard import core as CORE
+    from inkBoard import CORE as CORE
     from packaging.version import Version
 
 with suppress(ModuleNotFoundError):

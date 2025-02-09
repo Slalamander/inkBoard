@@ -3,7 +3,7 @@
 CORE object has some protections applied to ensure it runs 
 """
 
-from inkBoard import core as CORE
+from inkBoard import CORE as CORE
 
 import pytest
 

@@ -3,7 +3,7 @@ import pytest
 import asyncio
 from pathlib import Path
 
-from inkBoard import core as CORE, bootstrap, async_
+from inkBoard import CORE as CORE, bootstrap, async_
 
 CORE._DESIGNER_RUN = False
 

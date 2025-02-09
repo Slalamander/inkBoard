@@ -16,7 +16,7 @@ from .validate import validator_dict
 from PythonScreenStackManager.elements import Layout, TabPages, StatusBar
 
 if TYPE_CHECKING:
-    from inkBoard import config, core as CORE
+    from inkBoard import config, CORE as CORE
 
 _LOGGER = logging.getLogger(__name__)
 

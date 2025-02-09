@@ -1,8 +1,9 @@
 ###Inkboard
 
+import logging as _logging
+
 from types import MappingProxyType
 from typing import TYPE_CHECKING, Literal, Any, Union
-from . import logging as ib_logging
 
 __version__ = "0.3.1.dev2"
 "inkBoard version"
@@ -16,17 +17,18 @@ if TYPE_CHECKING:
     from PythonScreenStackManager.devices import PSSMdevice as device
     from PythonScreenStackManager.elements import Element
     from inkBoard.configuration.configure import config
+    from . import logging as ib_logging
 
     integration_objects: MappingProxyType[Literal["integration_entry"],Any]
 
 
-def getLogger(name: Union[str,None] = None) -> ib_logging.BaseLogger:
+def getLogger(name: Union[str,None] = None) -> "ib_logging.BaseLogger":
     """Convenience method to get a logger with type hinting for additional levels like verbose.
     
     Return a logger with the specified name, creating it if necessary.
     If no name is specified, return the root logger.
     """
-    return ib_logging.logging.getLogger(name)
+    return _logging.getLogger(name)
 
 
 class DomainError(ValueError):
@@ -44,5 +46,5 @@ class Singleton(type):
             cls._instances[cls] = super().__call__(*args, **kwargs)
         return cls._instances[cls]
     
-from .core import _CORE as core
+from .core import _CORE as CORE
 

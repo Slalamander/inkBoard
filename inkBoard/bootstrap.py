@@ -10,7 +10,7 @@ import inkBoard
 import inkBoard.platforms
 import inkBoard.loaders
 
-from inkBoard import constants as const, loaders, core as CORE
+from inkBoard import constants as const, loaders, CORE
 from inkBoard.helpers import DeviceError, ScreenError, ConfigError, QuitInkboard
 from inkBoard.util import reload_full_module
 from inkBoard.logging import setup_logging

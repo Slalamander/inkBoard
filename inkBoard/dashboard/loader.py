@@ -11,7 +11,7 @@ from PythonScreenStackManager import elements
 from PythonScreenStackManager.pssm.screen import DuplicateElementError
 
 from inkBoard import util
-from .. import core as CORE
+from .. import CORE as CORE
 from ..configuration import loaders, const
 
 from .validate import validate_general

@@ -20,7 +20,7 @@ except ImportError:
     from queue import Queue
 
 if TYPE_CHECKING:
-    from inkBoard import core as CORE
+    from inkBoard import CORE as CORE
     from inkBoard.configuration.types import LoggerEntry
 
 

@@ -17,7 +17,7 @@ if const.DESIGNER_INSTALLED:
     import inkBoarddesigner
 
 if TYPE_CHECKING:
-    from inkBoard import config as configuration, core as CORE
+    from inkBoard import config as configuration, CORE as CORE
 
 _LOGGER = logging.getLogger(__name__)
 

@@ -13,7 +13,7 @@ import importlib
 from contextlib import suppress
 from pathlib import Path
 
-from inkBoard import core as CORE
+from inkBoard import CORE as CORE
 from PythonScreenStackManager.exceptions import ShorthandNotFound
 
 if TYPE_CHECKING:
@@ -238,7 +238,8 @@ class ParsedAction:
                 raise
 
         self._parsed = True
-        self._notParsed.remove(self)
+        if self in self._notParsed:
+            self._notParsed.remove(self)
 
     @classmethod
     def parse_actions(cls) -> bool:

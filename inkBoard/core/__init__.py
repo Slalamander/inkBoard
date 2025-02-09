@@ -8,7 +8,7 @@ from pathlib import Path
 from datetime import datetime as dt
 from contextlib import suppress
 
-import inkBoard
+# import inkBoard
 from inkBoard import constants as const
 from inkBoard.arguments import parse_args
 
@@ -122,7 +122,6 @@ class COREMETA(ClassPropertyMetaClass):
             raise AttributeError
         return val
     
-
 class _CORE(metaclass=COREMETA):
 
     __slots__ = (
@@ -145,6 +144,7 @@ class _CORE(metaclass=COREMETA):
 
         cls._elementParsers = {}
         if not hasattr(cls,"_DESIGNER_RUN"):
+            from inkBoard.arguments import parse_args
             cls._DESIGNER_RUN = parse_args().command == const.COMMAND_DESIGNER
         
         ##As is, the current classproperty I have written actually does allow overwriting (setting) the property

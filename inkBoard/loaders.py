@@ -18,7 +18,7 @@ from inkBoard import util
 import inkBoard.integrations
 
 if TYPE_CHECKING:
-    from inkBoard import core as CORE
+    from inkBoard import CORE as CORE
     from PythonScreenStackManager.elements import Element
 
 _LOGGER = inkBoard.getLogger(__name__)

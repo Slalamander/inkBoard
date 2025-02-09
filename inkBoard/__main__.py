@@ -20,7 +20,7 @@ from inkBoard.helpers import QuitInkboard
 from inkBoard.arguments import parse_args, PRE_CORE_ACTIONS, POST_CORE_ACTIONS
 
 if TYPE_CHECKING:
-    from inkBoard import core as CORE
+    from inkBoard import CORE as CORE
     import PythonScreenStackManager
     from inkBoard.configuration.configure import config
 
