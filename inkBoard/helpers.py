@@ -111,7 +111,7 @@ def loop_exception_handler(loop, context):
     ##however, does maybe provide some issues with functions being called outside of the eventloop
     ##See documentation: https://docs.python.org/3/library/asyncio-policy.html#custom-policies
 
-class YAMLProxyDict(dict):
+class YAMLNodeDict(dict):
     """Dict used in yaml parsing
 
     Should be a drop in replacement for normal dicts, but it also has a reference to where in the YAML documents it came from.
