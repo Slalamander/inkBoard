@@ -36,7 +36,9 @@ FATAL = logging.FATAL
 
 LOG_LEVELS = ("NOTSET", "VERBOSE", "DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL")
 
-log_format = '%(asctime)s [%(levelname)s %(name)s %(funcName)s, line %(lineno)s %(YAML)s] %(message)s'
+# log_format = '%(asctime)s [%(levelname)s %(name)s %(funcName)s, line %(lineno)s %(YAML)s] %(message)s'
+
+log_format = '${asctime} [${levelname} ${name} ${funcName}, line ${lineno}${YAML}] ${message}'
 log_dateformat = '%d-%m-%Y %H:%M:%S'
 
 class ANSICOLORS:
@@ -97,36 +99,36 @@ class BaseLogger(logging.Logger):
     def __init__(self, name, level = 0):
         super().__init__(name, level)
 
-    def makeRecord(self, name, level, fn, lno, msg, args, exc_info, func = None, extra : dict = None, sinfo = None):
-        if extra and (v := extra.get("YAML", None)):
-            new_yaml = ""
-            start_mark = None
-            if isinstance(v, yaml.Node):
-                start_mark = v.start_mark
-                end_mark = v.end_mark
-            elif isinstance(v,tuple):
-                start_mark, end_mark = v
-            elif isinstance(v,yaml.Node):
-                start_mark = v
-                end_mark = None
-            elif isinstance(v,str):
-                new_yaml = v
+    # def makeRecord(self, name, level, fn, lno, msg, args, exc_info, func = None, extra : dict = None, sinfo = None):
+    #     if extra and (v := extra.get("YAML", None)):
+    #         new_yaml = ""
+    #         start_mark = None
+    #         if isinstance(v, yaml.Node):
+    #             start_mark = v.start_mark
+    #             end_mark = v.end_mark
+    #         elif isinstance(v,tuple):
+    #             start_mark, end_mark = v
+    #         elif isinstance(v,yaml.Node):
+    #             start_mark = v
+    #             end_mark = None
+    #         elif isinstance(v,str):
+    #             new_yaml = v
 
-            if start_mark:
-                f = Path(start_mark.name).name
+    #         if start_mark:
+    #             f = Path(start_mark.name).name
                 
-                if end_mark and end_mark.line != start_mark.line:
-                    new_yaml = f"{f} lines {start_mark.line}-{end_mark.line}"
-                else:
-                    new_yaml = f"{f} line {start_mark.line}"
+    #             if end_mark and end_mark.line != start_mark.line:
+    #                 new_yaml = f" {f} lines {start_mark.line}-{end_mark.line}"
+    #             else:
+    #                 new_yaml = f" {f} line {start_mark.line}"
 
-            extra["YAML"] = new_yaml
-        elif extra is not None:
-            extra["YAML"] = ""
-        else:
-            extra = {"YAML": ""}
+    #         extra["YAML"] = new_yaml
+    #     elif extra is not None:
+    #         extra["YAML"] = ""
+    #     else:
+    #         extra = {"YAML": ""}
 
-        return super().makeRecord(name, level, fn, lno, msg, args, exc_info, func, extra, sinfo)
+    #     return super().makeRecord(name, level, fn, lno, msg, args, exc_info, func, extra, sinfo)
 
     def verbose(self, msg, *args, exc_info = None, stack_info = False, stacklevel = 1, extra = None):
         "Logs a message at VERBOSE level (below DEBUG)"
@@ -134,18 +136,44 @@ class BaseLogger(logging.Logger):
 
 class BaseFormatter(logging.Formatter):
     
-    formatter = logging.Formatter(log_format, log_dateformat)
+    formatter = logging.Formatter(log_format, log_dateformat, style="$")
 
     @classmethod
     def format(cls, record):
-
-
+        if not "YAML" in record.__dict__:
+            record.__dict__["YAML"] = ""
+        else:
+            record.__dict__["YAML"] = cls._format_yaml(record.__dict__["YAML"])
         return cls.formatter.format(record)
+
+    @staticmethod
+    def _format_yaml(yamlinfo):
+        new_yaml = ""
+        start_mark = None
+        if isinstance(yamlinfo, yaml.Node):
+            start_mark = yamlinfo.start_mark
+            end_mark = yamlinfo.end_mark
+        elif isinstance(yamlinfo,tuple):
+            start_mark, end_mark = yamlinfo
+        elif isinstance(yamlinfo,yaml.Node):
+            start_mark = yamlinfo
+            end_mark = None
+        elif isinstance(yamlinfo,str):
+            new_yaml = yamlinfo
+
+        if start_mark:
+            f = Path(start_mark.name).name
+            
+            if end_mark and end_mark.line != start_mark.line:
+                new_yaml = f" {f} lines {start_mark.line}-{end_mark.line}"
+            else:
+                new_yaml = f" {f} line {start_mark.line}"        
+        return new_yaml
 
 
 class ColorFormatter(logging.Formatter):
     
-    def __init__(self, fmt = log_format, datefmt = log_dateformat, style = "%", validate = True):
+    def __init__(self, fmt = log_format, datefmt = log_dateformat, style = "$", validate = True):
         super().__init__(fmt, datefmt, style, validate)
 
     def format(self, record):
@@ -275,6 +303,7 @@ def init_logging(log_level: str = None, quiet: bool = False, verbose: bool = Fal
 
     logging.basicConfig(format=log_format, 
                     datefmt=log_dateformat,
+                    style="$",
                     handlers=[streamhandler])
     base_logger = logging.getLogger()
     if log_level:
