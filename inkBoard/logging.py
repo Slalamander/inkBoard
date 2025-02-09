@@ -160,8 +160,10 @@ class BaseFormatter(logging.Formatter):
         elif isinstance(yamlinfo,yaml.Node):
             start_mark = yamlinfo
             end_mark = None
+        elif isinstance(yamlinfo,YAMLNodeDict):
+            new_yaml = " " + str(yamlinfo)
         elif isinstance(yamlinfo,str):
-            new_yaml = yamlinfo
+            new_yaml = " " + yamlinfo
 
         if start_mark:
             f = Path(start_mark.name).name
