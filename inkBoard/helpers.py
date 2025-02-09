@@ -5,16 +5,20 @@ Does not import anything from pssm or integration yet, and is mainly meant to su
 import typing   ##Need to import typing to evaluate union strings (those are converted to typing.Union[...])
 import asyncio
 from typing import TYPE_CHECKING
-from typing import TypedDict, Generic, TypeVar, Callable, Union, Literal
+from typing import TypedDict, TypeVar, Union, Literal, Callable
 from types import ModuleType
-import functools
 import logging 
 import sys
 import importlib
 from contextlib import suppress
 
+from inkBoard import core as CORE
+from PythonScreenStackManager.exceptions import ShorthandNotFound
+
 if TYPE_CHECKING:
     from PythonScreenStackManager.elements import Element
+    from PythonScreenStackManager.pssm import PSSMScreen
+    import yaml
 
 _LOGGER = logging.getLogger("inkBoard")
 
@@ -39,6 +43,9 @@ class DashboardError(ConfigError):
 class QuitInkboard(InkBoardError):
     "Exception to set as eStop to quit the current inkBoard session"
     pass
+
+class inkBoardParseError(InkBoardError, ValueError):
+    "Something could not be parsed correctly"
 
 def add_required_keys(td : ph, keys : frozenset):
     """
@@ -93,53 +100,7 @@ def check_required_keys(typeddict : ph, checkdict : dict, log_start : str):
     return missing
 
 ##May move some things of these to a util module
-def _reload_full_module(module: Union[str,ModuleType], exclude: list[str] = []):    
-    """Reloads the module and all it's submodules presently imported
 
-    Keep in mind reloading imports the module, so things can behave unexpectedly, especially if order matters.
-    Generally be careful using this, reloading does not mean imports in none reloaded modules are refreshed, which can cause issuess when i.e. calling `isinstance`
-    
-    Parameters
-    ----------
-    module : Union[str,ModuleType]
-        The base module to reload.
-    exclude : list[str]
-        List with module names that do not get excluded. Names need to match in full.
-    """    
-    if isinstance(module, ModuleType):
-        module = module.__package__
-    
-    if isinstance(exclude,str):
-        exclude = [exclude]
-
-    mod_list = [x for x in sys.modules.copy() if x.startswith(module) and not x in exclude]
-    for mod_name in mod_list:
-        mod = sys.modules[mod_name]
-        try:
-            importlib.reload(mod)
-        except ModuleNotFoundError:
-            _LOGGER.error(f"Could not reload module {mod_name}")
-    
-    for mod_name in mod_list:
-        sys.modules.pop(mod_name)
-    
-    return
-
-
-T = TypeVar('T')
-
-class classproperty(Generic[T]):
-    "Used to avoid the deprecation warning (and the extra writing) needed to set class properties"
-    
-    def __init__(self, method: Callable[..., T]):
-        self.method = method
-        functools.update_wrapper(self, wrapped=method) # type: ignore
-
-    def __get__(self, obj, cls=None) -> T:
-        if cls is None:
-            cls = type(obj)
-        return self.method(cls)
-    
 def loop_exception_handler(loop, context):
 
     asyncio.BaseEventLoop.default_exception_handler(loop, context)
@@ -150,3 +111,71 @@ def loop_exception_handler(loop, context):
     ##however, does maybe provide some issues with functions being called outside of the eventloop
     ##See documentation: https://docs.python.org/3/library/asyncio-policy.html#custom-policies
 
+class YAMLProxyDict(dict):
+    """Dict used in yaml parsing
+
+    Should be a drop in replacement for normal dicts, but it also has a reference to where in the YAML documents it came from.
+    This allows for clearer logging, for example
+
+    Parameters
+    ----------
+    dict_ : dict
+        The dict gotten from the yaml node
+    node : yaml.Node
+        The node the dict came from
+    """
+
+    def __init__(self, dict_: dict, node : "yaml.Node"):
+        super().__init__(dict_)
+        self._start_mark = node.start_mark
+        self._end_mark = node.end_mark
+        return
+
+class ParsedAction:
+
+    def __init__(self, action : Union[Callable, str, dict]):
+
+        self._action = None
+        self._parsed = False
+        if isinstance(action,Callable):
+            self._action = action
+        else:
+            self._action_to_parse = action
+
+        if isinstance(action, (Callable,str)):
+            self._data = {}
+            self._options = {}
+        else:
+            action = dict(action)   ##Also allows being passed MappingProxies
+            action_val = action.pop("action")
+            if callable(action_val):
+                self._action = action_val
+            else:
+                self._action_to_parse = action_val
+
+            self._data = action.pop("data", {})
+            self._options = action  ##Simply what is left over of the dict
+
+        if hasattr(CORE,"screen"):
+            self._parse_action()
+        
+
+    def __call__(self, *args, **kwargs):
+        
+        if not self._parsed:
+            raise AttributeError("Cannot call functions before an action has been parsed")
+        
+        if self._action == None:
+            return None
+        
+        return self._action(*args, **kwargs, **self._data)
+
+    def _parse_action(self):
+        
+        if not self._action:
+            try:
+                self._action = CORE.screen.parse_shorthand_function(self._action_to_parse, self._options)
+            except ShorthandNotFound as exce:
+                _LOGGER.error(f"Unable to parse from {self._action}")
+
+        self._parsed = True
