@@ -10,6 +10,8 @@ from dataclasses import asdict
 from types import MappingProxyType
 import struct
 
+import yaml
+
 try:
     # Python 3.7 and newer, fast reentrant implementation
     # without task tracking (not needed for that when logging)
@@ -34,7 +36,7 @@ FATAL = logging.FATAL
 
 LOG_LEVELS = ("NOTSET", "VERBOSE", "DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL")
 
-log_format = '%(asctime)s [%(levelname)s %(name)s %(funcName)s, line %(lineno)s]: %(message)s'
+log_format = '%(asctime)s [%(levelname)s %(name)s %(funcName)s, line %(lineno)s %(YAML)s] %(message)s'
 log_dateformat = '%d-%m-%Y %H:%M:%S'
 
 class ANSICOLORS:
@@ -95,9 +97,40 @@ class BaseLogger(logging.Logger):
     def __init__(self, name, level = 0):
         super().__init__(name, level)
 
+    def makeRecord(self, name, level, fn, lno, msg, args, exc_info, func = None, extra : dict = None, sinfo = None):
+        if extra and (v := extra.get("YAML", None)):
+            new_yaml = ""
+            start_mark = None
+            if isinstance(v, yaml.Node):
+                start_mark = v.start_mark
+                end_mark = v.end_mark
+            elif isinstance(v,tuple):
+                start_mark, end_mark = v
+            elif isinstance(v,yaml.Node):
+                start_mark = v
+                end_mark = None
+            elif isinstance(v,str):
+                new_yaml = v
+
+            if start_mark:
+                f = Path(start_mark.name).name
+                
+                if end_mark and end_mark.line != start_mark.line:
+                    new_yaml = f"{f} lines {start_mark.line}-{end_mark.line}"
+                else:
+                    new_yaml = f"{f} line {start_mark.line}"
+
+            extra["YAML"] = new_yaml
+        elif extra is not None:
+            extra["YAML"] = ""
+        else:
+            extra = {"YAML": ""}
+
+        return super().makeRecord(name, level, fn, lno, msg, args, exc_info, func, extra, sinfo)
+
     def verbose(self, msg, *args, exc_info = None, stack_info = False, stacklevel = 1, extra = None):
         "Logs a message at VERBOSE level (below DEBUG)"
-        return self.log(VERBOSE, msg, *args, exc_info = None, stack_info = False, stacklevel = 1, extra = None)
+        return self.log(VERBOSE, msg, *args, exc_info = exc_info, stack_info = stack_info, stacklevel = stacklevel, extra = extra)
 
 class BaseFormatter(logging.Formatter):
     
@@ -105,6 +138,8 @@ class BaseFormatter(logging.Formatter):
 
     @classmethod
     def format(cls, record):
+
+
         return cls.formatter.format(record)
 
 
