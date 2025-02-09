@@ -93,19 +93,19 @@ class DashboardLoader(loaders.BaseSafeLoader):
         except (TypeError, KeyError):
             yaml_line = node.start_mark.line
             if "id" in d:
-                msg = f"Invalid element type '{d['type']}' (id {d['id']}) in configuration file {Path(node.start_mark.name).name}, line {yaml_line}"
+                msg = f"Invalid element type '{d['type']}' (id {d['id']})"
             else:
-                msg = f"Invalid element type '{d['type']}' in configuration file {Path(node.start_mark.name).name}, line {yaml_line}"
-            logger.error(msg, exc_info=True)
+                msg = f"Invalid element type '{d['type']}'"
+            logger.error(msg, extra={"YAML": node}, exc_info=True)
             self.__class__._config_error = True
             return None
         except SyntaxWarning:
             yaml_line = node.start_mark.line
             if "id" in d:
-                msg = f"Invalid element identifier in configuration file {Path(node.start_mark.name).name}, line {yaml_line}: {d['type']}  (id {d['id']})"
+                msg = f"Invalid element identifier: {d['type']}  (id {d['id']})"
             else:
-                msg = f"Invalid element identifier in configuration file {Path(node.start_mark.name).name}, line {yaml_line}: {d['type']}"
-            logger.error(msg, exc_info=True)
+                msg = f"Invalid element identifier: {d['type']}"
+            logger.error(msg, exc_info=True, extra={"YAML": node})
             self.__class__._config_error = True
             return None
         
@@ -120,10 +120,10 @@ class DashboardLoader(loaders.BaseSafeLoader):
             yaml_line = node.start_mark.line
             if "id" in d:
                 elt_id = d["id"]
-                msg = f"An element with id {elt_id} has already been registered. Duplicate element is located in configuration file {node.start_mark.name}, line {yaml_line}."
+                msg = f"An element with id {elt_id} has already been registered."
             else:
-                msg = f"Element {type_str} in configuration file {node.start_mark.name}, line {yaml_line} got a duplicate ID: {e}"
-            logger.error(msg, exc_info=True)
+                msg = f"Element {type_str} got a duplicate ID: {e}"
+            logger.error(msg, exc_info=True, extra={"YAML": node})
             self.__class__._config_error = True
             return None
         except Exception as e:
@@ -131,8 +131,8 @@ class DashboardLoader(loaders.BaseSafeLoader):
             elt_str = type_str
             if "id" in d:
                 elt_str = f"[{elt_str}: {d['id']}]"
-            msg = f"Error constructing element {type_str} in configuration file {node.start_mark.name}, line {yaml_line}: {e}"
-            logger.error(msg, exc_info=True)
+            msg = f"Error constructing element {type_str}: {e}"
+            logger.error(msg, exc_info=True, extra={"YAML": node})
             self.__class__._config_error = True
             return None
         return elt
