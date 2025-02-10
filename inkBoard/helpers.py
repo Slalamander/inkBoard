@@ -6,7 +6,7 @@ import typing   ##Need to import typing to evaluate union strings (those are con
 import asyncio
 from typing import TYPE_CHECKING
 from typing import TypedDict, TypeVar, Union, Literal, Callable
-from types import ModuleType
+from types import ModuleType, MethodType
 import logging 
 import sys
 import importlib
@@ -14,6 +14,8 @@ from contextlib import suppress
 from pathlib import Path
 
 from inkBoard import CORE as CORE
+from inkBoard.constants import CORESTAGES
+
 from PythonScreenStackManager.exceptions import ShorthandNotFound
 
 if TYPE_CHECKING:
@@ -177,10 +179,11 @@ class ParsedAction:
 
     _notParsed : set["ParsedAction"] = set()
 
-    def __init__(self, action : Union[Callable, str, dict], yamlmarks : tuple["yaml.Mark", "yaml.Mark"] = ()):
+    def __init__(self, action : Union[Callable, str, dict], awaitable: bool = True, yamlmarks : tuple["yaml.Mark", "yaml.Mark"] = ()):
 
         self._action = None
         self._parsed = False
+        self._awaitable = awaitable
         self.yamlstr = None
 
         if yamlmarks:
@@ -207,21 +210,53 @@ class ParsedAction:
             self._data = action.pop("data", {})
             self._options = action  ##Simply what is left over of the dict
 
-        if hasattr(CORE,"screen"):
+        # if hasattr(CORE,"screen"):
+        if CORE.stage > CORESTAGES.SETUP:
             self._parse_action()
         else:
             self._notParsed.add(self)
         
 
     def __call__(self, *args, **kwargs):
-        
-        if not self._parsed:
-            raise AttributeError("Cannot call functions before an action has been parsed")
-        
+        if isinstance(self._action, Exception):
+            raise self._action
+        elif not self._parsed:
+            AttributeError("Cannot call functions before its action has been parsed")
+
         if self._action == None:
             return None
-        
+        elif not asyncio.iscoroutinefunction(self._action):
+            ##I don't think this would work right? Since most coroutine checks check before making the call
+
+            return self._action(*args, **kwargs, **self._data)
+        elif self._awaitable:
+            return self._action(*args, **kwargs, **self._data)
+        else:
+            loop = asyncio.get_event_loop()
+            return loop.create_task(
+                self._action(*args, **kwargs, **self._data))
+        raise AttributeError("Cannot call functions before its action has been parsed")
+
+    def __sync_call__(self, *args, **kwargs):
+        """Handles non awaitable actions
+        """        
+        if self._action is None:
+            return None
         return self._action(*args, **kwargs, **self._data)
+    
+    async def __async_call(self, *args, **kwargs):
+        """Handles awaitable actions
+        """        
+        return await self._action(*args, **kwargs, **self._data)
+
+    def __task_call(self, *args, **kwargs):
+        """Used when awaitable is False
+
+        Wraps the function to call in a task. Can be useful when unable to handle a coroutine somewhere
+        """        
+        return asyncio.create_task(
+            self._action(*args, **kwargs, **self._data)
+            )
 
     def _parse_action(self):
         
@@ -229,13 +264,16 @@ class ParsedAction:
             try:
                 self._action = CORE.screen.parse_shorthand_function(self._action_to_parse, self._options)
             except ShorthandNotFound as exce:
-
-                msg = f"Unable to parse from {self._action}"
+                msg = f"Unable to parse from {self._action_to_parse}"
+                self._action = exce
                 if self.yamlstr:
                     _LOGGER.error(msg, extra={"YAML": self.yamlstr})
                 else:
                     _LOGGER.error(msg)
                 raise
+        
+        assert self._action == None or callable(self._action), f"Invalid type of action for {self._action}: {type(self._action)}"
+
 
         self._parsed = True
         if self in self._notParsed:
@@ -252,7 +290,7 @@ class ParsedAction:
         """
 
         errored = False
-        for p in cls._notParsed:
+        for p in cls._notParsed.copy():
             try:
                 p._parse_action()
             except ShorthandNotFound:
