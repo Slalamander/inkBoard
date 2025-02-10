@@ -95,6 +95,30 @@ class BaseSafeLoader(FastestAvailableSafeLoader):
         if "$" in val and hasattr(self, "_substitutions"):
             val = Template(val).safe_substitute(**self.__class__._substitutions)
         return val
+    
+    def construct_mapping(self, node, deep = False):
+        # res = super().construct_mapping(node, deep)
+        # if "Logs" in res:
+        #     print("log line")
+        
+        mapping = {}
+        for key_node, value_node in node.value:
+            key = self.construct_object(key_node, deep=deep)
+            if isinstance(value_node, yaml.MappingNode):
+                value = self.construct_mapping(value_node, deep)
+            else:
+                value = self.construct_object(value_node, deep=deep)
+            mapping[key] =  value
+
+        return YAMLNodeDict(mapping,node)
+
+
+    # def construct_object(self, node, deep=False):
+    #     obj = super().construct_object(node, deep)
+    #     if type(obj) == dict:
+    #         s = YAMLNodeDict.format_marks(node.start_mark, node.end_mark)
+    #         obj._yamlmarks = s
+    #     return obj
 
 BaseSafeLoader.add_constructor("!secret",secret_constructor)
 BaseSafeLoader.add_constructor("!entity",entity_constructor)
@@ -116,48 +140,73 @@ class MainConfigLoader(BaseSafeLoader):
             parse_later = {}
 
             for (key_node, value_node) in node.value:
-                if key_node.value == "substitutions":
+                key = self.construct_object(key_node, deep)
+                if key == "substitutions":
+                # if key == "substitutions":
                     if isinstance(value_node, yaml.MappingNode):
-                        val = super().construct_mapping(value_node)
+                        # val = super().construct_mapping(value_node)
+                        val = super().construct_mapping(value_node, deep)
+                        # val = YAMLNodeDict(val, node)
                     else:
-                        val = self.construct_object(value_node)
+                        val = self.construct_object(value_node, deep)
                     
-                    d[key_node.value] = val
+                    d[key] = val
                     BaseSafeLoader._substitutions = MappingProxyType(val)
 
-                elif key_node.value in const.DASHBOARD_KEYS:
+                elif key in const.DASHBOARD_KEYS:
                     _LOGGER.verbose(f"dashboard node is {value_node}")
-                    # d[key_node.value] = value_node
-                    parse_later[key_node.value] = value_node
-                    self._dashboardNodes[key_node.value] = value_node
+                    # d[key] = value_node
+                    parse_later[key] = value_node
+                    self._dashboardNodes[key] = value_node
                 else:
-                    parse_later[key_node.value] = value_node
+                    parse_later[key] = value_node
 
             for node_name, value_node in parse_later.items():
-                if isinstance(value_node,yaml.ScalarNode):
-                    val = self.construct_scalar(value_node)
-                elif isinstance(value_node, yaml.SequenceNode):
-                    val = self.construct_sequence(value_node)
-                elif isinstance(value_node, yaml.MappingNode):
+                # if isinstance(value_node,yaml.ScalarNode):
+                #     val = super().construct_scalar(value_node)
+                # elif isinstance(value_node, yaml.SequenceNode):
+                #     val = super().construct_sequence(value_node)
+                if isinstance(value_node, yaml.MappingNode):
                     # val = YAMLNodeDict(self.construct_mapping(value_node, deep), node)
                     val = self.construct_mapping(value_node, deep)
                 else:
-                    _LOGGER.warning(f"Unknown node type {value_node}")
+                    val = super().construct_object(value_node, deep)
+                    # assert isinstance(val,YAMLNodeDict)
+                # else:
+                #     _LOGGER.warning(f"Unknown node type {value_node}")
 
                 d[node_name] = val
-            yaml_dict = YAMLNodeDict(d, node)
+            d = YAMLNodeDict(d, node)
         else:
-            yaml_dict = YAMLNodeDict(super().construct_mapping(node, deep),node)
+            d = super().construct_mapping(node, deep)
+            # d = self.construct_object(node, deep)
+            # d = YAMLNodeDict(d,node)
+            # yaml_dict = super().construct_mapping(node, deep),node
         #Not returning mappingproxies, as it leads to quite some difficulties
         #I.e. JSON not wanting to dump stuff when it is a MappingProxy.
 
-        return yaml_dict
+        return d
     
-    def get_single_data(self):
-        return super().get_single_data()
+    # def get_single_data(self):
+    #     val = super().get_single_data()
+    #     if isinstance(val, dict):
+    #         val = YAMLNodeDict(val)
     
-    # def construct_object(self, node, deep=False):
-    #     obj = super().construct_object(node, deep)
-    #     if type(obj) == dict:
-    #         obj = YAMLNodeDict(obj,node)
-    #     return obj
+    def construct_object(self, node, deep=False):
+        # obj = super().construct_object(node, deep)
+        if isinstance(node, yaml.MappingNode):
+            # obj = YAMLNodeDict(obj,node)
+            obj = super().construct_mapping(node, deep)
+            return obj
+        else:
+            obj = super().construct_object(node, deep)
+            return obj
+
+    def construct_document(self, node):
+        if isinstance(node, yaml.MappingNode) and not hasattr(self,"_substitutions"):
+            for key_node, value_node in node.value:
+                key = self.construct_object(key_node)
+                if key == "substi":
+                    pass
+
+        return super().construct_document(node)

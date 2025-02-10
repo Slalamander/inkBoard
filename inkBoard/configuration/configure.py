@@ -45,7 +45,8 @@ def mount_config_dir(folder: Path):
 def read_config(filepath: Path) -> MainEntry:
     with open(filepath) as f:
         _config = yaml.load(f, Loader=MainConfigLoader)
-    return MappingProxyType(_config)
+    return _config
+    # return MappingProxyType(_config)
 
 def set_folders(full_config : MainEntry, base_folder: Path) -> FolderEntry:
     folderDict = {}
@@ -167,7 +168,8 @@ class config(metaclass=configMeta):
             exces.append("inkBoard")
 
         ##Would probably want to somehow validate the device and screen entries beforehand?
-        self.__device = MappingProxyType(DeviceEntry(**__full_config["device"]))
+        d = __full_config["device"]
+        self.__device = DeviceEntry(**__full_config["device"])
         self.__screen = ScreenEntry(**__full_config.get("screen",{}))
         self.__styles = StylesEntry(**__full_config.get("styles",{}))
         self.__logger = LoggerEntry(**__full_config.get("logger",{}))
