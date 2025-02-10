@@ -1,15 +1,13 @@
 "Core modules and objects for running inkBoard instances"
 
-from typing import TYPE_CHECKING, Literal, Final, Optional, Any, Callable
+from typing import TYPE_CHECKING, Literal, Final, Optional, Any, Callable, get_args
 from types import MappingProxyType, MemberDescriptorType
-from functools import cached_property
 import logging
-from pathlib import Path
 from datetime import datetime as dt
 from contextlib import suppress
 
-# import inkBoard
 from inkBoard import constants as const
+from inkBoard.constants import CORESTAGES
 from inkBoard.arguments import parse_args
 
 from PythonScreenStackManager.pssm.util import classproperty, ClassPropertyMetaClass
@@ -47,33 +45,10 @@ integration_objects: Final[MappingProxyType[Literal["integration_entry"],Any]]
 custom_functions: MappingProxyType[str,Callable]
 "Functions in the custom/functions folder of the config"
 
-
-# DESIGNER_RUN : bool = parse_args().command == const.COMMAND_DESIGNER
-False
-
 _INTEGRATION_KEYS = {}
 _INTEGRATION_OBJECTS = {}
 _ELEMENT_PARSERS = {}
 
-# def add_integration_config_key(key : str, folder : Path):
-#     """
-#     Adds the key that is connected to an integration and the import function. Will call the import_func if the key is present in the config.
-
-#     Parameters
-#     ----------
-#     key : str
-#         The key that users can use in their config file to load in the integration
-#     folder : Callable
-#         The function that handles the processing of data under said key.
-#     """    
-#     if key in _INTEGRATION_KEYS:
-#         int_mod = _INTEGRATION_KEYS[key].__module__
-#         _LOGGER.error(f"{key} is already used for a the config of a different integration: {int_mod}")
-#     else:
-#         _INTEGRATION_KEYS[key] = folder
-
-# def get_integration_config_keys() -> MappingProxyType[str,Callable]:
-#     return MappingProxyType(_INTEGRATION_KEYS)
 
 def add_element_parser(identifier : str, parser : Callable[[str],"Element"]):
     """
@@ -109,6 +84,97 @@ def parse_custom_function(name: str, attr: str, options = {}) -> Optional[Callab
         return
     return custom_functions[parse_string]
 
+_corestagestype = Literal["RELOAD", "QUIT", "NONE", "SETUP", "START", "RUN", "STOP"]
+# _corestages = list(val for val in CORESTAGES.__dict__.keys() if not val.startswith("_"))
+_corestageslevels = {val: key for key, val in CORESTAGES.__dict__.items() if not key.startswith("_")}
+
+class _CoreStage:
+    def __init__(self, stage : Literal[_corestagestype]):
+        # assert isinstance(stage,str) and hasattr(CORESTAGES,stage.upper()), f"Invalid stage {stage}"
+        
+        try:
+            if isinstance(stage,int):
+                self._stage = _corestageslevels[stage]
+                self._stageno = stage
+            else:
+                self._stageno = self._stage_to_no(stage)
+                self._stage = stage.upper()
+        except ValueError:
+            raise
+        except Exception as e:
+            raise ValueError(f"{stage} cannot be set as a corestage") from e
+    
+    def __repr__(self):
+        return self._stage
+
+    def __eq__(self, value):
+        if isinstance(value, str):
+            value = self._stage_to_no(value)
+        
+        if isinstance(value,(int)):
+            return value == self._stageno
+        elif isinstance(value,_CoreStage):
+            return value._stageno == self._stageno
+        else:
+            self.__invalid_type(value)
+    
+    def __lt__(self, value):
+        if isinstance(value,str):
+            value = self._stage_to_no(value)
+
+        if isinstance(value, (int)):
+            return self._stageno < value
+        elif isinstance(value, _CoreStage):
+            return self._stageno < value._stageno
+        else:
+            self.__invalid_type(value)
+    
+    def __le__(self, value):
+
+        if isinstance(value,str):
+            value = self._stage_to_no(value)
+
+        if isinstance(value, (int)):
+            return self._stageno <= value
+        elif isinstance(value, _CoreStage):
+            return self._stageno <= value._stageno
+        else:
+            self.__invalid_type(value)
+    
+    def __gt__(self, value):
+        if isinstance(value,str):
+            value = self._stage_to_no(value)
+
+        if isinstance(value, (int)):
+            return self._stageno > value
+        elif isinstance(value, _CoreStage):
+            return self._stageno > value._stageno
+        else:
+            self.__invalid_type(value)
+    
+    def __ge__(self, value):
+        if isinstance(value,str):
+            value = self._stage_to_no(value)
+
+        if isinstance(value, (int)):
+            return self._stageno >= value
+        elif isinstance(value, _CoreStage):
+            return self._stageno >= value._stageno
+        else:
+            self.__invalid_type(value)
+
+    def __invalid_type(self, value):
+        TypeError(f"Cannot compare core stage with value of type {type(value)}")
+
+    @staticmethod
+    def _stage_to_no(stage : str) -> int:
+        try:
+            return getattr(CORESTAGES,stage.upper())
+            # return _corestages.index(stage.upper())
+        except AttributeError as e:
+            raise ValueError(f"{stage} is not a valid core stage") from e
+
+
 class COREMETA(ClassPropertyMetaClass):
 
     def __setattr__(self, attr, value):
@@ -126,7 +192,7 @@ class _CORE(metaclass=COREMETA):
 
     __slots__ = (
         "_START_TIME", "_DESIGNER_RUN",
-        "_config", "_screen", "_device",
+        "_stage", "_config", "_screen", "_device",
         "_integrationLoader", "_integrationObjects",
         "_customFunctions", "_customElements", "_elementParsers"
     )
@@ -158,6 +224,7 @@ class _CORE(metaclass=COREMETA):
         ##And check if classes that are not elements implement that
 
         ##So: add the metaclass thingy, but for elements the __setattr__ will be overwritten
+        self._set_stage(CORESTAGES.NONE)
         return
     
     @classmethod
@@ -168,6 +235,7 @@ class _CORE(metaclass=COREMETA):
             with suppress(AttributeError):
                 delattr(cls, attr)
         
+        cls._set_stage(CORESTAGES.NONE)
         _LOGGER.error("Cleaned all attributes")
 
     #region
@@ -186,6 +254,11 @@ class _CORE(metaclass=COREMETA):
     
     @classproperty
     def IMPORT_TIME(cls): return cls.START_TIME
+
+    @classproperty
+    def stage(cls) -> _CoreStage:
+        "The current stage of the inkBoard run"
+        return cls._stage
 
     @classproperty
     def screen(cls) -> "PSSMScreen":
@@ -303,4 +376,8 @@ class _CORE(metaclass=COREMETA):
         return cls._customFunctions[parse_string]
 
 
+    @classmethod
+    def _set_stage(cls, stage : str):
+        cls._stage = _CoreStage(stage)
 
+_CORE._stage = CORESTAGES.NONE

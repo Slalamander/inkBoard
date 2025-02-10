@@ -24,6 +24,15 @@ if s := importlib.util.find_spec("inkBoarddesigner"):
         pass
 
 
+class CORESTAGES:
+    
+    QUIT = -3
+    RELOAD = -2
+    STOP = -1
+    NONE = 0
+    SETUP = 1
+    START = 2
+    RUN = 3
 
 LOG_LEVELS = ("NOTSET", "VERBOSE", "DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL")
 
