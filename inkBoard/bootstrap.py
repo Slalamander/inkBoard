@@ -13,6 +13,7 @@ import inkBoard.loaders
 from inkBoard import constants as const, loaders, CORE
 from inkBoard.helpers import DeviceError, ScreenError, ConfigError, QuitInkboard
 from inkBoard.helpers import ParsedAction
+from inkBoard.constants import CORESTAGES
 from inkBoard.util import reload_full_module
 from inkBoard.logging import setup_logging
 from inkBoard.types import coretype
@@ -138,18 +139,14 @@ async def setup_integration_loader(core: "CORE"):
 
 async def setup_core(config_file, integration_loader: "loaders.IntegrationLoader" = None) -> "CORE":
     "Sets up the core module for running inkBoard, everything up to starting."
-    
-    # from inkBoard import core as CORE
-    # from inkBoard import core
+
     c = CORE()
-    print("core is set up")
-    # CORE()
 
-    assert Path(config_file).exists(), f"{config_file} does not exist"
     p = Path(config_file)
-    assert Path(config_file).suffix[1:] in const.CONFIG_FILE_TYPES, f"{config_file} must be a yaml file"
+    assert p.exists(), f"{config_file} does not exist"
+    assert p.suffix[1:] in const.CONFIG_FILE_TYPES, f"{config_file} must be a yaml file"
 
-    config_folder = Path(config_file).parent
+    config_folder = p.parent
 
     if integration_loader != None:
         assert not hasattr(CORE,"integrationLoader"), "inkBoard core already has an integration loader defined"
@@ -169,9 +166,6 @@ async def setup_core(config_file, integration_loader: "loaders.IntegrationLoader
     setup_logging(CORE)
 
     if hasattr(CORE,"integrationLoader"):
-    # if CORE.integrationLoader:
-        ##This should be throwing an error for now
-        ##Since I should figure out how to make hasattr return False if a private attribute is not set yet
         CORE.integrationLoader.import_integrations(CORE)
 
     CORE._customFunctions = import_custom_functions(CORE)
@@ -186,6 +180,8 @@ async def setup_core(config_file, integration_loader: "loaders.IntegrationLoader
 
     if hasattr(CORE,"integrationLoader"):
         CORE._integrationObjects = await CORE.integrationLoader.async_setup_integrations(CORE)
+
+    CORE._set_stage(CORESTAGES.DASHBOARD)
 
     main_layout = setup_dashboard_config(CORE)
 

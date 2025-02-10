@@ -31,8 +31,9 @@ class CORESTAGES:
     STOP = -1
     NONE = 0
     SETUP = 1
-    START = 2
-    RUN = 3
+    DASHBOARD = 2
+    START = 3
+    RUN = 4
 
 LOG_LEVELS = ("NOTSET", "VERBOSE", "DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL")
 
