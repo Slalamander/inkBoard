@@ -11,6 +11,7 @@ from inkBoard.constants import CORESTAGES
 from inkBoard.arguments import parse_args
 
 from PythonScreenStackManager.pssm.util import classproperty, ClassPropertyMetaClass
+from PythonScreenStackManager.exceptions import ShorthandNotFound
 
 from . import util  ##Depending on how stuff moves around, may need to import util somewhere else?
 
@@ -371,8 +372,8 @@ class _CORE(metaclass=COREMETA):
 
         parse_string = name.lower()
         if parse_string not in cls._customFunctions:
-            _LOGGER.error(f"No custom function called {parse_string}")
-            return
+            msg = f"No custom function called {parse_string}"
+            raise ShorthandNotFound(msg=msg)
         return cls._customFunctions[parse_string]
 
 
