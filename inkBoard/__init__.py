@@ -1,6 +1,6 @@
 ###Inkboard
 
-import logging as _logging
+import logging as __logging
 
 from types import MappingProxyType
 from typing import TYPE_CHECKING, Literal, Any, Union
@@ -28,7 +28,7 @@ def getLogger(name: Union[str,None] = None) -> "ib_logging.BaseLogger":
     Return a logger with the specified name, creating it if necessary.
     If no name is specified, return the root logger.
     """
-    return _logging.getLogger(name)
+    return __logging.getLogger(name)
 
 
 class DomainError(ValueError):
