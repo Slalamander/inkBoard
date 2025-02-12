@@ -17,6 +17,7 @@ from inkBoard import CORE as CORE
 from inkBoard.constants import CORESTAGES
 
 from PythonScreenStackManager.exceptions import ShorthandNotFound
+from PythonScreenStackManager.pssm import util as pssm_util
 
 if TYPE_CHECKING:
     from PythonScreenStackManager.elements import Element
@@ -25,7 +26,7 @@ if TYPE_CHECKING:
 
 _LOGGER = logging.getLogger("inkBoard")
 
-ph = TypedDict("ph")
+_ph = TypedDict("ph")
 "Placeholder typedict for typehinting"
 
 class InkBoardError(Exception):
@@ -50,7 +51,7 @@ class QuitInkboard(InkBoardError):
 class inkBoardParseError(InkBoardError, ValueError):
     "Something could not be parsed correctly"
 
-def add_required_keys(td : ph, keys : frozenset):
+def add_required_keys(td : _ph, keys : frozenset):
     """
     Adds the required keys to the typeddict, and removes them from the optional keys
 
@@ -64,7 +65,7 @@ def add_required_keys(td : ph, keys : frozenset):
     td.__required_keys__ = td.__required_keys__.union(keys)
     td.__optional_keys__ = td.__optional_keys__.difference(td.__required_keys__)
 
-def add_optional_keys(td : ph, keys : frozenset):
+def add_optional_keys(td : _ph, keys : frozenset):
     """
     Adds the optional keys to the typeddict, and removes them from the required keys
 
@@ -78,7 +79,7 @@ def add_optional_keys(td : ph, keys : frozenset):
     td.__optional_keys__ = td.__optional_keys__.union(keys)
     td.__required_keys__ = td.__required_keys__.difference(td.__required_keys__)
 
-def check_required_keys(typeddict : ph, checkdict : dict, log_start : str):
+def check_required_keys(typeddict : _ph, checkdict : dict, log_start : str):
     """
     checks if the keys required by typedict are present in checkdict. Exits inkboard if any are missing.
     Uses name for constructing logs.
@@ -210,7 +211,6 @@ class ParsedAction:
             self._data = action.pop("data", {})
             self._options = action  ##Simply what is left over of the dict
 
-        # if hasattr(CORE,"screen"):
         if CORE.stage > CORESTAGES.SETUP:
             self._parse_action()
         else:
@@ -225,7 +225,7 @@ class ParsedAction:
 
         if self._action == None:
             return None
-        elif not asyncio.iscoroutinefunction(self._action):
+        elif not pssm_util.iscoroutinefunction(self._action):
             ##I don't think this would work right? Since most coroutine checks check before making the call
 
             return self._action(*args, **kwargs, **self._data)
@@ -237,27 +237,6 @@ class ParsedAction:
             return loop.create_task(
                 self._action(*args, **kwargs, **self._data))
         raise AttributeError("Cannot call functions before its action has been parsed")
-
-    def __sync_call__(self, *args, **kwargs):
-        """Handles non awaitable actions
-        """        
-        if self._action is None:
-            return None
-        return self._action(*args, **kwargs, **self._data)
-    
-    async def __async_call(self, *args, **kwargs):
-        """Handles awaitable actions
-        """        
-        return await self._action(*args, **kwargs, **self._data)
-
-    def __task_call(self, *args, **kwargs):
-        """Used when awaitable is False
-
-        Wraps the function to call in a task. Can be useful when unable to handle a coroutine somewhere
-        """        
-        return asyncio.create_task(
-            self._action(*args, **kwargs, **self._data)
-            )
 
     def _parse_action(self):
         
@@ -305,7 +284,3 @@ class _AsyncParsedAction(ParsedAction):
 
     async def __call__(self, *args, **kwargs):
         return await self._action(*args, **kwargs, **self._data)
-    
-    # @property
-    # def _is_coroutine(self):
-    #     return self._action._is_coroutine
