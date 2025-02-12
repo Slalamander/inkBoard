@@ -8,7 +8,6 @@ from contextlib import suppress
 
 from inkBoard import constants as const
 from inkBoard.constants import CORESTAGES
-from inkBoard.arguments import parse_args
 
 from PythonScreenStackManager.pssm.util import classproperty, ClassPropertyMetaClass
 from PythonScreenStackManager.exceptions import ShorthandNotFound
@@ -211,8 +210,11 @@ class _CORE(metaclass=COREMETA):
 
         cls._elementParsers = {}
         if not hasattr(cls,"_DESIGNER_RUN"):
-            from inkBoard.arguments import parse_args
-            cls._DESIGNER_RUN = parse_args().command == const.COMMAND_DESIGNER
+            import sys
+            if len(sys.argv) > 1 and sys.argv[1] == const.COMMAND_DESIGNER:
+                cls._DESIGNER_RUN = True
+            else:
+                cls._DESIGNER_RUN = False
         
         ##As is, the current classproperty I have written actually does allow overwriting (setting) the property
         ##may have two options: implement core as a singleton, or fix classmethod
