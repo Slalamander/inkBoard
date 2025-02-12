@@ -13,10 +13,12 @@ from ..constants import DEFAULT_MAIN_TABS_NAME
 from .loader import DashboardLoader
 from .validate import validator_dict
 
+from inkBoard import CORE
+
 from PythonScreenStackManager.elements import Layout, TabPages, StatusBar
 
 if TYPE_CHECKING:
-    from inkBoard import config, CORE as CORE
+    from inkBoard import config
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -121,7 +123,7 @@ def get_main_layout(dash_config: "config.configuration", core: "CORE"):
     return Layout(layout)
 
 def _add_ha_defaults():
-    from inkBoard.core import integration_loader
+    integration_loader = CORE.integrationLoader
     imported_modules = integration_loader.imported_integrations
     ha_integration = "homeassistant_client"
     if ha_integration not in imported_modules:

@@ -1,13 +1,12 @@
 ###Inkboard
 
+__version__ = "0.3.1.dev2"
+"inkBoard version"
+
 import logging as __logging
 
 from types import MappingProxyType
 from typing import TYPE_CHECKING, Literal, Any, Union
-
-__version__ = "0.3.1.dev2"
-"inkBoard version"
-
 
 if TYPE_CHECKING:
     ##These are set in the main() function, so they can actually be imported during runtime too.
@@ -45,6 +44,6 @@ class Singleton(type):
         if cls not in cls._instances:
             cls._instances[cls] = super().__call__(*args, **kwargs)
         return cls._instances[cls]
-    
-from .core import _CORE as CORE
 
+##Keep this on the bottom, apparently is causes a circular import otherwise
+from ._core import _CORE as CORE

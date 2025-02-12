@@ -5,11 +5,11 @@ import logging
 from datetime import datetime as dt
 from contextlib import suppress
 
-from inkBoard import constants as const
-from inkBoard.constants import CORESTAGES
-
 from PythonScreenStackManager.pssm.util import classproperty, ClassPropertyMetaClass
 from PythonScreenStackManager.exceptions import ShorthandNotFound
+
+from . import constants as const
+from .constants import CORESTAGES
 
 if TYPE_CHECKING:
     from PythonScreenStackManager.pssm.screen import PSSMScreen

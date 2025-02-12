@@ -3,7 +3,7 @@
 from typing import TypedDict
 from PythonScreenStackManager.pssm_types import *
 
-from .core import _CORE
+from ._core import _CORE
 
 coretype = type[_CORE]
 
