@@ -123,6 +123,7 @@ def setup_dashboard_config(core: "CORE") -> "elements.Layout":
     "Reads out validates the dashboard nodes from the config, as well as optionally importing the custom dashboard file."
 
     from inkBoard import dashboard
+    CORE._set_stage(CORESTAGES.DASHBOARD)
 
     config = core.config
     dash_conf = dashboard.build_config_elements(config, core)
@@ -148,6 +149,8 @@ async def setup_core(config_file, integration_loader: "loaders.IntegrationLoader
     assert p.suffix[1:] in const.CONFIG_FILE_TYPES, f"{config_file} must be a yaml file"
 
     config_folder = p.parent
+
+    CORE._set_stage(CORESTAGES.SETUP)
 
     if integration_loader != None:
         assert not hasattr(CORE,"integrationLoader"), "inkBoard core already has an integration loader defined"
@@ -182,8 +185,6 @@ async def setup_core(config_file, integration_loader: "loaders.IntegrationLoader
     if hasattr(CORE,"integrationLoader"):
         CORE._integrationObjects = await CORE.integrationLoader.async_setup_integrations(CORE)
 
-    CORE._set_stage(CORESTAGES.DASHBOARD)
-
     main_layout = setup_dashboard_config(CORE)
 
     await CORE.screen.async_add_element(main_layout, skipPrint=True)
@@ -194,19 +195,20 @@ async def setup_core(config_file, integration_loader: "loaders.IntegrationLoader
 
 async def start_core(core: "CORE"):
     "Starts the inkBoard core, but does not run the print loop yet"
-
-    core.screen.start_batch_writing()
+    CORE._set_stage(CORESTAGES.DASHBOARD)
+    CORE.screen.start_batch_writing()
 
     if hasattr(CORE,"integrationLoader"):
-        await core.integrationLoader.async_start_integrations(core)
+        await CORE.integrationLoader.async_start_integrations(CORE)
 
 async def run_core(core: "CORE"):
     "Runs the inkBoard core. Generally call after `setup_core` and `start_core`"
 
-    coros = [core.screen.async_start_screen_printing(), core.screen._eStop]
+    CORE._set_stage(CORESTAGES.RUN)
+    coros = [CORE.screen.async_start_screen_printing(), CORE.screen._eStop]
 
-    if core.integrationLoader:
-        coros.append(core.integrationLoader.run_integrations(core))
+    if getattr(CORE,"integrationLoader", None):
+        coros.append(CORE.integrationLoader.run_integrations(CORE))
     
     L = asyncio.gather(
                     *coros,
@@ -237,8 +239,9 @@ async def reload_core(core: "CORE", full_reload: bool = False):
         The inkBoard core
     full_reload : bool, optional
         A full reload reloads all modules that affect printing, i.e. PSSM, non custom integrations, platforms, etc. by default False
-    """    
-
+    """
+    
+    CORE._set_stage(CORESTAGES.RELOAD)
     _shutdown_core(core, is_reload=True)
     if hasattr(core,"integrationLoader"):
         await core.integrationLoader.async_stop_integrations(core)
@@ -275,6 +278,7 @@ async def reload_core(core: "CORE", full_reload: bool = False):
 
 async def stop_core(core: "CORE"):
     try:
+        core._set_stage(CORESTAGES.QUIT)
         _shutdown_core(core)
         if hasattr(core, "integrationLoader"):
             await core.integrationLoader.async_stop_integrations(core)
