@@ -78,8 +78,11 @@ async def run_inkBoard(configuration: Union[str,Path],
 def run(args):
     """Starts the main eventloop and runs inkBoard.
     This function is blocking"""
+
+    debug = const.DEBUG
+    
     res = asyncio.run(run_inkBoard(args.configuration, args.command),
-            debug=_LOGGER.getEffectiveLevel() <= logging.DEBUG)
+            debug = debug)
     return res
 
 def run_config(config_file: Union[Path,str]):
