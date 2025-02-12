@@ -80,7 +80,7 @@ def run(args):
     This function is blocking"""
 
     debug = const.DEBUG
-    debug = False
+    # debug = False
     
     res = asyncio.run(run_inkBoard(args.configuration, args.command),
             debug = debug)
