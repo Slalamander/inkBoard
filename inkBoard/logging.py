@@ -37,7 +37,6 @@ ERROR = logging.ERROR
 CRITICAL = logging.CRITICAL
 FATAL = logging.FATAL
 
-
 # log_format = '%(asctime)s [%(levelname)s %(name)s %(funcName)s, line %(lineno)s %(YAML)s] %(message)s'
 
 log_format = '${asctime} [${levelname} ${name} ${funcName}, line ${lineno}${YAML}] ${message}'
@@ -100,37 +99,6 @@ class BaseLogger(logging.Logger):
 
     def __init__(self, name, level = 0):
         super().__init__(name, level)
-
-    # def makeRecord(self, name, level, fn, lno, msg, args, exc_info, func = None, extra : dict = None, sinfo = None):
-    #     if extra and (v := extra.get("YAML", None)):
-    #         new_yaml = ""
-    #         start_mark = None
-    #         if isinstance(v, yaml.Node):
-    #             start_mark = v.start_mark
-    #             end_mark = v.end_mark
-    #         elif isinstance(v,tuple):
-    #             start_mark, end_mark = v
-    #         elif isinstance(v,yaml.Node):
-    #             start_mark = v
-    #             end_mark = None
-    #         elif isinstance(v,str):
-    #             new_yaml = v
-
-    #         if start_mark:
-    #             f = Path(start_mark.name).name
-                
-    #             if end_mark and end_mark.line != start_mark.line:
-    #                 new_yaml = f" {f} lines {start_mark.line}-{end_mark.line}"
-    #             else:
-    #                 new_yaml = f" {f} line {start_mark.line}"
-
-    #         extra["YAML"] = new_yaml
-    #     elif extra is not None:
-    #         extra["YAML"] = ""
-    #     else:
-    #         extra = {"YAML": ""}
-
-    #     return super().makeRecord(name, level, fn, lno, msg, args, exc_info, func, extra, sinfo)
 
     def verbose(self, msg, *args, exc_info = None, stack_info = False, stacklevel = 1, extra = None):
         "Logs a message at VERBOSE level (below DEBUG)"
@@ -451,3 +419,11 @@ class FileLogEntry(TypedDict):
 ##I'm still not fully sure what the best way to set up network logging is tbh
 ##Add setting to handle std out logging (via a terminal key)
 ##Handle log queue being set up every time a reload is called
+
+def getLogger(name: Union[str,None] = None) -> "BaseLogger":
+    """Convenience method to get a logger with type hinting for additional levels like verbose.
+    
+    Return a logger with the specified name, creating it if necessary.
+    If no name is specified, return the root logger.
+    """
+    return logging.getLogger(name)
