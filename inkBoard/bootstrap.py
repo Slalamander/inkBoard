@@ -7,11 +7,12 @@ from pathlib import Path
 from contextlib import suppress
 
 import inkBoard
+from inkBoard.exceptions import ConfigError, DeviceError, ScreenError
 import inkBoard.platforms
 import inkBoard.loaders
 
 from inkBoard import constants as const, loaders, CORE
-from inkBoard.helpers import DeviceError, ScreenError, ConfigError, QuitInkboard
+from inkBoard.exceptions import QuitInkboard
 from inkBoard.helpers import ParsedAction
 from inkBoard.constants import CORESTAGES
 from inkBoard.util import reload_full_module

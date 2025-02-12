@@ -16,7 +16,7 @@ from PythonScreenStackManager.exceptions import ReloadWarning, FullReloadWarning
 
 import inkBoard
 from inkBoard import constants as const, bootstrap, loaders
-from inkBoard.helpers import QuitInkboard
+from inkBoard.exceptions import QuitInkboard
 from inkBoard.arguments import parse_args, PRE_CORE_ACTIONS, POST_CORE_ACTIONS
 
 if TYPE_CHECKING:

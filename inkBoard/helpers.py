@@ -29,28 +29,6 @@ _LOGGER = logging.getLogger("inkBoard")
 _ph = TypedDict("ph")
 "Placeholder typedict for typehinting"
 
-class InkBoardError(Exception):
-    "Base Exception for inkBoard"
-
-class DeviceError(InkBoardError):
-    "Something went wrong setting up the device"
-
-class ScreenError(InkBoardError):
-    "Something went wrong setting up the screen instance"
-
-class ConfigError(InkBoardError):
-    "Something is wrong with the configuration"
-
-class DashboardError(ConfigError):
-    "Unable to setup the dashboard"
-
-class QuitInkboard(InkBoardError):
-    "Exception to set as eStop to quit the current inkBoard session"
-    pass
-
-class inkBoardParseError(InkBoardError, ValueError):
-    "Something could not be parsed correctly"
-
 def add_required_keys(td : _ph, keys : frozenset):
     """
     Adds the required keys to the typeddict, and removes them from the optional keys

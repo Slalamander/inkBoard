@@ -7,7 +7,7 @@ import logging
 from typing import TYPE_CHECKING
 
 from ..configuration.loaders import const as yaml_const
-from ..helpers import DashboardError
+from ..exceptions import DashboardError
 from ..constants import DEFAULT_MAIN_TABS_NAME
 
 from .loader import DashboardLoader
