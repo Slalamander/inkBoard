@@ -6,7 +6,7 @@ import typing   ##Need to import typing to evaluate union strings (those are con
 import asyncio
 from typing import TYPE_CHECKING
 from typing import TypedDict, TypeVar, Union, Literal, Callable
-from types import ModuleType, MethodType
+from types import ModuleType, MethodType, CoroutineType
 import logging 
 import sys
 import importlib
@@ -161,6 +161,7 @@ class YAMLNodeDict(dict):
         else:
             return f"{f} line {start_mark.line}"
 
+
 class ParsedAction:
     """Helper to aid in parsing actions shorthands and dicts
 
@@ -175,7 +176,6 @@ class ParsedAction:
         start and optionally end_mark of the yaml entry, by default ()
         used for logging
     """
-
 
     _notParsed : set["ParsedAction"] = set()
 
@@ -229,9 +229,10 @@ class ParsedAction:
             ##I don't think this would work right? Since most coroutine checks check before making the call
 
             return self._action(*args, **kwargs, **self._data)
-        elif self._awaitable:
-            return self._action(*args, **kwargs, **self._data)
         else:
+            ##If this runs into issuess with awaiting etc.
+            ##Check the fix for the trigger interceptor, may be an issue with threadsafety
+            ##Fix would be to submit the coroutine to the correct event loop
             loop = asyncio.get_event_loop()
             return loop.create_task(
                 self._action(*args, **kwargs, **self._data))
@@ -274,6 +275,8 @@ class ParsedAction:
         
         assert self._action == None or callable(self._action), f"Invalid type of action for {self._action}: {type(self._action)}"
 
+        if asyncio.iscoroutinefunction(self._action) and self._awaitable:
+            self.__class__ = _AsyncParsedAction
 
         self._parsed = True
         if self in self._notParsed:
@@ -296,3 +299,13 @@ class ParsedAction:
             except ShorthandNotFound:
                 errored = True
         return errored
+
+
+class _AsyncParsedAction(ParsedAction):
+
+    async def __call__(self, *args, **kwargs):
+        return await self._action(*args, **kwargs, **self._data)
+    
+    # @property
+    # def _is_coroutine(self):
+    #     return self._action._is_coroutine
