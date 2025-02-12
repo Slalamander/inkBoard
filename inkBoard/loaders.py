@@ -33,10 +33,10 @@ def load_custom_functions(core: "CORE") -> MappingProxyType[str, Callable]:
     try:
         from custom import functions as custom_funcs
     except (ImportError, ModuleNotFoundError):
-        _LOGGER.debug("No directory for custom functions found")
+        _LOGGER.info("No directory for custom functions found")
         return {}
 
-    _LOGGER.debug("Gathering custom functions")
+    _LOGGER.info(f"Gathering custom functions from {custom_funcs.__path__[0]}")
 
     funcs = {}
 
@@ -84,7 +84,7 @@ def load_custom_elements(core: "CORE") -> MappingProxyType[str, "Element"]:
     try:
         from custom import elements as custom_elts
     except (ImportError, ModuleNotFoundError):
-        _LOGGER.debug("No directory for custom functions found")
+        _LOGGER.info("No directory for custom functions found")
         return {}
 
     _LOGGER.debug("Gathering custom functions")
