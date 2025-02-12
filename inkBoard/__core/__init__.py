@@ -1,5 +1,7 @@
 "Core modules and objects for running inkBoard instances"
 
+raise DeprecationWarning("The core module is deprecated. Please import CORE from the base inkBoard.")
+
 from typing import TYPE_CHECKING, Literal, Final, Optional, Any, Callable, get_args
 from types import MappingProxyType, MemberDescriptorType
 import logging
