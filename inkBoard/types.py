@@ -1,11 +1,25 @@
 "Types for inkBoard"
 
 from typing import TypedDict
+from PythonScreenStackManager.pssm_types import *
 
 from .core import _CORE
 
 coretype = type[_CORE]
 
+class actionentry(TypedDict):
+    """Base form of an action dict
+
+    Different action parsers may require or accept more entries aside from the two below.
+    """    
+
+    action: str
+    "The name of the shorthand action to parse"
+
+    data: dict
+    "Additional paramaters to pass every time the action is called"
+
+actiontype = Union[Callable,str,actionentry]
 
 class inkboardrequirements(TypedDict):
     "Dict for indicating inkBoard related requirements for platform.json or manifest.json"
