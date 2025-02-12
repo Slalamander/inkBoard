@@ -39,6 +39,8 @@ def mount_config_dir(folder: Path):
         import custom  # pylint: disable=import-outside-toplevel  # noqa: F401
         _LOGGER.debug("imported custom folder")
 
+    ##From testing: if a similar folder already exists in the working directory, this would cause errors as it would be imported from there.
+    ##Needs fixing at some point
     sys.path.remove(folder)
     sys.path_importer_cache.pop(folder, None)
 
