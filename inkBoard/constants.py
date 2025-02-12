@@ -1,6 +1,7 @@
 
 from typing import TYPE_CHECKING, Union
 import tracemalloc
+import sys
 from pathlib import Path
 import importlib.util
 
@@ -12,6 +13,8 @@ if TYPE_CHECKING:
 # ---------------------------------------------------------------------------- #
 #                               General constants                              #
 # ---------------------------------------------------------------------------- #
+
+DEBUG = bool(sys.gettrace())
 
 DESIGNER_INSTALLED: bool = False
 DESIGNER_FOLDER: Union[None,Path] = None
@@ -80,6 +83,7 @@ INKBOARD_COLORS = {
     "inkboard-white": (255,255,255) #Simply white but putting it in here for completeness
 }
 
+ICON_FOLDER = INKBOARD_FOLDER / "files" / "icons"
 INKBOARD_ICON = INKBOARD_FOLDER / "files/icons/inkboard.ico"
 INKBOARD_BACKGROUND = INKBOARD_FOLDER / "files/images/default_background.png"
 
