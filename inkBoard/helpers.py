@@ -211,9 +211,20 @@ class ParsedAction:
             ##If this runs into issuess with awaiting etc.
             ##Check the fix for the trigger interceptor, may be an issue with threadsafety
             ##Fix would be to submit the coroutine to the correct event loop
-            loop = asyncio.get_event_loop()
-            return loop.create_task(
-                self._action(*args, **kwargs, **self._data))
+
+            coro = self._action(*args, **kwargs, **self._data)
+            try:
+                return asyncio.create_task(coro)
+                # t = asyncio.get_event_loop().create_task(coro)
+                # self._tasks.add(t)
+                # t.add_done_callback(lambda t: self._tasks.remove(t))
+                
+                return t
+            except (RuntimeError, RuntimeWarning) as exce:
+                return asyncio.run_coroutine_threadsafe(coro,asyncio.get_event_loop())
+            except Exception as exce:
+                _LOGGER.exception(f"Unable to call action for {self._action_to_parse}", extra={"YAML": self.yamlstr})
+            
         raise AttributeError("Cannot call functions before its action has been parsed")
 
     def _parse_action(self):
