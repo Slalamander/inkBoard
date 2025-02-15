@@ -241,12 +241,17 @@ async def reload_core(core: "CORE", full_reload: bool = False):
         A full reload reloads all modules that affect printing, i.e. PSSM, non custom integrations, platforms, etc. by default False
     """
     
+    # await asyncio.sleep(0)
     CORE._set_stage(CORESTAGES.RELOAD)
     _shutdown_core(core, is_reload=True)
     if hasattr(core,"integrationLoader"):
         await core.integrationLoader.async_stop_integrations(core)
 
     if not full_reload:
+        if hasattr(core,"screen"):
+            async with core.screen._printLock:
+                await asyncio.sleep(0)
+        # await core.screen
         PSSM.pssm._reset()
         for mod in const.BASE_RELOAD_MODULES:
             _LOGGER.debug(f"Reloading module {mod}")
