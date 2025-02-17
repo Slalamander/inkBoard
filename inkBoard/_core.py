@@ -1,11 +1,12 @@
 
+import asyncio
 from typing import TYPE_CHECKING, Literal, Optional, Any, Callable
 from types import MappingProxyType, MemberDescriptorType
 import logging
 from datetime import datetime as dt
 from contextlib import suppress
 
-from PythonScreenStackManager.pssm.util import classproperty, ClassPropertyMetaClass
+from PythonScreenStackManager.pssm.util import classproperty, ClassPropertyMetaClass, PSSMEventLoopPolicy
 from PythonScreenStackManager.exceptions import ShorthandNotFound
 
 from . import constants as const
@@ -318,3 +319,42 @@ class _CORE(metaclass=COREMETA):
         cls._stage = _CoreStage(stage)
 
 _CORE._stage = CORESTAGES.NONE
+
+
+class InkBoardEventLoopPolicy(asyncio.DefaultEventLoopPolicy):
+
+    # def __init__(self):
+    #     return
+    #     # super().__init__(screen)
+        
+
+    def core_exception_handler(self, loop, context):
+        
+        asyncio.BaseEventLoop.default_exception_handler(self, context)
+        ##May be useful to implement a custom loop, that automatically handles creating tasks and falls back to thread safe calls?
+
+
+    def new_event_loop(self):
+        # selector = selectors.SelectSelector()
+        loop = PSSMEventLoopPolicy.new_event_loop(self)
+        loop.set_exception_handler(self.core_exception_handler)
+        return loop
+        # return asyncio.SelectorEventLoop(selector)
+
+    def get_event_loop(self):
+        if hasattr(_CORE,"screen"):
+            return _CORE.screen.mainLoop
+        else:
+            return super().get_event_loop(self)
+        
+
+
+def loop_exception_handler(loop, context):
+
+    asyncio.BaseEventLoop.default_exception_handler(loop, context)
+
+    ##Hopefully this comment does not end up lost but:
+    ##Create custom event loop policy that always returns the screen's mainloop
+    ##That way, asyncio.get_event_loop() will always return the screen loop
+    ##however, does maybe provide some issues with functions being called outside of the eventloop
+    ##See documentation: https://docs.python.org/3/library/asyncio-policy.html#custom-policies
