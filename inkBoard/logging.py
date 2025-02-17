@@ -13,7 +13,7 @@ import struct
 import yaml
 
 from inkBoard.helpers import YAMLNodeDict
-from inkBoard.constants import LOG_LEVELS
+from inkBoard.constants import LOG_LEVELS, DEBUGGING
 
 try:
     # Python 3.7 and newer, fast reentrant implementation
@@ -324,7 +324,11 @@ def setup_filehandler(core: "CORE", config: "LoggerEntry"):
         fileconf = dict(config.log_to_file)
     else:
         fileconf = {}
-    
+
+    if DEBUGGING and not fileconf.get("enable_in_debug", False):
+        _LOGGER.debug("Not setting up filelogger, debug in progress")
+        return
+
     fileconf.setdefault("backup_count", 5)
     fileconf["backupCount"] = fileconf.pop("backup_count")
     fileconf.setdefault("filename", "inkboard.log") ##Default filename: logs -> but resolve to config folder.
@@ -395,6 +399,13 @@ def setup_logging(core: "CORE"):
         ##Determine how to deal with this inbetween reloads since it will likekly set up multiple queues like this
         listener.start()
 
+def getLogger(name: Union[str,None] = None) -> "BaseLogger":
+    """Convenience method to get a logger with type hinting for additional levels like verbose.
+    
+    Return a logger with the specified name, creating it if necessary.
+    If no name is specified, return the root logger.
+    """
+    return logging.getLogger(name)
 
 class FileLogEntry(TypedDict):
     "Entries that can be used for the ``log_to_file`` logging entry"
@@ -412,7 +423,10 @@ class FileLogEntry(TypedDict):
     """The minimum level of logs to log to the file
 
     If left at None, it will be set to the same level as the base logger.
-    """    
+    """
+
+    enable_in_debug : bool = False
+    "Enables the file logger even if a debugger is currently attached"
 
 ##Todos for logging:
 ##Setup socketlogger within the api extension -> no, not socketlogger, use httphandler probably?
@@ -420,10 +434,3 @@ class FileLogEntry(TypedDict):
 ##Add setting to handle std out logging (via a terminal key)
 ##Handle log queue being set up every time a reload is called
 
-def getLogger(name: Union[str,None] = None) -> "BaseLogger":
-    """Convenience method to get a logger with type hinting for additional levels like verbose.
-    
-    Return a logger with the specified name, creating it if necessary.
-    If no name is specified, return the root logger.
-    """
-    return logging.getLogger(name)

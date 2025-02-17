@@ -14,7 +14,8 @@ if TYPE_CHECKING:
 #                               General constants                              #
 # ---------------------------------------------------------------------------- #
 
-DEBUG = bool(sys.gettrace())
+DEBUGGING = bool(sys.gettrace())
+"True if a debugger is attached to the python process"
 
 DESIGNER_INSTALLED: bool = False
 DESIGNER_FOLDER: Union[None,Path] = None
