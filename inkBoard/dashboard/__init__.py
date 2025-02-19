@@ -11,7 +11,7 @@ from ..exceptions import DashboardError
 from ..constants import DEFAULT_MAIN_TABS_NAME
 
 from .loader import DashboardLoader
-from .validate import validator_dict
+from .validate import validator_dict, validate_general
 
 from inkBoard import CORE
 
@@ -42,13 +42,13 @@ def build_config_elements(config : "config", core: "CORE"):
     for conf_key in yaml_const.DASHBOARD_KEYS:
         if conf_key in conf:
             ##Determine how to deal with the validators, i.e. they should only validate the top_level elements
-            validator = validator_dict.get(conf_key,validate.validate_general)
+            validator = validator_dict.get(conf_key, validate_general)
             DashboardLoader._validator = validator
 
             conf_res = DashboardLoader().construct_dashboard_node(conf[conf_key],True)
 
             if conf_key  == "statusbar":
-                if conf_res == None:
+                if conf_res is None:
                     conf_res = {}
                 else:
                     conf_res = dict(conf_res)
