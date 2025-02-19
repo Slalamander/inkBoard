@@ -318,6 +318,14 @@ class _CORE(metaclass=COREMETA):
     def _set_stage(cls, stage : str):
         cls._stage = _CoreStage(stage)
 
+    @classmethod
+    def create_task(cls, coro, *, name = None) -> asyncio.Task:
+        if not hasattr(cls,"screen"):
+            return asyncio.create_task(coro, name=name)
+
+        return cls.screen.create_task(coro, name=name)
+
+
 _CORE._stage = CORESTAGES.NONE
 
 
@@ -330,7 +338,7 @@ class InkBoardEventLoopPolicy(asyncio.DefaultEventLoopPolicy):
 
     def core_exception_handler(self, loop, context):
         
-        asyncio.BaseEventLoop.default_exception_handler(self, context)
+        asyncio.BaseEventLoop.default_exception_handler(loop, context)
         ##May be useful to implement a custom loop, that automatically handles creating tasks and falls back to thread safe calls?
 
 
