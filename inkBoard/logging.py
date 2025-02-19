@@ -277,15 +277,30 @@ def init_logging(log_level: str = None, quiet: bool = False, verbose: bool = Fal
                     datefmt=log_dateformat,
                     style="$",
                     handlers=[streamhandler])
-    base_logger = logging.getLogger()
-    if log_level:
-        base_logger.setLevel(log_level)
+    
+    if log_level or log_level == 0:
+        pass
     elif verbose:
-        base_logger.setLevel(VERBOSE)
+        log_level = VERBOSE
     elif quiet:
-        base_logger.setLevel(CRITICAL)
+        log_level = CRITICAL
     else:
-        base_logger.setLevel(WARNING)
+        log_level = WARNING
+    
+    import inkBoard
+    import PythonScreenStackManager
+
+    try:
+        import inkBoarddesigner
+    except ImportError:
+        log_modules = (inkBoard, PythonScreenStackManager)
+    else:
+        log_modules = (inkBoard, PythonScreenStackManager, inkBoarddesigner)
+
+    # base_logger = logging.getLogger()
+    for log_mod in log_modules:
+        logging.getLogger(log_mod.__name__).setLevel(log_level)
+
 
     ##Would it be better to set up the stream handler already? I'm not quite sure
 
