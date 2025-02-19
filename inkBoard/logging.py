@@ -26,6 +26,16 @@ if TYPE_CHECKING:
     from inkBoard import CORE as CORE
     from inkBoard.configuration.types import LoggerEntry
 
+import inkBoard
+import PythonScreenStackManager
+
+try:
+    import inkBoarddesigner
+except ImportError:
+    _baselog_modules = (inkBoard, PythonScreenStackManager)
+else:
+    _baselog_modules = (inkBoard, PythonScreenStackManager, inkBoarddesigner)
+
 
 NOTSET = logging.NOTSET
 VERBOSE = int(logging.DEBUG/2)
@@ -262,6 +272,13 @@ class LocalhostSocketHandler(logging.handlers.SocketHandler):
 streamhandler = logging.StreamHandler()
 streamhandler.setFormatter(ColorFormatter(log_format, log_dateformat))
 
+
+def _set_baselogger_levels(log_level):
+    ##Sets the log level for the base packages
+
+    for log_mod in _baselog_modules:
+        logging.getLogger(log_mod.__name__).setLevel(log_level)
+
 def init_logging(log_level: str = None, quiet: bool = False, verbose: bool = False) -> None:
     """Initialises the logger, such that the messages printed to stdout are color coded.
     
@@ -287,21 +304,10 @@ def init_logging(log_level: str = None, quiet: bool = False, verbose: bool = Fal
     else:
         log_level = WARNING
     
-    import inkBoard
-    import PythonScreenStackManager
 
-    try:
-        import inkBoarddesigner
-    except ImportError:
-        log_modules = (inkBoard, PythonScreenStackManager)
-    else:
-        log_modules = (inkBoard, PythonScreenStackManager, inkBoarddesigner)
+    _set_baselogger_levels(log_level)
 
     # base_logger = logging.getLogger()
-    for log_mod in log_modules:
-        logging.getLogger(log_mod.__name__).setLevel(log_level)
-
-
     ##Would it be better to set up the stream handler already? I'm not quite sure
 
 def overwrite_basicConfig(core: "CORE", config: "LoggerEntry"):
@@ -387,8 +393,10 @@ def setup_logging(core: "CORE"):
     ##Remote logging: setup later
     ##Need more knowledge on best practices, as well as knowing what is the best way to set up server/client for general connections
 
-    logging.root.setLevel(NOTSET)
+    # logging.root.setLevel(NOTSET)
     streamhandler.setLevel(config.level)
+    _set_baselogger_levels(config.level)
+
     for log_name, level in config.logs:
         logging.getLogger(log_name).setLevel(level)
 
