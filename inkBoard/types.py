@@ -74,3 +74,12 @@ class manifestjson(TypedDict):
 
     inkboard_requirements: inkboardrequirements
     "inkBoard specific requirements"
+
+__all__ = [
+    "coretype",
+    "actionentry",
+    "actiontype",
+    "inkboardrequirements",
+    "platformjson",
+    "manifestjson"
+]
