@@ -88,6 +88,13 @@ ICON_FOLDER = INKBOARD_FOLDER / "files" / "icons"
 INKBOARD_ICON = INKBOARD_FOLDER / "files/icons/inkboard.ico"
 INKBOARD_BACKGROUND = INKBOARD_FOLDER / "files/images/default_background.png"
 
+INKBOARD_ICONS = {
+    "inkboard": ICON_FOLDER / "inkboard.ico",
+    "inkboard-droplet": ICON_FOLDER / "inkboard-droplet.ico",
+    "inkboard-droplet-circle": ICON_FOLDER / "inkboard-droplet-circle.ico",
+    "inkboard-logo-droplet": ICON_FOLDER / "inkboard-logo-droplet.ico",
+    "inkboard-logo-circle": ICON_FOLDER / "inkboard-logo-circle.ico"
+}
 
 DEFAULT_MAIN_TABS_NAME = "inkboard-main-tab-pages"
 
