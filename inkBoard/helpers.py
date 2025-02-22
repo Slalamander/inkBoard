@@ -18,6 +18,7 @@ from inkBoard.constants import CORESTAGES
 
 from PythonScreenStackManager.exceptions import ShorthandNotFound
 from PythonScreenStackManager.pssm import util as pssm_util
+from PythonScreenStackManager.tools import DrawShapes
 
 if TYPE_CHECKING:
     from PythonScreenStackManager.elements import Element
