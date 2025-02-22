@@ -8,7 +8,7 @@ from ._core import _CORE
 coretype = type[_CORE]
 
 class actionentry(TypedDict):
-    """Base form of an action dict
+    """Entry for actions. If not data is required, a string with the action will suffice too.
 
     Different action parsers may require or accept more entries aside from the two below.
     """    
