@@ -16,7 +16,8 @@ from typing import Union, Callable, Literal
 import inkBoard
 
 from PythonScreenStackManager.elements import Element
-from PythonScreenStackManager.tools import DummyTask, classproperty
+from PythonScreenStackManager.tools import DummyTask
+from PythonScreenStackManager.util import classproperty, isclassproperty
 
 
 _LOGGER = inkBoard.getLogger(__name__)

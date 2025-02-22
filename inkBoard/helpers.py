@@ -215,11 +215,7 @@ class ParsedAction:
             coro = self._action(*args, **kwargs, **self._data)
             try:
                 return asyncio.create_task(coro)
-                # t = asyncio.get_event_loop().create_task(coro)
-                # self._tasks.add(t)
-                # t.add_done_callback(lambda t: self._tasks.remove(t))
-                
-                return t
+
             except (RuntimeError, RuntimeWarning) as exce:
                 return asyncio.run_coroutine_threadsafe(coro,asyncio.get_event_loop())
             except Exception as exce:

@@ -93,6 +93,7 @@ def run_config(config_file: Union[Path,str]):
                         debug=const.DEBUGGING)
 
 def main():
+
     from inkBoard._core import InkBoardEventLoopPolicy
     asyncio.set_event_loop_policy(InkBoardEventLoopPolicy())
 

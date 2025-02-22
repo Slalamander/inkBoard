@@ -6,7 +6,7 @@ import logging
 from datetime import datetime as dt
 from contextlib import suppress
 
-from PythonScreenStackManager.pssm.util import classproperty, ClassPropertyMetaClass, PSSMEventLoopPolicy
+from PythonScreenStackManager.util import classproperty, ClassPropertyMetaClass
 from PythonScreenStackManager.exceptions import ShorthandNotFound
 
 from . import constants as const
@@ -28,8 +28,7 @@ _corestageslevels = {val: key for key, val in CORESTAGES.__dict__.items() if not
 
 class _CoreStage:
     def __init__(self, stage : Literal[_corestagestype]):
-        # assert isinstance(stage,str) and hasattr(CORESTAGES,stage.upper()), f"Invalid stage {stage}"
-        
+
         try:
             if isinstance(stage,int):
                 self._stage = _corestageslevels[stage]
@@ -331,11 +330,6 @@ _CORE._stage = CORESTAGES.NONE
 
 class InkBoardEventLoopPolicy(asyncio.DefaultEventLoopPolicy):
 
-    # def __init__(self):
-    #     return
-    #     # super().__init__(screen)
-        
-
     def core_exception_handler(self, loop, context):
         
         asyncio.BaseEventLoop.default_exception_handler(loop, context)
@@ -343,7 +337,7 @@ class InkBoardEventLoopPolicy(asyncio.DefaultEventLoopPolicy):
 
 
     def new_event_loop(self):
-        # selector = selectors.SelectSelector()
+        from PythonScreenStackManager.pssm.util import PSSMEventLoopPolicy
         loop = PSSMEventLoopPolicy.new_event_loop(self)
         loop.set_exception_handler(self.core_exception_handler)
         return loop
