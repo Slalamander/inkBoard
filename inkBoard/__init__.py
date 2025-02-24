@@ -1,6 +1,6 @@
 ###Inkboard
 
-__version__ = "0.3.1.dev2"
+__version__ = "0.3.2.dev1"
 "inkBoard version"
 
 import logging as __logging
