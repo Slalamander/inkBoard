@@ -47,6 +47,8 @@ class DashboardLoader(loaders.BaseSafeLoader):
     _validator : const.validatortype = validate_general
     "Function used to validate parsed elements. Passed to the parser function."
 
+    _TemplateClass : type["TemplateElement"]
+
     def __init__(self, stream = None):
         if stream is not None:
             super().__init__(stream)
@@ -70,7 +72,11 @@ class DashboardLoader(loaders.BaseSafeLoader):
                 parser = parsers[idf]
                 elt_class = parser(elt_type_str)
 
-        validator(elt_class,elt_type)
+        if idf == "template":
+            ##Validating comes later for templates.
+            pass
+        else:
+            validator(elt_class,elt_type)
 
         return elt_class
 
@@ -78,8 +84,12 @@ class DashboardLoader(loaders.BaseSafeLoader):
 
         d = {}
         for (key_node, value_node) in node.value:
-            val = self.construct_dashboard_node(value_node,deep, depth=depth+1)
-            d[key_node.value] = val
+            if key_node.tag in const.TEMPLATE_EXTEND_TAGS:
+                val = self.template_variable_extender(node, key_node, value_node)
+                d = util.update_nested_dict(val, d)
+            else:
+                val = self.construct_dashboard_node(value_node,deep, depth=depth+1)
+                d[key_node.value] = val
 
         if "type" not in d:
             return loaders.YAMLNodeDict(d,node)
@@ -117,14 +127,25 @@ class DashboardLoader(loaders.BaseSafeLoader):
         type_str = d.pop("type")
         
         try:
-            elt = elt_type(**d)
+            if isinstance(elt_type, DashboardLoader._TemplateClass):
+                v = loaders.YAMLNodeDict(d, node)
+                elt = elt_type.construct_element(**v)
+                try:
+                    validator(type(elt), type_str)
+                except TypeError as exce:
+                    raise TemplateTypeError from exce
+            else:
+                elt = elt_type(**d)
         except DuplicateElementError as e:
             if "id" in d:
                 elt_id = d["id"]
                 msg = f"An element with id {elt_id} has already been registered."
             else:
                 msg = f"Element {type_str} got a duplicate ID: {e}"
-            logger.error(msg, exc_info=True, extra={"YAML": node})
+            _LOGGER.error(msg, exc_info=True, extra={"YAML": node})
+            self.__class__._config_error = True
+        except inkBoardTemplateError as e:
+            _LOGGER.error(e, extra={"YAML": node})
             self.__class__._config_error = True
         except Exception as e:
             elt_str = type_str
@@ -139,8 +160,11 @@ class DashboardLoader(loaders.BaseSafeLoader):
     def construct_sequence(self, node, deep = True, depth = 0):
         seq_vals = []
         for sequence_node in node.value:
-            v = self.construct_dashboard_node(sequence_node, deep, depth=depth+1)
-            seq_vals.append(v)
+            if sequence_node.tag in const.TEMPLATE_EXTEND_TAGS:
+                seq_vals.extend(self.template_variable_extender(node, sequence_node))
+            else:
+                v = self.construct_dashboard_node(sequence_node, deep, depth=depth+1)
+                seq_vals.append(v)
         return seq_vals
         
     def construct_dashboard_node(self, node, deep, depth = 0):
