@@ -117,7 +117,7 @@ class YAMLNodeDict(dict):
         return
 
     def __repr__(self):
-        return self.format_marks(self._start_mark, self._end_mark)
+        return f"<YAML nodes> {self.format_marks(self._start_mark, self._end_mark)}"
     
     @staticmethod
     def format_marks(start_mark : "yaml.Mark", end_mark : "yaml.Mark" = None) -> str:
