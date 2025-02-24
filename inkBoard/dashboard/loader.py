@@ -4,19 +4,23 @@ The yaml loader that parses the dashboard config (element types and the like)
 
 import yaml
 import logging
-from typing import Callable, Literal
-from pathlib import Path
+from typing import Callable, Literal, TYPE_CHECKING
 
 from PythonScreenStackManager import elements
 from PythonScreenStackManager.pssm.screen import DuplicateElementError
 
 from inkBoard import util
+from inkBoard.exceptions import TemplateTypeError, inkBoardTemplateError
+
 from .. import CORE as CORE
 from ..configuration import loaders, const
 
 from .validate import validate_general
 
-logger = logging.getLogger(__package__)
+_LOGGER = logging.getLogger(__name__)
+
+if TYPE_CHECKING:
+    from .templates import TemplateElement
 
 ## Loading here kinda messes with things.
 ##Reload before building then. -> should be fine since it is not interfaced with
@@ -40,11 +44,11 @@ class DashboardLoader(loaders.BaseSafeLoader):
     _config_error = False
     _CORE: CORE = None
 
-    _validator : Callable[[Literal["Element_class"],Literal["Requested_type"]],None] = validate_general
+    _validator : const.validatortype = validate_general
     "Function used to validate parsed elements. Passed to the parser function."
 
     def __init__(self, stream = None):
-        if stream != None:
+        if stream is not None:
             super().__init__(stream)
 
     def parse_element_type(self, elt_type: str, validator: Callable[[Literal["Element_class"],Literal["Requested_type"]],None] = validate_general) -> elements.Element:
@@ -78,7 +82,7 @@ class DashboardLoader(loaders.BaseSafeLoader):
             d[key_node.value] = val
 
         if "type" not in d:
-            return d
+            return loaders.YAMLNodeDict(d,node)
 
         if d["type"] == "None" and len(d) == 1:
             return None
@@ -91,25 +95,23 @@ class DashboardLoader(loaders.BaseSafeLoader):
         try:
             elt_type = self.parse_element_type(d["type"], validator)
         except (TypeError, KeyError):
-            yaml_line = node.start_mark.line
             if "id" in d:
                 msg = f"Invalid element type '{d['type']}' (id {d['id']})"
             else:
                 msg = f"Invalid element type '{d['type']}'"
-            logger.error(msg, extra={"YAML": node}, exc_info=True)
+            _LOGGER.error(msg, extra={"YAML": node})
             self.__class__._config_error = True
             return None
         except SyntaxWarning:
-            yaml_line = node.start_mark.line
             if "id" in d:
                 msg = f"Invalid element identifier: {d['type']}  (id {d['id']})"
             else:
                 msg = f"Invalid element identifier: {d['type']}"
-            logger.error(msg, exc_info=True, extra={"YAML": node})
+            _LOGGER.error(msg, exc_info=True, extra={"YAML": node})
             self.__class__._config_error = True
             return None
         
-        if elt_type == None:
+        if elt_type is None:
             return d
         
         type_str = d.pop("type")
@@ -117,7 +119,6 @@ class DashboardLoader(loaders.BaseSafeLoader):
         try:
             elt = elt_type(**d)
         except DuplicateElementError as e:
-            yaml_line = node.start_mark.line
             if "id" in d:
                 elt_id = d["id"]
                 msg = f"An element with id {elt_id} has already been registered."
@@ -125,17 +126,15 @@ class DashboardLoader(loaders.BaseSafeLoader):
                 msg = f"Element {type_str} got a duplicate ID: {e}"
             logger.error(msg, exc_info=True, extra={"YAML": node})
             self.__class__._config_error = True
-            return None
         except Exception as e:
-            yaml_line = node.start_mark.line
             elt_str = type_str
             if "id" in d:
                 elt_str = f"[{elt_str}: {d['id']}]"
             msg = f"Error constructing element {type_str}: {e}"
-            logger.error(msg, exc_info=True, extra={"YAML": node})
+            _LOGGER.error(msg, extra={"YAML": node})
             self.__class__._config_error = True
-            return None
-        return elt
+        else:
+            return elt
 
     def construct_sequence(self, node, deep = True, depth = 0):
         seq_vals = []
