@@ -210,10 +210,20 @@ class LogFileHandler(logging.handlers.RotatingFileHandler):
     """Class that handles logging to log files for inkBoard
     """    
 
+    _current_handler : "LogFileHandler" = None
+
     def __init__(self, filename, mode = "a", maxBytes = 0, backupCount = 0, encoding = None, errors = None, level: Union[int,str] = None):
         super().__init__(filename, mode, maxBytes, backupCount, encoding, True, errors)
-        
-        if level == None:
+
+        if self._current_handler:
+            hdlr = self._current_handler
+            if hdlr.stream:
+                hdlr.stream.close()
+                assert hdlr.stream.closed, "Stream should be closed before setting up a new filehandler"
+
+        self.__class__._current_handler = self
+
+        if level is None:
             level = logging.root.level
         elif isinstance(level,str):
             level = level.upper()
@@ -221,7 +231,10 @@ class LogFileHandler(logging.handlers.RotatingFileHandler):
 
         if not isinstance(filename,Path): filename = Path(filename)
         if filename.exists():
-            self.doRollover()
+            try:
+                self.doRollover()
+            except PermissionError as e:
+                _LOGGER.error(e)
 
     def filter(self, record):
         if record.levelno < self.level:
