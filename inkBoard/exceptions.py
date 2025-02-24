@@ -23,3 +23,15 @@ class QuitInkboard(InkBoardError):
 
 class inkBoardParseError(InkBoardError, ValueError):
     "Something could not be parsed correctly"
+
+class inkBoardTemplateError(DashboardError):
+    "Base error for anything to do with template Elements"
+
+class TemplateLoadError(inkBoardTemplateError):
+    "Something went wrong loading and/or creating a template"
+
+class TemplateElementError(inkBoardTemplateError):
+    "Something went wrong parsing a template element"
+
+class TemplateTypeError(inkBoardTemplateError):
+    "The type from the parsed template is invalid"
