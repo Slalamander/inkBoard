@@ -215,11 +215,15 @@ class LogFileHandler(logging.handlers.RotatingFileHandler):
     def __init__(self, filename, mode = "a", maxBytes = 0, backupCount = 0, encoding = None, errors = None, level: Union[int,str] = None):
         super().__init__(filename, mode, maxBytes, backupCount, encoding, True, errors)
 
-        if self._current_handler:
+        if self.__class__._current_handler:
+            _LOGGER.debug("Removing previous instance of LogFileHandler and log_to_file settings")
             hdlr = self._current_handler
+            remove_handler(hdlr)
             if hdlr.stream:
                 hdlr.stream.close()
                 assert hdlr.stream.closed, "Stream should be closed before setting up a new filehandler"
+                hdlr.stream = None
+            hdlr.close()
 
         self.__class__._current_handler = self
 
@@ -231,10 +235,9 @@ class LogFileHandler(logging.handlers.RotatingFileHandler):
 
         if not isinstance(filename,Path): filename = Path(filename)
         if filename.exists():
-            try:
-                self.doRollover()
-            except PermissionError as e:
-                _LOGGER.error(e)
+            self.doRollover()
+        _LOGGER.debug("LogFileHandler has been set up")
+
 
     def filter(self, record):
         if record.levelno < self.level:
