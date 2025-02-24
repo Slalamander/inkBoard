@@ -84,16 +84,6 @@ def check_required_keys(typeddict : _ph, checkdict : dict, log_start : str):
 
 ##May move some things of these to a util module
 
-def loop_exception_handler(loop, context):
-
-    asyncio.BaseEventLoop.default_exception_handler(loop, context)
-
-    ##Hopefully this comment does not end up lost but:
-    ##Create custom event loop policy that always returns the screen's mainloop
-    ##That way, asyncio.get_event_loop() will always return the screen loop
-    ##however, does maybe provide some issues with functions being called outside of the eventloop
-    ##See documentation: https://docs.python.org/3/library/asyncio-policy.html#custom-policies
-
 class YAMLNodeDict(dict):
     """Dict used in yaml parsing
 
