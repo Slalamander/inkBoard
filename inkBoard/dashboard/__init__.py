@@ -6,16 +6,21 @@ Its functions can also be called for custom dashboards.
 import logging
 from typing import TYPE_CHECKING
 
+import yaml
+
 from ..configuration.loaders import const as yaml_const
 from ..exceptions import DashboardError
 from ..constants import DEFAULT_MAIN_TABS_NAME
 
 from .loader import DashboardLoader
+from .templates import TemplateLoader, TemplateElement, parse_template
 from .validate import validator_dict, validate_general
 
 from inkBoard import CORE
 
 from PythonScreenStackManager.elements import Layout, TabPages, StatusBar
+
+DashboardLoader._TemplateClass = TemplateElement
 
 if TYPE_CHECKING:
     from inkBoard import config
@@ -39,9 +44,19 @@ def build_config_elements(config : "config", core: "CORE"):
         _add_ha_defaults()
 
     dash_conf = {}
-    for conf_key in yaml_const.DASHBOARD_KEYS:
+    CORE.add_element_parser("template", parse_template)
+
+    if yaml_const.TEMPLATES_KEY in conf:
+        nodes : yaml.nodes.MappingNode = conf[yaml_const.TEMPLATES_KEY]
+
+        for template_name, template_node in nodes.value:
+            
+            TemplateLoader(template_name.value, template_node).construct_template()
+
+    ##Also add a check for other template files (not fully sure, but either in custom, or in just a templates folder)
+
+    for conf_key in filter(lambda k: k != yaml_const.TEMPLATES_KEY, yaml_const.DASHBOARD_KEYS):
         if conf_key in conf:
-            ##Determine how to deal with the validators, i.e. they should only validate the top_level elements
             validator = validator_dict.get(conf_key, validate_general)
             DashboardLoader._validator = validator
 
