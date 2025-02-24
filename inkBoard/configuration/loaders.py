@@ -10,6 +10,7 @@ from string import Template
 from pathlib import Path
 
 import yaml
+from yaml.nodes import MappingNode
 
 from yaml import SafeLoader as FastestAvailableSafeLoader
 try:
@@ -18,6 +19,7 @@ except ImportError:
     pass
 
 from inkBoard.helpers import YAMLNodeDict
+from inkBoard.util import update_nested_dict
 
 from . import const
 
@@ -58,6 +60,12 @@ def include_constructor(loader: "BaseSafeLoader", node: yaml.nodes.ScalarNode) -
         c = yaml.load(f, Loader=BaseSafeLoader)
 
     return c
+
+def template_variable_constructor(loader: "BaseSafeLoader", node: yaml.nodes.ScalarNode) -> str:
+    """Get appropriate entries from secrets.yaml"""
+    return loader.template_variable_constructor(node)
+
+
 
 class BaseSafeLoader(FastestAvailableSafeLoader):
     "Base config loader for inkBoard. Used to register tags and the like."
@@ -100,18 +108,44 @@ class BaseSafeLoader(FastestAvailableSafeLoader):
         
         mapping = {}
         for key_node, value_node in node.value:
-            key = self.construct_object(key_node, deep=deep)
-            if isinstance(value_node, yaml.MappingNode):
-                value = self.construct_mapping(value_node, deep)
+            if key_node.tag in const.TEMPLATE_EXTEND_TAGS:
+                val = self.template_variable_extender(node, key_node, value_node)
+                mapping = update_nested_dict(val, mapping)
             else:
-                value = self.construct_object(value_node, deep=deep)
-            mapping[key] =  value
+                key = self.construct_object(key_node, deep=deep)
+                if isinstance(value_node, yaml.MappingNode):
+                    value = self.construct_mapping(value_node, deep)
+                else:
+                    value = self.construct_object(value_node, deep=deep)
+                mapping[key] =  value
 
         return YAMLNodeDict(mapping,node)
+
+    def construct_sequence(self, node, deep = False):
+        seq = []
+        for child in node.value:
+            if child.tag in const.TEMPLATE_EXTEND_TAGS:
+                seq.extend(self.template_variable_extender(node, child))
+            else:
+                seq.append(self.construct_object(child, deep=deep))
+        return seq
+
+    def template_variable_constructor(self, node: yaml.nodes.ScalarNode):
+        val = node.tag + " " + node.value
+        return val
+
+    def template_variable_extender(self, parent_node : yaml.nodes.Node, key_node : yaml.nodes.ScalarNode, value_node : yaml.nodes.ScalarNode = None):
+        if isinstance(parent_node, MappingNode):
+            return {key_node.tag: value_node.value}
+        return [key_node.value]
+
 
 BaseSafeLoader.add_constructor("!secret",secret_constructor)
 BaseSafeLoader.add_constructor("!entity",entity_constructor)
 BaseSafeLoader.add_constructor("!include", include_constructor)
+
+for anchor in const.TEMPLATE_TAGS:
+    BaseSafeLoader.add_constructor(anchor, template_variable_constructor)
 
 class MainConfigLoader(BaseSafeLoader):
     
