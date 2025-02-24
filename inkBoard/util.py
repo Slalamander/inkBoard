@@ -16,12 +16,13 @@ from typing import Union, Callable, Literal
 import inkBoard
 
 from PythonScreenStackManager.elements import Element
-from PythonScreenStackManager.tools import DummyTask
+from PythonScreenStackManager.tools import DummyTask, update_nested_dict
 from PythonScreenStackManager.util import classproperty, isclassproperty
 
 
 _LOGGER = inkBoard.getLogger(__name__)
 
+##Move this to helpers
 def get_module_elements(module: ModuleType) -> dict[str,"Element"]:
     """
     Creates a dict with all the valid elements in a module to use in element parsers, for example
@@ -81,6 +82,8 @@ def reload_full_module(module: Union[str,ModuleType], exclude: list[str] = []):
     
     return
 
+
+##Improve this one with the one created for the documentation?
 def function_parameter_dict(func: Callable, types_as_str: bool = False, is_method: bool = False) -> dict[Literal["required", "optional"], dict[str, dict[Literal["type_hint","default"],str]]]:
     """Returns a dict with function params etc.
 
