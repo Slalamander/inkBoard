@@ -284,8 +284,8 @@ class _CORE(metaclass=COREMETA):
         KeyError
             Raised if the string is invalid or something else went wrong
         """
-        if not ":" in element_str:
-            msg = f"A custom element string must be structured as {{identifier}}:{{element_type}}"
+        if ":" not in element_str:
+            msg = "A custom element string must be structured as {{identifier}}:{{element_type}}"
             _LOGGER.error(msg)
             raise KeyError(msg)
         
