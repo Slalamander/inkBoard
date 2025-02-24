@@ -143,7 +143,7 @@ async def setup_integration_loader(core: "CORE"):
 async def setup_core(config_file, integration_loader: "loaders.IntegrationLoader" = None) -> "CORE":
     "Sets up the core module for running inkBoard, everything up to starting."
 
-    c = CORE()
+    CORE()
 
     p = Path(config_file)
     assert p.exists(), f"{config_file} does not exist"
