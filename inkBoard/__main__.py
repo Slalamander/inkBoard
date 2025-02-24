@@ -16,7 +16,7 @@ from PythonScreenStackManager.exceptions import ReloadWarning, FullReloadWarning
 
 import inkBoard
 from inkBoard import constants as const, bootstrap, loaders
-from inkBoard.exceptions import QuitInkboard
+from inkBoard.exceptions import QuitInkboard, ConfigError
 from inkBoard.arguments import parse_args, PRE_CORE_ACTIONS, POST_CORE_ACTIONS
 
 if TYPE_CHECKING:
@@ -48,7 +48,11 @@ async def run_inkBoard(configuration: Union[str,Path],
     "Runs inkBoard from the passed config file"
 
     while True:
-        CORE = await bootstrap.setup_core(configuration, loaders.IntegrationLoader)
+        try:
+            CORE = await bootstrap.setup_core(configuration, loaders.IntegrationLoader)
+        except ConfigError as exce:
+            _LOGGER.error("Unable to set up inkBoard core")
+            return 1
         
         if command in POST_CORE_ACTIONS:
             return POST_CORE_ACTIONS[command](parse_args())
