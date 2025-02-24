@@ -349,12 +349,6 @@ class InkBoardEventLoopPolicy(asyncio.DefaultEventLoopPolicy):
         else:
             return super().get_event_loop(self)
         
-
-
-def loop_exception_handler(loop, context):
-
-    asyncio.BaseEventLoop.default_exception_handler(loop, context)
-
     ##Hopefully this comment does not end up lost but:
     ##Create custom event loop policy that always returns the screen's mainloop
     ##That way, asyncio.get_event_loop() will always return the screen loop
