@@ -70,7 +70,7 @@ class DashboardLoader(loaders.BaseSafeLoader):
                 raise SyntaxWarning(msg)
             else:
                 parser = parsers[idf]
-                elt_class = parser(elt_type_str)
+                elt_class = parser(elt_type_str, idf)
 
         if idf == "template":
             ##Validating comes later for templates.
@@ -98,7 +98,7 @@ class DashboardLoader(loaders.BaseSafeLoader):
             return None
 
         if depth <= 1:
-            validator = DashboardLoader._validator
+            validator = self.__class__._validator
         else:
             validator = validate_general
 
