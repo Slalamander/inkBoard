@@ -45,7 +45,7 @@ def import_custom_elements(core: "CORE") -> dict[str, "elements.Element"]:
 
     elts = inkBoard.loaders.load_custom_elements(core)
 
-    def parser(elt_str):
+    def parser(elt_str, *args):
         return elts[elt_str]
 
     core.add_element_parser("custom", parser)
