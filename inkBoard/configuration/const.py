@@ -48,4 +48,6 @@ TEMPLATE_TAGS = (
     *TEMPLATE_EXTEND_TAGS
 )
 
+YAML_STR_TAG = 'tag:yaml.org,2002:str'
+
 validatortype = Callable[[Literal["Element_class"],Literal["Requested_type"]],None]
