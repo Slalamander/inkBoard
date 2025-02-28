@@ -3,7 +3,7 @@
 import yaml
 from yaml.constructor import BaseConstructor
 from yaml.nodes import Node, MappingNode, ScalarNode, SequenceNode
-
+import copy
 
 import inkBoard
 from inkBoard.configuration import loaders
@@ -11,11 +11,14 @@ from inkBoard.exceptions import TemplateElementError, TemplateLoadError
 from inkBoard.helpers import YAMLNodeDict
 
 from .loader import DashboardLoader, const
+from .validate import validate_general
 
 _LOGGER = inkBoard.getLogger(__name__)
 
 class TemplateLoader(loaders.BaseSafeLoader):
     """YAML Loader for inkBoard templates
+
+    Handles setup, i.e. identifying the variables and their types, and provides validation.
     """
 
     _allowed_entries = ("defaults", "element")
@@ -79,6 +82,7 @@ class TemplateLoader(loaders.BaseSafeLoader):
 
                 ##These should go into a template object instead.
                 template_node = node_map
+                break
         
         defaults = data.get("defaults", {})
         vars = self._variables.copy()
@@ -140,6 +144,15 @@ class TemplateElement:
 
         self._templates[self._template] = self
 
+        self._has_id_node = False
+        self._base_type = None
+        for key_node, value_node in template_node.value:
+            if key_node.value == "id":
+                self._has_id_node = True
+            if key_node.value == "type":
+                if value_node.tag not in const.TEMPLATE_TAGS:
+                    self._base_type = value_node.value
+
         ##Add elt_type property (parsed from under element; use for validator)
         ##Nope, that can be a variable as well
 
@@ -149,7 +162,7 @@ class TemplateElement:
     def __str__(self):
         return f"inkBoard Template Element: {self._template}"
 
-    def construct_element(self, variables : loaders.YAMLNodeDict = {}) -> "TemplateElement":
+    def construct_element(self, variables : loaders.YAMLNodeDict = {}, id : str = None) -> "TemplateElement":
         """Constructs an element using the given variables
         """        
 
@@ -184,13 +197,33 @@ class TemplateElement:
             _LOGGER.error(msg, extra={"YAML": variables})
             errors = True
 
+        if id and self._has_id_node:
+            msg = f"Template {self._template} does not accept the id paramater, one is already set in the base element."
+            errors = True
+        elif id:
+            key_node = yaml.ScalarNode(const.YAML_STR_TAG, "id")
+            yaml
+            value_node = yaml.ScalarNode(const.YAML_STR_TAG, id)
+            temp_nodes = copy.deepcopy(self._template_node)
+            temp_nodes.value.append((key_node,value_node))
+        else:
+            temp_nodes = copy.copy(self._template_node)
+
         if errors:
             raise TemplateElementError(f"Unable to parse template {self._template}")
 
         template_vars = self._optional_variables | variables    ##This should overwrite keys present in optionals
 
-        # res = TemplateParser(template_vars).construct_document(self._template_node)
-        res = TemplateParser(template_vars).construct_dashboard_node(self._template_node, 2)
+        ##Allowing custom ids:
+        ##either add a variable node in the template, or add a node to the template from here
+        ##That would mean using a copy of the node, but I think that's ok?
+
+        # n = copy.copy(self._template_node)
+        # key_node = yaml.Node()
+        # n.value.append("hi")
+        ##Add two scalar nodes: 1 with a string value of ID, one with a string of the id/none
+        ##Do figure out what the correct tag is for strings, i don't believe they made constants for that
+        res = TemplateParser(template_vars).construct_dashboard_node(temp_nodes, 2)
 
         # except Exception as exce:
         #     _LOGGER.error(exce)
@@ -208,6 +241,8 @@ class TemplateElement:
 class TemplateParser(DashboardLoader):
     """Parses to an element from a template node
     """
+
+    _validator = validate_general
 
     def __init__(self, variables : dict):
 
@@ -236,6 +271,15 @@ class TemplateParser(DashboardLoader):
 
     ##Instead of a yaml loader for this, maybe use an Element that calls the parser?
 
-def parse_template(template):
+def parse_template_type(template : str, identifier : str):
+    """Returns the correct template element from the template string
+
+    Raises keyerror if the template is not registered.
+
+    Parameters
+    ----------
+    template : str
+        The template to get
+    """    
 
     return TemplateElement._templates[template]
