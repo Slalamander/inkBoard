@@ -13,7 +13,7 @@ from ..exceptions import DashboardError
 from ..constants import DEFAULT_MAIN_TABS_NAME
 
 from .loader import DashboardLoader
-from .templates import TemplateLoader, TemplateElement, parse_template
+from .templates import TemplateLoader, TemplateElement, parse_template_type
 from .validate import validator_dict, validate_general
 
 from inkBoard import CORE
@@ -44,7 +44,7 @@ def build_config_elements(config : "config", core: "CORE"):
         _add_ha_defaults()
 
     dash_conf = {}
-    CORE.add_element_parser("template", parse_template)
+    CORE.add_element_parser("template", parse_template_type)
 
     if yaml_const.TEMPLATES_KEY in conf:
         nodes : yaml.nodes.MappingNode = conf[yaml_const.TEMPLATES_KEY]
