@@ -12,8 +12,9 @@ from PythonScreenStackManager.pssm.screen import DuplicateElementError
 from inkBoard import util
 from inkBoard.exceptions import TemplateTypeError, inkBoardTemplateError
 
-from .. import CORE as CORE
-from ..configuration import loaders, const
+from inkBoard import CORE as CORE
+from inkBoard.configuration import loaders, const
+from inkBoard.constants import DEBUGGING
 
 from .validate import validate_general
 
@@ -144,16 +145,22 @@ class DashboardLoader(loaders.BaseSafeLoader):
                 msg = f"Element {type_str} got a duplicate ID: {e}"
             _LOGGER.error(msg, exc_info=True, extra={"YAML": node})
             self.__class__._config_error = True
+            if DEBUGGING:
+                raise
         except inkBoardTemplateError as e:
-            _LOGGER.error(e, extra={"YAML": node})
+            _LOGGER.error(e, extra={"YAML": node}, exc_info=DEBUGGING)
             self.__class__._config_error = True
+            if DEBUGGING:
+                raise
         except Exception as e:
             elt_str = type_str
             if "id" in d:
                 elt_str = f"[{elt_str}: {d['id']}]"
             msg = f"Error constructing element {type_str}: {e}"
-            _LOGGER.error(msg, extra={"YAML": node})
+            _LOGGER.error(msg, extra={"YAML": node}, exc_info=DEBUGGING)
             self.__class__._config_error = True
+            if DEBUGGING:
+                raise
         else:
             return elt
 
