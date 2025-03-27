@@ -109,6 +109,20 @@ class YAMLNodeDict(dict):
     def __repr__(self):
         return f"<YAML nodes> {self.format_marks(self._start_mark, self._end_mark)}"
     
+    def _convert(self):
+        return self.__convert(self)
+
+    @staticmethod
+    def __convert(v_yaml : "YAMLNodeDict"):
+        d = {}
+        for k, v in v_yaml.items():
+            if isinstance(v, YAMLNodeDict):
+                v = YAMLNodeDict.__convert(v)
+                d[k] = v
+            else:
+                d[k] = v
+        return d
+
     @staticmethod
     def format_marks(start_mark : "yaml.Mark", end_mark : "yaml.Mark" = None) -> str:
         """Formats a yaml mark to a string similar as in logging
