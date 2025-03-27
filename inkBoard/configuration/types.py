@@ -1,7 +1,7 @@
 "Holds the typehints for the inkBoard config, mainly typedicts and dataclasses"
 
 from types import MappingProxyType
-from typing import *
+from typing import TYPE_CHECKING, Literal, TypedDict, Union, Callable, Optional, Any
 from pathlib import Path
 import dataclasses
 from dataclasses import dataclass
@@ -127,6 +127,15 @@ class StylesEntry(TypedDict):
 
     blur_popup_background: bool
     "Default setting for blurring the background behind popups. Defaults to True"
+
+    base_style : dict[dict[str,str]] = {}
+    "Base styling values, may be used as default values for values not present in themes"
+
+    theme : str = None
+    "The theme to use when loading"
+
+    themes : list[dict] = []
+    "List of themes to load in"
 
 @dataclass(frozen=True)
 class FolderEntry(_BaseConfigEntry):
