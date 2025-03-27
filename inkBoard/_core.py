@@ -347,7 +347,7 @@ class InkBoardEventLoopPolicy(asyncio.DefaultEventLoopPolicy):
         if hasattr(_CORE,"screen"):
             return _CORE.screen.mainLoop
         else:
-            return super().get_event_loop(self)
+            return super().get_event_loop()
         
     ##Hopefully this comment does not end up lost but:
     ##Create custom event loop policy that always returns the screen's mainloop
