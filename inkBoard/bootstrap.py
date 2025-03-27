@@ -104,14 +104,18 @@ def setup_styles(core: "CORE"):
     config = core.config
 
     import PythonScreenStackManager as pssm
-    pssm.pssm.styles.Style.add_color_shorthand(**const.INKBOARD_COLORS)
+    from PythonScreenStackManager.pssm import Style
+    
+    Style.add_color_shorthand(**const.INKBOARD_COLORS)
 
     # pssm.constants.SHORTHAND_ICONS["inkboard"] = const.INKBOARD_ICON
     pssm.constants.SHORTHAND_ICONS["inkboard-background"] = const.INKBOARD_BACKGROUND
     pssm.constants.SHORTHAND_ICONS.update(const.INKBOARD_ICONS)
 
     if config.styles:
-        pssm.pssm.styles.Style.add_color_shorthand(**config.styles.get("shorthand_colors",{}))
+        Style.add_color_shorthand(**config.styles.get("shorthand_colors",{}))
+        Style.setup_style_tree(config.styles["base_style"])
+
     
     new_folders = {
                 "font_folder": config.folders.font_folder,
