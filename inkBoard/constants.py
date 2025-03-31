@@ -30,9 +30,11 @@ if s := importlib.util.find_spec("inkBoarddesigner"):
 
 class CORESTAGES:
     
-    QUIT = -3
-    RELOAD = -2
-    STOP = -1
+
+    QUIT = -4
+    RELOAD = -3
+    STOP = -2
+    RESET = -1    ##Set after reset
     NONE = 0
     SETUP = 1
     DASHBOARD = 2
