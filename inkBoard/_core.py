@@ -36,7 +36,8 @@ class _CoreStage:
             else:
                 self._stageno = self._stage_to_no(stage)
                 self._stage = stage.upper()
-        except ValueError:
+        except ValueError as e:
+            _LOGGER.error(e)
             raise
         except Exception as e:
             raise ValueError(f"{stage} cannot be set as a corestage") from e
@@ -171,8 +172,11 @@ class _CORE(metaclass=COREMETA):
             if attr == "_DESIGNER_RUN": continue
             with suppress(AttributeError):
                 delattr(cls, attr)
-        
-        cls._set_stage(CORESTAGES.NONE)
+        try:
+            cls._set_stage(CORESTAGES.RESET)
+        except Exception as exce:
+            _LOGGER.exception("???")
+            return
         _LOGGER.error("Cleaned all attributes")
 
     #region
@@ -316,6 +320,7 @@ class _CORE(metaclass=COREMETA):
     @classmethod
     def _set_stage(cls, stage : str):
         cls._stage = _CoreStage(stage)
+        return
 
     @classmethod
     def create_task(cls, coro, *, name = None) -> asyncio.Task:
@@ -332,7 +337,13 @@ class InkBoardEventLoopPolicy(asyncio.DefaultEventLoopPolicy):
 
     def core_exception_handler(self, loop, context):
         
+        if _CORE.stage <= CORESTAGES.RESET:
+            # task : asyncio.Task = context["task"]
+            if context["message"] == "Task was destroyed but it is pending!":
+                ##Task is (not yet) marked as cancelled?
+                return
         asyncio.BaseEventLoop.default_exception_handler(loop, context)
+        
         ##May be useful to implement a custom loop, that automatically handles creating tasks and falls back to thread safe calls?
 
 
