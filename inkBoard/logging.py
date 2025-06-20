@@ -413,7 +413,7 @@ def setup_logging(core: "CORE"):
     streamhandler.setLevel(config.level)
     _set_baselogger_levels(config.level)
 
-    for log_name, level in config.logs:
+    for log_name, level in config.logs.items():
         logging.getLogger(log_name).setLevel(level)
 
     queue = Queue()
