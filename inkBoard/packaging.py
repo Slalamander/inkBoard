@@ -18,7 +18,7 @@ from datetime import datetime as dt
 from contextlib import suppress
 
 import inkBoard
-import inkBoard.platforms
+# import inkBoard.platforms
 from inkBoard.configuration.const import CONFIG_FILE_TYPES, INKBOARD_FOLDER
 from inkBoard.types  import *
 from inkBoard import constants as const, bootstrap
@@ -211,10 +211,8 @@ def install_packages(file: Union[str, Path] = None, no_input: bool = False):
         return PackageInstaller(file, skip_confirmations=no_input, confirmation_function=confirm_input).install()
     else:
         packages = PackageInstaller.gather_inkboard_packages()
-        if len(packages) == 1:
-            print(f"Found 1 package that can be installed")
-        else:
-            print(f"Found {len(packages)} packages that can be installed")
+
+        print(f"Found {len(packages)} {'package' if len(packages) == 1 else 'packages'} that can be installed")
         for package in packages:
             ##Add a confirmation message for each file.
             PackageInstaller(package, skip_confirmations=no_input, confirmation_function=confirm_input).install()
