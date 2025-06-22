@@ -12,6 +12,8 @@ INKBOARD_PACKAGE_INTERNAL_FOLDER = ".inkBoard"
 PACKAGE_INDEX_URL = "https://github.com/Slalamander/inkBoard-package-index"
 "url to the package index"
 
+INTERNAL_PACKAGE_INDEX_FILE = "package_index.json"
+
 ZIP_COMPRESSION = zipfile.ZIP_BZIP2
 ZIP_COMPRESSION_LEVEL = 9
 
