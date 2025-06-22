@@ -41,3 +41,6 @@ class PackageIndex(TypedDict):
 comparisonstrings = Literal[
     '==', '!=', '>=', '<=', '>', '<'
 ]
+
+class NegativeConfirmation(UserWarning):
+    "Raised by ask confirm if the confirmation was negative"
