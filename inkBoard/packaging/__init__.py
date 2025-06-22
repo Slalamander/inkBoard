@@ -12,11 +12,11 @@ from .types import internalinstalltypes
 
 if TYPE_CHECKING:
     from inkBoard import CORE as CORE
-    from .install import BaseInstaller
 
 _LOGGER = inkBoard.getLogger(__name__)
+_LOGGER.warning("Dont forget to write tests fro this")
 
-def confirm_input(msg: str, installer: "BaseInstaller"):
+def confirm_input(msg: str):
     answer = input(f"{msg}\n(Y/N): ")
     if answer.lower() in {"y","yes"}:
         return True
@@ -63,6 +63,7 @@ def create_core_package(core: "CORE", name: str = None, pack_all: bool = False, 
         The core object constructed from the config
     """
     from .package import Packager
+
     if pack_all:
         Packager(core).create_package(name)
     else:
