@@ -18,7 +18,7 @@ from datetime import datetime as dt
 from contextlib import suppress
 
 import inkBoard
-import inkBoard.platforms
+#import inkBoard.platforms
 from inkBoard.configuration.const import CONFIG_FILE_TYPES, INKBOARD_FOLDER
 from inkBoard.types  import *
 from inkBoard import constants as const, bootstrap
