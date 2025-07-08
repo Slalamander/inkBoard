@@ -63,3 +63,29 @@ def compare_versions(requirement: Union[str,"Version"], compare_version: Union[s
         comp_str = "compare_version >= required_version"
     
     return eval(comp_str, {}, {"compare_version": compare_version, "required_version": parse_version(req_version)})
+
+def write_version_filename(package_name : str, version : Union[str,"Version"], suffix : str = ".zip") -> str:
+    """Creates the appropriate filename for an inkBoard index package
+
+    The returned string will have the form of "{package_name}-{version}{suffix}".
+    If suffix evaluates to a boolean `True`, it will be included, otherwise not.
+
+    Parameters
+    ----------
+    package_name : str
+        The name of the package
+    version : str, Version
+        The version of the package
+    suffix : str, optional
+        Suffix for after the strin, by default ".zip"
+
+    Returns
+    -------
+    str
+        The formatted package name
+    """    
+    
+    if suffix:
+        return f"{package_name}-{version}{suffix}"
+    else:
+        return f"{package_name}-{version}"

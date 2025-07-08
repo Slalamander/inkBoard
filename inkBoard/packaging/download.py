@@ -4,7 +4,7 @@ Trying to implement this without using requests
 from typing import (
     Union,
     Literal,
-
+    TYPE_CHECKING
 )
 import urllib.request
 from pathlib import Path
@@ -22,6 +22,9 @@ from .constants import (
     PACKAGE_INDEX_URL,
     INTERNAL_PACKAGE_INDEX_FILE,
 )
+
+if TYPE_CHECKING:
+    from .version import Version
 
 _LOGGER = logging.getLogger(__name__)
 ##For the logger here, maybe use a seperate format?
@@ -116,6 +119,8 @@ class Downloader:
                 pass
 
         raw_url = self._make_raw_file_link()
+
+        #[ ] for platforms, ask to copy files like readme etc. into the current working directory?
         return
 
     @classmethod
