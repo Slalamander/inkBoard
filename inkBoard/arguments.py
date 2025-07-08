@@ -34,7 +34,7 @@ def command_logs(args):
 
 def command_designer(args):
     if not DESIGNER_MOD:
-        print("Running inkBoard designer require the inkBoard designer to be installed")
+        print("Running inkBoard designer requires the inkBoard designer to be installed")
         print("Run 'pip install inkBoarddesigner' to install it")
         return 1
 
@@ -53,7 +53,7 @@ PRE_CORE_ACTIONS = {
     const.COMMAND_VERSION: command_version,
     const.COMMAND_DESIGNER: command_designer,
     const.COMMAND_INSTALL: command_install,
-    const.COMMAND_LOGS: command_logs
+    const.COMMAND_LOGS: command_logs,
 }
 "Action that can/have to be run before creating the CORE object"
 

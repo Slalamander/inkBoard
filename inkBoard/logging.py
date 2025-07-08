@@ -3,7 +3,7 @@
 import logging
 import logging.handlers
 from pathlib import Path
-from typing import Any, Optional, TYPE_CHECKING, Union, TypedDict
+from typing import Any, Optional, TYPE_CHECKING, Union, TypedDict, Callable
 from functools import partial, partialmethod
 from contextlib import suppress
 from dataclasses import asdict
@@ -119,11 +119,14 @@ class BaseFormatter(logging.Formatter):
     formatter = logging.Formatter(log_format, log_dateformat, style="$")
 
     @classmethod
-    def format(cls, record):
-        if not "YAML" in record.__dict__:
+    def format(cls, record, format_func : Callable = None):
+        #[ ]: This should be a method. And return super().format
+        if "YAML" not in record.__dict__:
             record.__dict__["YAML"] = ""
         else:
             record.__dict__["YAML"] = cls._format_yaml(record.__dict__["YAML"])
+        if format_func:
+            return format_func(record)
         return cls.formatter.format(record)
 
     @staticmethod
@@ -159,7 +162,7 @@ class ColorFormatter(logging.Formatter):
         super().__init__(fmt, datefmt, style, validate)
 
     def format(self, record):
-        formatted = BaseFormatter.format(record)
+        formatted = BaseFormatter.format(record, super().format)
         if record.levelno < DEBUG:
             format_level = 0
         elif record.levelno in ANSI_FORMATS:

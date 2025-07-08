@@ -1,3 +1,5 @@
+"backup version of packaging.py for porting"
+
 "Handles inkBoard packages, both creating and installing them."
 
 import asyncio
@@ -25,6 +27,10 @@ from inkBoard import constants as const, bootstrap
 
 import PythonScreenStackManager as PSSM
 
+from .constants import (
+    ZIP_COMPRESSION,
+    ZIP_COMPRESSION_LEVEL,
+    )
 
 if TYPE_CHECKING:
     from inkBoard import CORE as CORE
@@ -38,8 +44,7 @@ try:
 except ModuleNotFoundError:
     from pkg_resources import parse_version
 
-ZIP_COMPRESSION = zipfile.ZIP_BZIP2
-ZIP_COMPRESSION_LEVEL = 9
+
 
 _LOGGER = inkBoard.getLogger(__name__)
 
@@ -124,7 +129,7 @@ def compare_versions(requirement: Union[str,"Version"], compare_version: Union[s
         comp_str = f"compare_version {c[0]} required_version"
     else:
         req_version = requirement
-        comp_str = f"compare_version >= required_version"
+        comp_str = "compare_version >= required_version"
     
     return eval(comp_str, {}, {"compare_version": compare_version, "required_version": parse_version(req_version)})
 
