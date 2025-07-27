@@ -6,6 +6,7 @@ if TYPE_CHECKING:
     from .version import Version
 
 internalinstalltypes = Literal["platform", "integration"]
+downloadinstalltypes = Literal["platform", "integration"]
 packagetypes = Literal['package', 'integration', 'platform']
 branchtypes = Literal["main", "dev"]
 

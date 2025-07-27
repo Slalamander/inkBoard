@@ -17,6 +17,7 @@ import tempfile
 
 from inkBoard import logging
 
+from .install import PackageInstaller
 from .types import (
     PackageIndex,
     branchtypes
@@ -54,9 +55,10 @@ class Downloader:
     ##Invalid url (i.e. invalid name thing)
     ##No internet
     ##Mainly just to know what the errors are
-    def __init__(self, destination_folder : Path):
+    def __init__(self, destination_folder : Path, confirmation_function = None):
         print(self._index_downloaded)
         self.destination_folder = destination_folder
+        self._confirmation_function = confirmation_function
 
         #[ ]: Implement confirmation_function
 
@@ -96,6 +98,7 @@ class Downloader:
         with tempfile.TemporaryDirectory() as tempdir:
             temp_path = Path(tempdir)
             download_loc = self._download_package(package_url, filename, tempdir)
+            installer = PackageInstaller(download_loc, confirmation_function=self._confirmation_function, package_type="integration")
 
     def download_platform_package(self, name : str, package_branch : branchtypes = "main", version : str = ""):
         #[ ] for platforms, ask to copy files like readme etc. into the current working directory?

@@ -775,7 +775,10 @@ class PackageInstaller(BaseInstaller):
             return zipfile.ZipFile(file, 'r')
 
 class InternalInstaller(BaseInstaller):
-    "Handles installing requirements of already installed platforms and integrations."
+    """Handles installing requirements of already installed platforms and integrations.
+    
+    I.e. used to call the appropriate `pip install ...` commands
+    """
     def __init__(self, install_type: internalinstalltypes, name: str, skip_confirmations = False, confirmation_function = None):
         ##May remove the subclassing, but just reuse the usable functions (i.e. seperate out a few funcs.)
         ##Also, use the constant designer mod in case something is not found internally.
