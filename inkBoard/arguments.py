@@ -121,16 +121,36 @@ def parse_args():
         const.COMMAND_INSTALL, help="Installs inkBoard packages or requirements from a config folder"
     )
 
-    parser_install.add_argument("file", help="""
-                            The file to install. If it is a ZIP file, inkBoard will check if it is an inkBoard compatible one (Either an inkBoard package, or a zip of a platform or integration folder).
-                            If a YAML file, inkBoard will go through the base directory, the files folder and the custom folder and call pip install on any files it finds titled requirements.txt. In the custom integration folder, it will also take care of installing requirements for the integrations presents.
-                            If it is platform or integration, appended by a name, inkBoard will go through the install process of that respective platform/integration, provided it is installed internally.
-                            If not supplied, the installer will look for all suitable ZIP files in the current directory.
-                            """, default=None, nargs='?')
-    ##How to deal with passing the name part of the command?
-    
-    parser_install.add_argument("name", help="The name of platform or integration to install. This is not used if the file command is not one of integration or platform.",
-                                default=None, nargs="?")
+    parser_install.add_argument("--upgrade", "-U", action='store_true', help="""
+                            Checks if any integrations and platforms passed can be upgraded from the inkBoard package index.
+                            """, dest="upgrade")
+    parser_install.add_argument("--dev", "-D", action='store_true', help="""
+                            Enables downloading packages from the developer branch.
+                            """, dest="upgrade")
+    parser_install.add_argument("--local", "-L", help="""
+                            Installs local files. Pass appropriate file arguments.
+                            Accepts:\n
+                                -  (paths to) ZIP files of integrations, platforms, or packages
+                                -  (paths to) a configuration YAML file. This creates a list of install requirements for custom integrations and all requirements.txt files found in the configuration directory and sub directories.\n
+                                -  The names of a platform or integration already internally installed, to install its requirements. This case is usually already handled by the other methods.
+                            """, dest="local_installs", default=[], nargs='?')
+    parser_install.add_argument("--platforms",  "-P", help="""
+                            Downloads and installs provided platforms. If --upgrade is not provided, nothing is done if the platform is already installed.
+                            """, dest="platforms", default=[], nargs='?')
+    parser_install.add_argument("--integrations",  "-I", help="""
+                            Downloads and installs provided integrations. If --upgrade is not provided, nothing is done if the integration is already installed.
+                            """, dest="integrations", default=[], nargs='?')
+    parser_install.add_argument("index", "--index", "-X", help="""
+                            Manually determines the install type for each argument. Names ending with .zip, .txt, .yaml and .yml are handled as arguments to --local.
+                            Other arguments are looked up in the inkBoard index and downloaded and installed if needed.
+                            """, dest="index_installs", default=[], nargs='?')
+    # raise Exception("Go implement the functions for the install arguments. But first get the index repo set up probably.")
+    ##installer command
+    #[x]: rename file to type/installtype; options will be integration, platform and file
+    #[x]: names argument; the name(s) of things to install.
+    #[x]: shorthands (-f, -i, -p); either in the function or somehow in the parser make them exclusive -> no, add them as regular options, with nargs
+    #[ ]: FOR LATER: add argument that allows installation from github links
+    ## ok so: seperate arg for each type, make the command call everything at once
 
     parser_install.add_argument('--no-input', help="Disables any input prompts that are deemed optional", action='store_true')
 
