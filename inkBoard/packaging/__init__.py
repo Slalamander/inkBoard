@@ -7,7 +7,7 @@ from pathlib import Path
 import inkBoard
 # from inkBoard.types  import *
 from inkBoard import constants as bootstrap
-from .types import internalinstalltypes
+from .types import internalinstalltypes, downloadinstalltypes
 
 
 if TYPE_CHECKING:
@@ -76,16 +76,20 @@ def create_core_package(core: "CORE", name: str = None, pack_all: bool = False, 
     return 0
 
 
-def run_install_command(file: str, name: str, no_input: bool):
+def run_install_command(install_arg: str, name: str, no_input: bool):
     ##Add functionality to installer for internal installs (platforms and integrations)
     ##Usage: install [platform/integration] [name]
 
-    if file in internalinstalltypes.__args__:
-        return install_internal(file, name, no_input)
-    else:
-        return install_packages(file, no_input)
+    #[ ]: install by default goes to download (i.e. similar to pip install)
+    #[ ]: how to: allow to pass platforms/integrations -> goes to download; otherwise check if file
+    #[ ]: Add a flag to call the internal installer (or a install - requirements)
 
-def install_internal(install_type: str, name:str, no_input: bool = False):
+    if install_arg in downloadinstalltypes.__args__:
+        return install_internal_requirements(install_arg, name, no_input)
+    else:
+        return install_packages(install_arg, no_input)
+
+def install_internal_requirements(install_type: str, name:str, no_input: bool = False):
     from .install import InternalInstaller
     return InternalInstaller(install_type, name, no_input, confirm_input).install()
 
@@ -109,5 +113,6 @@ def install_packages(file: Union[str, Path] = None, no_input: bool = False):
             PackageInstaller(package, skip_confirmations=no_input, confirmation_function=confirm_input).install()
         return 0
 
-
+def download_packages():
+    return
 

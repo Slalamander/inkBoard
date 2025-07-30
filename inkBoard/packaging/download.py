@@ -4,19 +4,23 @@ Trying to implement this without using requests
 from typing import (
     Union,
     Literal,
-    TYPE_CHECKING
+    TYPE_CHECKING,
 )
+
 import urllib.request
 from pathlib import Path
 import os
 from datetime import datetime as dt
 from datetime import timedelta
 import json
+import tempfile
 
 from inkBoard import logging
 
+from .install import PackageInstaller
 from .types import (
-    PackageIndex
+    PackageIndex,
+    branchtypes
 )
 from .constants import (
     PACKAGE_INDEX_URL,
@@ -51,9 +55,14 @@ class Downloader:
     ##Invalid url (i.e. invalid name thing)
     ##No internet
     ##Mainly just to know what the errors are
-    def __init__(self, destination_folder : Path):
+    def __init__(self, destination_folder : Path, confirmation_function = None):
         print(self._index_downloaded)
         self.destination_folder = destination_folder
+        self._confirmation_function = confirmation_function
+
+        #[ ]: Implement confirmation_function
+        #[ ]: parse version from the string
+
     
     def get_package_index(self, force_get = False) -> dict:
 
@@ -84,44 +93,102 @@ class Downloader:
         self.index : PackageIndex = package_index
         return package_index
 
-    def download_integration_package(self, name : str, package_type : Literal["main","dev"] = "main", version : str = ""):
-        #"https://github.com/Slalamander/inkBoard-package-index/raw/refs/heads/main/platforms/desktop0.0.2.zip"
-        if package_type not in ("main","dev"):
-            raise ValueError(f"branch must be one of {packagebranchtypes}, you passed {package_type}")
+    def download_integration_package(self, name : str, package_branch : branchtypes = "main", version : str = ""):
+        ##[ ]: create url -> download into temp folder -> copy to appropriate inkboard folder
+        filename, package_url = self._make_package_url(name, "integrations", package_branch, version)
+        with tempfile.TemporaryDirectory() as tempdir:
+            temp_path = Path(tempdir)
+            download_loc = self._download_package(package_url, filename, tempdir)
+            installer = PackageInstaller(download_loc, confirmation_function=self._confirmation_function, package_type="integration")
+
+    def download_platform_package(self, name : str, package_branch : branchtypes = "main", version : str = ""):
+        #[ ] for platforms, ask to copy files like readme etc. into the current working directory?
+        filename, package_url = self._make_package_url(name, "platforms", package_branch, version)
+
+    def _make_package_url(self, package_name : str, package_type : Literal["integrations", "platforms"], package_branch: branchtypes, version : str = ''):
+        """Creates the raw url for a platform or integration package
+
+        Parameters
+        ----------
+        package_name : str
+            The name of the package
+        package_type : Literal[&quot;integrations&quot;, &quot;platforms&quot;]
+            Type of package, either integration or platform
+        package_branch : branchtypes
+            The branch to download from. Not relevant when version is specified
+        version : str
+            Specific version to get
+
+        Returns
+        -------
+        tuple[str, str]
+            The filename and corresponding url of the package
+
+        Raises
+        ------
+        ValueError
+            _description_
+        KeyError
+            _description_
+        ValueError
+            _description_
+        ValueError
+            _description_
+        """        
         
+        #create the raw_url for a package
+        
+        #"https://github.com/Slalamander/inkBoard-package-index/raw/refs/heads/main/platforms/desktop0.0.2.zip"
+        if package_branch not in ("main","dev"):
+            raise ValueError(f"branch must be one of {packagebranchtypes}, you passed {package_branch}")
+
         if not hasattr(self,"index"):
             self.get_package_index()
 
-        if name not in self.index["integrations"]:
-            raise KeyError(f"Integration {name} is not known in the package index")
+        if package_name not in self.index[package_type]:
+            raise KeyError(f"Integration {package_name} is not known in the package index")
 
         if version:
-            ##Handle cases where _dev should be appended to it?
-            _LOGGER.warning(f"Downloading custom versions is not available (yet). Download of {name} will fail if the version is not the newest one in the <main> or <dev> branch.")
-            if package_type == "dev" or version.count(".") >= 3:
-                ##main versions should be 0.2.5 etc. For dev, it may be 0.2.5.dev1 etc.
-                ##If it's more something went wrong tbf lol
-                ##Minor versions **should** end up in the main index too.
-                _LOGGER.debug(f"appending _dev suffix to {name} version {version} for package handling")
+            _LOGGER.warning(f"Downloading archived versions is not available (yet). Download of {package_name} will fail if the version is not the newest one in the <main> or <dev> branch.")
+            if version == self.index[package_type][package_name]["main"]["version"]:
+                fileversion = version
+            elif version == self.index[package_type][package_name]["dev"]["version"]:
                 fileversion = f"{version}_dev"
-                raise ValueError("I don't think it should be handled like this for specific versions")
-                ##Basically: for versions if specified, check if it is the main version -> prefer
-                ##If dev version -> well you know it's the dev version
-                ##Otherwise, there will be a dev/main folder in the repo that handles those and which should be set via the package_type honestly?
-                ##Or should there be a check in the indexer whether a dev version is elligeble?
+            else:
+                # _LOGGER.warning(f"Downloading archived versions is not available (yet). Download of {name} will fail if the version is not the newest one in the <main> or <dev> branch.")
+                _LOGGER.error("Downloading archived components is not available yet.")
+                raise ValueError("Downloading archived components is not available yet.")
+                if package_branch == "dev" or version.count(".") >= 3:
+                    ##main versions should be 0.2.5 etc. For dev, it may be 0.2.5.dev1 etc.
+                    ##If it's more something went wrong tbf lol
+                    ##Minor versions **should** end up in the main index too.
+                    _LOGGER.debug(f"appending _dev suffix to {package_name} version {version} for package handling")
+                    fileversion = f"{version}_dev"
+                    raise ValueError("I don't think it should be handled like this for specific versions")
+                    ##Basically: for versions if specified, check if it is the main version -> prefer
+                    ##If dev version -> well you know it's the dev version
+                    ##Otherwise, there will be a dev/main folder in the repo that handles those and which should be set via the package_type honestly?
+                    ##Or should there be a check in the indexer whether a dev version is elligeble?
 
-            pass
         else:
-            fileversion = self.index["integrations"][name][package_type]
-            if package_type == "dev":
+            fileversion = self.index[package_type][package_name][package_branch]
+            if package_branch == "dev":
             # version =
                 fileversion = f"{fileversion}_dev"
-                pass
+        
+        filename = f"{package_name}-{fileversion}.zip"
+        filepath = f"/{package_type}/{package_name}/{filename}"
 
-        raw_url = self._make_raw_file_link()
+        raw_url = self._make_raw_file_link(filepath, package_branch)
+        return filename, raw_url
 
-        #[ ] for platforms, ask to copy files like readme etc. into the current working directory?
-        return
+    def _download_package(self, raw_url : str, filename : str, dest : Path):
+
+        dest = Path(dest) / filename
+        loc, _ = self._download_raw_file(raw_url, dest)
+        return loc
+            ##From here an installer instance can be created I think? Since that one reidentifies the package anyways
+
 
     @classmethod
     def _download_package_index(cls, *, _destination_file : Union[Path, str] = None):
@@ -136,9 +203,9 @@ class Downloader:
     @staticmethod
     def _download_raw_file(raw_file_url : str, destination_file : str):
 
-        filename, headers = urllib.request.urlretrieve(raw_file_url, filename=destination_file)
-        _LOGGER.debug(f"Successfully downloaded {filename}")
-        return filename, headers
+        path_to_download, headers = urllib.request.urlretrieve(raw_file_url, filename=destination_file)
+        _LOGGER.debug(f"Successfully downloaded {path_to_download}")
+        return path_to_download, headers
 
     @staticmethod
     def _make_raw_file_link(file : str, branch = "main", repo_url : str = PACKAGE_INDEX_URL) -> str:

@@ -5,6 +5,7 @@ from typing import (
     Callable,
     Union,
     Optional,
+    Literal
 )
 from abc import abstractmethod
 from contextlib import suppress
@@ -326,13 +327,19 @@ class PackageInstaller(BaseInstaller):
         Function to call when asking for confirmation, gets passed the question to confirm and the Installer instance., by default None
     """
 
-    def __init__(self, file: Union[Path,str], skip_confirmations: bool = False, confirmation_function: Callable[[str, 'BaseInstaller'],bool] = None):
+    def __init__(self,
+                file: Union[Path,str], 
+                skip_confirmations: bool = False, confirmation_function: Callable[[str, 'BaseInstaller'],bool] = None,
+                package_type : Literal[None, "integration", "platform", "package", "configuration"] = None,
+                ):
         self._file = Path(file)
         assert self._file.exists(), f"{file} does not exist"
         self._confirmation_function = confirmation_function
         self._skip_confirmations = skip_confirmations
 
-        if self._file.suffix in CONFIG_FILE_TYPES:
+        if package_type is not None:
+            self._package_type = package_type
+        elif self._file.suffix in CONFIG_FILE_TYPES:
             self._package_type = "configuration"
         else:
             self._package_type: packagetypes = self.identify_zip_file(self._file)
@@ -350,6 +357,8 @@ class PackageInstaller(BaseInstaller):
             self.install_package()
         elif self._package_type == "configuration":
             self.install_config_requirements(self._file, self._skip_confirmations, self._confirmation_function)
+        else:
+            raise ValueError(f"Unknown package_type given: {self._package_type}")
 
     def install_package(self) -> Optional[packagetypes]:
         """Installs a package type .zip file file
@@ -766,7 +775,10 @@ class PackageInstaller(BaseInstaller):
             return zipfile.ZipFile(file, 'r')
 
 class InternalInstaller(BaseInstaller):
-    "Handles installing requirements of already installed platforms and integrations."
+    """Handles installing requirements of already installed platforms and integrations.
+    
+    I.e. used to call the appropriate `pip install ...` commands
+    """
     def __init__(self, install_type: internalinstalltypes, name: str, skip_confirmations = False, confirmation_function = None):
         ##May remove the subclassing, but just reuse the usable functions (i.e. seperate out a few funcs.)
         ##Also, use the constant designer mod in case something is not found internally.

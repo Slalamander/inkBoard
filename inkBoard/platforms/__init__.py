@@ -18,8 +18,12 @@ if const.DESIGNER_INSTALLED:
 
 if TYPE_CHECKING:
     from inkBoard import config as configuration, CORE as CORE
+    from . import basedevice
 
 _LOGGER = logging.getLogger(__name__)
+
+#[ ]: move this code to a 'device' folder (or basedevice, idk). Platform folder will only hold that
+#[ ]: and features can be put in a subfolder such that they are categorised by the feature name.
 
 def get_device(config : "configuration", core: "CORE") -> Device:
     "Initialises the correct device based on the config."
@@ -56,7 +60,7 @@ def get_device(config : "configuration", core: "CORE") -> Device:
     else:
         ##Test this again once the platform is installed
         dev_spec = importlib.util.spec_from_file_location(platform_package, str(platform_path / "__init__.py"), submodule_search_locations=[])
-        device_platform: basedevice = importlib.util.module_from_spec(dev_spec)
+        device_platform: "basedevice" = importlib.util.module_from_spec(dev_spec)
         sys.modules[platform_package] = device_platform
         dev_spec.loader.exec_module(device_platform)
         device_platform = importlib.import_module(".device",platform_package)

@@ -1,8 +1,5 @@
 ###Inkboard
 
-__version__ = "0.3.2.dev1"
-"inkBoard version"
-
 import logging as __logging
 
 from types import MappingProxyType
@@ -20,6 +17,8 @@ if TYPE_CHECKING:
 
     integration_objects: MappingProxyType[Literal["integration_entry"],Any]
 
+__version__ = "0.3.2.dev1"
+"inkBoard version"
 
 def getLogger(name: Union[str,None] = None) -> "ib_logging.BaseLogger":
     """Convenience method to get a logger with type hinting for additional levels like verbose.
