@@ -61,6 +61,7 @@ class Downloader:
         self._confirmation_function = confirmation_function
 
         #[ ]: Implement confirmation_function
+        #[ ]: parse version from the string
 
     
     def get_package_index(self, force_get = False) -> dict:
