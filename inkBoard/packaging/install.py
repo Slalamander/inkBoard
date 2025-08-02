@@ -329,8 +329,8 @@ class PackageInstaller(BaseInstaller):
 
     def __init__(self,
                 file: Union[Path,str], 
-                skip_confirmations: bool = False, confirmation_function: Callable[[str, 'BaseInstaller'],bool] = None,
                 package_type : Literal[None, "integration", "platform", "package", "configuration"] = None,
+                skip_confirmations: bool = False, confirmation_function: Callable[[str, 'BaseInstaller'],bool] = None,
                 ):
         self._file = Path(file)
         assert self._file.exists(), f"{file} does not exist"
