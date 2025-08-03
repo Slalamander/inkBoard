@@ -5,8 +5,9 @@ from typing import (
     Union,
     Literal,
     TYPE_CHECKING,
+    Final
 )
-
+from types import MappingProxyType
 import urllib.request
 from pathlib import Path
 import os
@@ -16,10 +17,12 @@ import json
 import tempfile
 
 from inkBoard import logging
+from inkBoard.constants import INKBOARD_FOLDER
 
 from .types import (
     PackageIndex,
-    branchtypes
+    branchtypes,
+    TESTTYPE,
 )
 from .constants import (
     PACKAGE_INDEX_URL,
@@ -43,8 +46,10 @@ class Downloader:
     destination_folder : Path
     "Folder where downloaded files are put. Usually a temporary folder"
 
-    index : PackageIndex
+    package_index : PackageIndex = {}
     "inkBoard package index with information on package versions"
+
+    index_file : Final[Path] = INKBOARD_FOLDER / "files" / INTERNAL_PACKAGE_INDEX_FILE
 
     file_location : Path
     "Location (with file name) of the downloaded file. `None` until the download has been succesfull."
@@ -52,9 +57,12 @@ class Downloader:
     file_name : str
     "Name of the downloaded file. `None` until the download has been succesfull."
 
-    _index_downloaded : bool = False
+    _last_index_change : str = None
+
+    # _index_downloaded : bool = False
     #Indicate whether the index has been updated for this instance of the downloader
     #Means it can be updated i.e. when asking to download a package of which the version is supposedly already up to date
+    #Currently commented out to test classmethod downloading (which simply checks if the index is outdated)
 
     ##Some stuff to test:
     ##Invalid url (i.e. invalid name thing)
@@ -76,34 +84,55 @@ class Downloader:
 
         #[ ]: Implement confirmation_function
     
-    def get_package_index(self, force_get = False) -> dict:
+    @classmethod
+    def get_package_index(cls, force_get = False) -> PackageIndex:
+        """Gets the package index
 
-        ##Internal file is NOT going to be put into the destination folder
-        internal_file = self.destination_folder / INTERNAL_PACKAGE_INDEX_FILE
+        If the index file does not exist or is outdated, it will be downloaded.
+        Only opens the index file if required.
 
-        get_index = False
-        if force_get:
+        Parameters
+        ----------
+        force_get : bool, optional
+            Forces downloading and updating the index, by default False
+
+        Returns
+        -------
+        PackageIndex
+            The package index
+        """        
+
+        if force_get or cls.is_index_outdated():
             get_index = True
-        elif self._index_downloaded:
-            get_index = False
-        elif internal_file.exists():
-            ##Check last changed (i.e. downloaded) time?
-            last_change = os.path.getmtime(internal_file)
-            d = dt.now() - dt.fromtimestamp(last_change)
-            if d.days != 0:
-                get_index = True
         else:
-            get_index = True
+            get_index = False
 
         if get_index:
-            self._download_package_index()
-            self._index_downloaded = True
+            cls._download_package_index()
+            cls._last_index_change = os.path.getmtime(cls.index_file)
 
-        with open(internal_file) as f:
-            package_index = PackageIndex(json.load(f))
+        if get_index or not cls.package_index:
+            with open(cls.index_file) as f:
+                package_index = MappingProxyType(PackageIndex(json.load(f)))
+            
+            cls.package_index : PackageIndex = package_index
         
-        self.index : PackageIndex = package_index
-        return package_index
+        return cls.package_index
+
+    @classmethod
+    def is_index_outdated(cls) -> bool:
+
+        if not cls.index_file.exists():
+            return True
+        else:
+            last_change = cls._last_index_change
+            if last_change is None:
+                last_change = os.path.getmtime(cls.index_file)
+            d = dt.now() - dt.fromtimestamp(last_change)
+            if d.days != 0:
+                return True
+        return False
+                
 
     def _download_integration_package(self, name : str, package_branch : branchtypes = "main", version : str = "") -> Path:
         filename, package_url = self._make_download_url(name, "integrations", package_branch, version)
@@ -151,17 +180,17 @@ class Downloader:
         if package_branch not in ("main","dev"):
             raise ValueError(f"branch must be one of {packagebranchtypes}, you passed {package_branch}")
 
-        if not hasattr(self,"index"):
+        if not self.package_index:
             self.get_package_index()
 
-        if package_name not in self.index[package_type]:
+        if package_name not in self.package_index[package_type]:
             raise KeyError(f"Integration {package_name} is not known in the package index")
 
         if version:
             _LOGGER.warning(f"Downloading archived versions is not available (yet). Download of {package_name} will fail if the version is not the newest one in the <main> or <dev> branch.")
-            if version == self.index[package_type][package_name]["main"]["version"]:
+            if version == self.package_index[package_type][package_name]["main"]["version"]:
                 fileversion = version
-            elif version == self.index[package_type][package_name]["dev"]["version"]:
+            elif version == self.package_index[package_type][package_name]["dev"]["version"]:
                 fileversion = f"{version}_dev"
             else:
                 # _LOGGER.warning(f"Downloading archived versions is not available (yet). Download of {name} will fail if the version is not the newest one in the <main> or <dev> branch.")
@@ -180,7 +209,7 @@ class Downloader:
                     ##Or should there be a check in the indexer whether a dev version is elligeble?
 
         else:
-            fileversion = self.index[package_type][package_name][package_branch]
+            fileversion = self.package_index[package_type][package_name][package_branch]
             if package_branch == "dev":
             # version =
                 fileversion = f"{fileversion}_dev"
@@ -217,7 +246,7 @@ class Downloader:
     @classmethod
     def _download_package_index(cls, *, _destination_file : Union[Path, str] = None):
         if _destination_file == None:
-            _destination_file = Path(__file__).parent / INTERNAL_PACKAGE_INDEX_FILE
+            _destination_file = cls.index_file
         _LOGGER.info("Getting inkBoard package index from github")
         raw_url = cls._make_raw_file_link("index.json")
         cls._download_raw_file(raw_url, _destination_file)
