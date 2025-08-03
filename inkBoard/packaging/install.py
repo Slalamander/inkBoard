@@ -5,7 +5,8 @@ from typing import (
     Callable,
     Union,
     Optional,
-    Literal
+    Literal,
+    get_args,
 )
 from abc import abstractmethod
 from contextlib import suppress
@@ -40,7 +41,10 @@ from .types import (
 from .constants import (
     PACKAGE_ID_FILES,
     INKBOARD_PACKAGE_INTERNAL_FOLDER,
-    REQUIREMENTS_FILE
+    REQUIREMENTS_FILE,
+    INDEX_PACKAGE_KEYS,
+    PACKAGETYPE_TO_INDEX_KEY,
+    INDEX_KEY_TO_PACKAGETYPE,
 )
 from .version import (
     InkboardVersion,
@@ -48,6 +52,7 @@ from .version import (
     parse_version,
     compare_versions,
     get_comparitor_string,
+    split_comparison_string
     )
 from .download import Downloader
 
@@ -833,11 +838,80 @@ class PackageInstaller(BaseInstaller):
 class PackageIndexInstaller(PackageInstaller):
     "Handles installing packages from the package index"
 
-    def __init__(self, file, package_type = None, skip_confirmations = False, confirmation_function = None):
+    def __init__(self, 
+                name : str,
+                package_type : packagetypes = None,
+                skip_confirmations : bool = False,
+                confirmation_function = None):
         self.downloader = Downloader()
-        super().__init__(file, package_type, skip_confirmations, confirmation_function)
+        self.downloaded = False
+
+        if get_comparitor_string(name):
+            name, cmp, version = split_comparison_string(name)
+            self.package_name = name
+            self._comparison_string = cmp
+            self.version = version
+        else:
+            self.package_name = name
+            self._comparison_string = None
+            self.version = None
+
+        if package_type is None:
+            package_type = self.identify_package_type(name)
+        else:
+            self.verify_package(self.package_name, package_type)
+        # super().__init__(name, package_type, skip_confirmations, confirmation_function)
+
+    def install(self):
+        ##Ensure first that download has taken place succesfully
+        ##Then run super().install after setting the file
+
+        #So structure:
+        #   - Get the index
+        #   - Check if the wanted package is already installed, if so, compare the version to the index version
+        #   - set up a tempdir, pass as destination folder (Optionally enable using a common tempdir)
+        #   - download package, set file location to file
+        #   - run super().install()
+
+        if not self.downloaded:
+            self.download_package()
+        return super().install()
+    
+    def download_package(self):
+
+        self.downloaded = True
+        return
+    
+    @classmethod
+    def verify_package(cls, name : str, package_type : str):
+        p_index = Downloader.get_package_index()
+
+        index_type = PACKAGETYPE_TO_INDEX_KEY.get(package_type, package_type)
+        if index_type not in INDEX_PACKAGE_KEYS:
+            raise KeyError(f"Unknown package type {package_type}, cannot be found in the package index")
+        
+        if name not in p_index[index_type]:
+            raise FileNotFoundError(f"Package with name {name} does not exist in the {package_type} package index")
+        
+        return True
 
     @classmethod
     def identify_package_type(cls, name : str):
-        return super().identify_package_type(name)
-    
+
+        p_index = Downloader.get_package_index()        
+        if cmp := get_comparitor_string(name):
+            package_name, _ = name.split(cmp)
+        else:
+            package_name = name
+
+        index_type = None
+        for k in INDEX_PACKAGE_KEYS:
+            if package_name in p_index[k]:
+                index_type = k
+                break
+        
+        if index_type is None:
+            raise FileNotFoundError(f"Cannot find anything matching the name {package_name} in the package index")
+        
+        package_type = INDEX_KEY_TO_PACKAGETYPE[index_type]
+        return package_type
