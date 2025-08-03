@@ -30,6 +30,28 @@ def get_comparitor_string(input_str: str) -> Literal[comparisonstrings]:
         return c[0]
     return
 
+def split_comparison_string(input_str : str) -> tuple[str, Union[str,None], Union[str,None]]:
+    """Splits the string into the name, comparison string and version string
+
+    If it is not 
+
+    Parameters
+    ----------
+    input_str : str
+        The string to split
+
+    Returns
+    -------
+    tuple[str, Union[str,None], Union[str,None]]
+        _description_
+    """    
+
+    if cmp := get_comparitor_string(input_str):
+        name, version = input_str.split(cmp)
+        return name, cmp, version
+    else:
+        raise ValueError(f"{input_str} does not contain a version comparison")
+
 def compare_versions(requirement: Union[str,"Version"], compare_version: Union[str,"Version"]) -> bool:
     """Does simple version comparisons.
 
