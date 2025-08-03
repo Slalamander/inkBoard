@@ -17,7 +17,6 @@ import tempfile
 
 from inkBoard import logging
 
-from .install import PackageInstaller
 from .types import (
     PackageIndex,
     branchtypes
@@ -47,6 +46,12 @@ class Downloader:
     index : PackageIndex
     "inkBoard package index with information on package versions"
 
+    file_location : Path
+    "Location (with file name) of the downloaded file. `None` until the download has been succesfull."
+
+    file_name : str
+    "Name of the downloaded file. `None` until the download has been succesfull."
+
     _index_downloaded : bool = False
     #Indicate whether the index has been updated for this instance of the downloader
     #Means it can be updated i.e. when asking to download a package of which the version is supposedly already up to date
@@ -55,14 +60,21 @@ class Downloader:
     ##Invalid url (i.e. invalid name thing)
     ##No internet
     ##Mainly just to know what the errors are
-    def __init__(self, destination_folder : Path, confirmation_function = None):
-        print(self._index_downloaded)
-        self.destination_folder = destination_folder
+    def __init__(self, destination_folder : str | Path, confirmation_function = None):
+
+        #FIXME check installer to see if an instance can install more than one file or is made per file. Follow same pattern for downloader.
+
+        self.destination_folder = Path(destination_folder)
+        
+        if not self.destination_folder.is_dir():
+            if self.destination_folder.exists():
+                raise FileNotFoundError(f"Destination {self.destination_folder} is not a folder")
+            else:
+                raise FileNotFoundError(f"Destination folder {self.destination_folder} does not exist")
+        
         self._confirmation_function = confirmation_function
 
         #[ ]: Implement confirmation_function
-        #[ ]: parse version from the string
-
     
     def get_package_index(self, force_get = False) -> dict:
 
@@ -93,19 +105,16 @@ class Downloader:
         self.index : PackageIndex = package_index
         return package_index
 
-    def download_integration_package(self, name : str, package_branch : branchtypes = "main", version : str = ""):
-        ##[ ]: create url -> download into temp folder -> copy to appropriate inkboard folder
-        filename, package_url = self._make_package_url(name, "integrations", package_branch, version)
-        with tempfile.TemporaryDirectory() as tempdir:
-            temp_path = Path(tempdir)
-            download_loc = self._download_package(package_url, filename, tempdir)
-            installer = PackageInstaller(download_loc, confirmation_function=self._confirmation_function, package_type="integration")
+    def _download_integration_package(self, name : str, package_branch : branchtypes = "main", version : str = "") -> Path:
+        filename, package_url = self._make_download_url(name, "integrations", package_branch, version)
+        return self._download_from_url(package_url, filename)
 
-    def download_platform_package(self, name : str, package_branch : branchtypes = "main", version : str = ""):
+    def _download_platform_package(self, name : str, package_branch : branchtypes = "main", version : str = ""):
         #[ ] for platforms, ask to copy files like readme etc. into the current working directory?
-        filename, package_url = self._make_package_url(name, "platforms", package_branch, version)
+        filename, package_url = self._make_download_url(name, "platforms", package_branch, version)
+        return self._download_from_url(package_url, filename)
 
-    def _make_package_url(self, package_name : str, package_type : Literal["integrations", "platforms"], package_branch: branchtypes, version : str = ''):
+    def _make_download_url(self, package_name : str, package_type : Literal["integrations", "platforms"], package_branch: branchtypes, version : str = ''):
         """Creates the raw url for a platform or integration package
 
         Parameters
@@ -115,7 +124,7 @@ class Downloader:
         package_type : Literal[&quot;integrations&quot;, &quot;platforms&quot;]
             Type of package, either integration or platform
         package_branch : branchtypes
-            The branch to download from. Not relevant when version is specified
+            The inkBoard branch to download from. Not relevant when version is specified
         version : str
             Specific version to get
 
@@ -182,13 +191,28 @@ class Downloader:
         raw_url = self._make_raw_file_link(filepath, package_branch)
         return filename, raw_url
 
-    def _download_package(self, raw_url : str, filename : str, dest : Path):
+    def _download_from_url(self, raw_url : str, filename : str) -> Path:
+        """_summary_
 
-        dest = Path(dest) / filename
+        Parameters
+        ----------
+        raw_url : str
+            _description_
+        filename : str
+            _description_
+
+        Returns
+        -------
+        Path
+            _description_
+        """
+
+        dest = self.destination_folder / filename
         loc, _ = self._download_raw_file(raw_url, dest)
-        return loc
+        self.file_location = Path(loc)
+        self.file_name = self.file_location.name
+        return self.file_location
             ##From here an installer instance can be created I think? Since that one reidentifies the package anyways
-
 
     @classmethod
     def _download_package_index(cls, *, _destination_file : Union[Path, str] = None):
@@ -198,7 +222,6 @@ class Downloader:
         raw_url = cls._make_raw_file_link("index.json")
         cls._download_raw_file(raw_url, _destination_file)
         _LOGGER.info("Updated inkBoard package index")
-        
 
     @staticmethod
     def _download_raw_file(raw_file_url : str, destination_file : str):
