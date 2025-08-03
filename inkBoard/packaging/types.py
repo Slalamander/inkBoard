@@ -44,7 +44,7 @@ class PackageIndex(TypedDict):
     "Version of PSSM the index was made on"
 
     timestamp : dict[branchtypes, str]
-    "ISO format timestamp of when the index file was run"
+    "ISO format timestamp of when the index file was last updated"
 
     platforms : dict[str,dict[branchtypes,indexpackagedict]]
     "List of platforms and their versions in the main and dev branch"
