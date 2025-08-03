@@ -49,6 +49,7 @@ from .version import (
     compare_versions,
     get_comparitor_string,
     )
+from .download import Downloader
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -310,6 +311,61 @@ class BaseInstaller:
     # - Platform
     # - Integration
     # - requirements; internal and external -> internal eh, should be taken care of when actually installing it.
+class InternalInstaller(BaseInstaller):
+    """Handles installing requirements of already installed platforms and integrations.
+    
+    I.e. used to call the appropriate `pip install ...` commands
+    """
+    def __init__(self, install_type: internalinstalltypes, name: str, skip_confirmations = False, confirmation_function = None):
+        ##May remove the subclassing, but just reuse the usable functions (i.e. seperate out a few funcs.)
+        ##Also, use the constant designer mod in case something is not found internally.
+        ##Do give a warning for platforms though, or integrations without a designer module.
+        if install_type == "integration":
+            file = Path("integrations") / name
+        elif install_type == "platform":
+            file = Path("platforms") / name
+
+        full_path = INKBOARD_FOLDER / file
+        if not DESIGNER_INSTALLED:
+            assert full_path.exists(), f"{install_type} {name} is not installed or does not exist"
+        else:
+            if not full_path.exists():
+                assert (DESIGNER_FOLDER / file).exists(),  f"{install_type} {name} is not installed or does not exist"
+                full_path = DESIGNER_FOLDER / file
+
+        self._name = full_path.name
+        self._full_path = full_path
+        self._confirmation_function = confirmation_function
+        self._skip_confirmations = skip_confirmations
+        self._install_type = install_type
+        return
+    
+    def install(self):
+        if self._install_type == "integration":
+            return self.install_integration()
+        elif self._install_type == "platform":
+            return self.install_platform()
+
+    def install_platform(self):
+
+        with open(self._full_path / PACKAGE_ID_FILES["platform"]) as f:
+            conf: platformjson = json.load(f)
+            
+        with suppress(NegativeConfirmation):
+            msg = f"Install platform {self._name}?"
+            self.ask_confirm(msg)
+            return self.install_platform_requirements(self._name, conf)
+        return 1
+
+    def install_integration(self):
+        with open(self._full_path / PACKAGE_ID_FILES["integration"]) as f:
+            conf: platformjson = json.load(f)
+        
+        with suppress(NegativeConfirmation):
+            msg = f"Install integration {self._name}?"
+            self.ask_confirm(msg)
+            return self.install_integration_requirements(self._name, conf)
+        return 1
 
 class PackageInstaller(BaseInstaller):
     """Installs an inkBoard compatible .zip file, or requirements files in a config directory.
@@ -342,7 +398,7 @@ class PackageInstaller(BaseInstaller):
         elif self._file.suffix in CONFIG_FILE_TYPES:
             self._package_type = "configuration"
         else:
-            self._package_type: packagetypes = self.identify_zip_file(self._file)
+            self._package_type: packagetypes = self.identify_package_type(self._file)
         return
 
     def install(self):
@@ -699,14 +755,14 @@ class PackageInstaller(BaseInstaller):
             if file.suffix != ".zip":
                 continue
 
-            if p := cls.identify_zip_file(file):
+            if p := cls.identify_package_type(file):
                 packs[file] = p
         
         _LOGGER.info(f"Found {len(packs)} inkBoard installable zip packages.")
         return packs
     
     @classmethod
-    def identify_zip_file(cls, file: Union[str, Path, zipfile.ZipFile]) -> Optional[packagetypes]:
+    def identify_package_type(cls, file: Union[str, Path, zipfile.ZipFile]) -> Optional[packagetypes]:
         """Identifies the type of inkBoard package the zip file is
 
         Parameters
@@ -774,58 +830,14 @@ class PackageInstaller(BaseInstaller):
         else:
             return zipfile.ZipFile(file, 'r')
 
-class InternalInstaller(BaseInstaller):
-    """Handles installing requirements of already installed platforms and integrations.
+class PackageIndexInstaller(PackageInstaller):
+    "Handles installing packages from the package index"
+
+    def __init__(self, file, package_type = None, skip_confirmations = False, confirmation_function = None):
+        self.downloader = Downloader()
+        super().__init__(file, package_type, skip_confirmations, confirmation_function)
+
+    @classmethod
+    def identify_package_type(cls, name : str):
+        return super().identify_package_type(name)
     
-    I.e. used to call the appropriate `pip install ...` commands
-    """
-    def __init__(self, install_type: internalinstalltypes, name: str, skip_confirmations = False, confirmation_function = None):
-        ##May remove the subclassing, but just reuse the usable functions (i.e. seperate out a few funcs.)
-        ##Also, use the constant designer mod in case something is not found internally.
-        ##Do give a warning for platforms though, or integrations without a designer module.
-        if install_type == "integration":
-            file = Path("integrations") / name
-        elif install_type == "platform":
-            file = Path("platforms") / name
-
-        full_path = INKBOARD_FOLDER / file
-        if not DESIGNER_INSTALLED:
-            assert full_path.exists(), f"{install_type} {name} is not installed or does not exist"
-        else:
-            if not full_path.exists():
-                assert (DESIGNER_FOLDER / file).exists(),  f"{install_type} {name} is not installed or does not exist"
-                full_path = DESIGNER_FOLDER / file
-
-        self._name = full_path.name
-        self._full_path = full_path
-        self._confirmation_function = confirmation_function
-        self._skip_confirmations = skip_confirmations
-        self._install_type = install_type
-        return
-    
-    def install(self):
-        if self._install_type == "integration":
-            return self.install_integration()
-        elif self._install_type == "platform":
-            return self.install_platform()
-
-    def install_platform(self):
-
-        with open(self._full_path / PACKAGE_ID_FILES["platform"]) as f:
-            conf: platformjson = json.load(f)
-            
-        with suppress(NegativeConfirmation):
-            msg = f"Install platform {self._name}?"
-            self.ask_confirm(msg)
-            return self.install_platform_requirements(self._name, conf)
-        return 1
-
-    def install_integration(self):
-        with open(self._full_path / PACKAGE_ID_FILES["integration"]) as f:
-            conf: platformjson = json.load(f)
-        
-        with suppress(NegativeConfirmation):
-            msg = f"Install integration {self._name}?"
-            self.ask_confirm(msg)
-            return self.install_integration_requirements(self._name, conf)
-        return 1
