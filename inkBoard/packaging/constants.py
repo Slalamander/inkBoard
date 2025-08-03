@@ -26,6 +26,18 @@ PACKAGE_ID_FILES : dict[packagetypes,str] = MappingProxyType({
 VERSION_COMPARITORS = ('==', '!=', '>=', '<=', '>', '<')    ##The order of this is important!
 "Comparison operators allowed for versioning, so they can be evaluated internally"
 
+INDEX_PACKAGE_KEYS = (
+    "platforms",
+    "integrations",
+)
+#The actual keys that hold all the packages. The other keys in the index are additional information.
+
+PACKAGETYPE_TO_INDEX_KEY = {
+    "platform": "platforms",
+    "integration": "integrations"
+}
+INDEX_KEY_TO_PACKAGETYPE = {v: k for k,v in PACKAGETYPE_TO_INDEX_KEY.items()}
+
 DESIGNER_FILES = {"designer", "designer.py"}
 #Files in integrations etc. meant for the designer. Currently these are not included in files in the package index
 
