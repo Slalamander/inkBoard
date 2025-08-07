@@ -627,7 +627,7 @@ class PackageInstaller(BaseInstaller):
             self.ask_confirm(msg)
 
         if (INKBOARD_FOLDER / "platforms" / platform).exists():
-            
+            #[ ]: Implement the self._path_to_platform function here
             with open(INKBOARD_FOLDER / "platforms" / platform / PACKAGE_ID_FILES["platform"]) as f:
                 cur_conf: platformjson = json.load(f)
                 cur_version = parse_version(cur_conf['version'])
@@ -671,9 +671,11 @@ class PackageInstaller(BaseInstaller):
             msg = f"inkBoard requirements for integration {integration} are not met (see logs). Continue installing?"
             self.ask_confirm(msg)
 
-        if (INKBOARD_FOLDER / "integrations" / integration).exists():
+        # if (INKBOARD_FOLDER / "integrations" / integration).exists():
+        if p := self._path_to_integration(integration):
             
-            with open(INKBOARD_FOLDER / "integrations" / integration / PACKAGE_ID_FILES["integration"]) as f:
+            # with open(INKBOARD_FOLDER / "integrations" / integration / PACKAGE_ID_FILES["integration"]) as f:
+            with open(p / PACKAGE_ID_FILES["integration"]) as f:
                 cur_conf: manifestjson = json.load(f)
                 cur_version = parse_version(cur_conf['version'])
             
@@ -835,6 +837,33 @@ class PackageInstaller(BaseInstaller):
         else:
             return zipfile.ZipFile(file, 'r')
 
+    @staticmethod
+    def _path_to_platform(platform : str, check_designer : bool = False) -> Union[Path, None]:
+        """Get the path to the given platform, or None if it is not installed.
+        
+        If `check_designer` is true, the designer folder will be checked if it cannot be found in the base inkBoard folder.
+        """
+        f = INKBOARD_FOLDER / "platforms" / platform
+        if f.exists():
+            return f
+        elif check_designer and DESIGNER_FOLDER:
+            f = DESIGNER_FOLDER / "platforms" / platform
+            if f.exists():
+                return f
+        return None
+    
+    @staticmethod
+    def _path_to_integration(integration : str, check_designer : bool = False) -> Union[Path, None]:
+        f = INKBOARD_FOLDER / "integrations" / integration
+        if f.exists():
+            return f
+        elif check_designer and DESIGNER_FOLDER:
+            f = DESIGNER_FOLDER / "integrations" / integration
+            if f.exists():
+                return f
+        return None
+    #FIXME add function that gets the current version of a platform/integration (perhaps in the base installer)
+
 class PackageIndexInstaller(PackageInstaller):
     "Handles installing packages from the package index"
 
@@ -843,7 +872,6 @@ class PackageIndexInstaller(PackageInstaller):
                 package_type : packagetypes = None,
                 skip_confirmations : bool = False,
                 confirmation_function = None):
-        self.downloader = Downloader()
         self.downloaded = False
 
         if get_comparitor_string(name):
@@ -862,7 +890,7 @@ class PackageIndexInstaller(PackageInstaller):
             self.verify_package(self.package_name, package_type)
         # super().__init__(name, package_type, skip_confirmations, confirmation_function)
 
-    def install(self):
+    def install(self, download_folder : Union[Path, str, None] = None):
         ##Ensure first that download has taken place succesfully
         ##Then run super().install after setting the file
 
@@ -874,14 +902,25 @@ class PackageIndexInstaller(PackageInstaller):
         #   - run super().install()
 
         if not self.downloaded:
-            self.download_package()
+            self.download()
         return super().install()
     
-    def download_package(self):
-
+    def download(self, destination_folder : Union[Path, str]):
+        dest = Path(destination_folder)
+        self._downloader = Downloader(
+            dest, 
+        )
         self.downloaded = True
         return
     
+    def _install_with_tempdir(self):
+        
+        with tempfile.TemporaryDirectory() as tempdir:
+            tempdir_path = Path(tempdir)
+            self.install(tempdir_path)
+        
+        return
+
     @classmethod
     def verify_package(cls, name : str, package_type : str):
         p_index = Downloader.get_package_index()
@@ -897,7 +936,7 @@ class PackageIndexInstaller(PackageInstaller):
 
     @classmethod
     def identify_package_type(cls, name : str):
-
+        
         p_index = Downloader.get_package_index()        
         if cmp := get_comparitor_string(name):
             package_name, _ = name.split(cmp)
