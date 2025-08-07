@@ -5,7 +5,8 @@ from typing import (
     Union,
     Literal,
     TYPE_CHECKING,
-    Final
+    Final,
+    overload,
 )
 from types import MappingProxyType
 import urllib.request
@@ -22,7 +23,6 @@ from inkBoard.constants import INKBOARD_FOLDER
 from .types import (
     PackageIndex,
     branchtypes,
-    TESTTYPE,
 )
 from .constants import (
     PACKAGE_INDEX_URL,
@@ -41,7 +41,15 @@ _LOGGER = logging.getLogger(__name__)
 
 packagebranchtypes = ("main", "dev")
 
+#FIXME clean up this class. Remove unused type hints, methods etc. Move required methods to the installer.
 class Downloader:
+    """Helper class for downloading inkBoard packages.
+    
+    Instantiating this class IMMEDIATELY starts the download.
+    Use the `download` or `repo_download` classmethods instead.
+    `PackageIndexInstaller().download` provides a user friendly wrapper to interface with this class too (i.e. for validation of packages etc).
+    """
+
 
     destination_folder : Path
     "Folder where downloaded files are put. Usually a temporary folder"
@@ -68,9 +76,23 @@ class Downloader:
     ##Invalid url (i.e. invalid name thing)
     ##No internet
     ##Mainly just to know what the errors are
-    def __init__(self, destination_folder : str | Path, confirmation_function = None):
+    def __init__(self, url : str, destination : Union[str, Path] = None, *, destination_folder : Union[str, Path] = None, destination_file : Union[str, Path] = None):
 
         #FIXME check installer to see if an instance can install more than one file or is made per file. Follow same pattern for downloader.
+
+        ##For downloader/installer:
+        ##Would I think make the Downloader basically only handle direct download tasks.
+        ##So, pass it a destination folder, a filename, and (possibly) a repo url?
+        ##Confirmation handler would all be done within the installer
+
+        if destination is None and (destination_folder is None or destination_file is None):
+            raise ValueError("Pass both a destination folder and destination file when not specifying destination")
+        elif destination is not None:
+            if (destination_folder is not None or destination_file is not None):
+                raise ValueError("Specifying a destination folder or destination file is not allowed when passing destination")
+            destination = Path(destination)
+            destination_folder = destination.parents
+            destination_file = destination.name
 
         self.destination_folder = Path(destination_folder)
         
@@ -80,7 +102,16 @@ class Downloader:
             else:
                 raise FileNotFoundError(f"Destination folder {self.destination_folder} does not exist")
         
-        self._confirmation_function = confirmation_function
+        self.destination_file = Path(destination_file)
+        if len(self.destination_file.parts) != 1:
+            raise ValueError(f"Destination file cannot have more than 1 part, {self.destination_file} is invalid")
+
+        if (self.destination_folder / self.destination_file).exists():
+            raise FileExistsError(f"File {(self.destination_folder / self.destination_file)} exists")
+
+        self.file_location = self._download_url_request(url)
+
+        # self._confirmation_function = confirmation_function
 
         #[ ]: Implement confirmation_function
     
@@ -90,6 +121,7 @@ class Downloader:
 
         If the index file does not exist or is outdated, it will be downloaded.
         Only opens the index file if required.
+        The index file is located internally in the `files` directory of inkBoard.
 
         Parameters
         ----------
@@ -133,15 +165,93 @@ class Downloader:
                 return True
         return False
                 
+    #These functions are meant as shorthands to create and instance and download
+    #Maybe though, handle file and destination verification as a seperate function
+    #Main thing, kind of, is how to also make these functions able to handle being passed a destination single or a destination and destination file
+    
+    @overload
+    @classmethod
+    def download(cls, url : str, destination : Union[str,Path]) -> Path:
+        """Downloads contents from the provided url to the given destination
 
+        Parameters
+        ----------
+        url : str
+            The url to retrieve the contents from
+        destination : Union[str,Path]
+            Destination the contents, including filename
+
+        Returns
+        -------
+        Path
+            The location of the retrieved contents
+        """   
+
+    @overload
+    @classmethod
+    def download(cls, url : str, destination_folder : Union[str,Path], destination_file : Union[str, Path]) -> Path:
+        """Downloads contents from the provided url to the given destination
+
+        Parameters
+        ----------
+        url : str
+            The url to retrieve the contents from
+        destination_folder : Union[str,Path]
+            Destination folder of the contents
+        destination_file : Union[str, Path]
+            Filename of the retrieved contents
+
+        Returns
+        -------
+        Path
+            The location of the retrieved contents
+        """        
+
+    @classmethod
+    def download(cls, url : str, **destination_kwargs) -> Path:
+
+        ins = cls(url, **destination_kwargs)
+        return ins.file_location
+    
+    @overload
+    @classmethod
+    def repo_download(cls, repo_url : str, branch : str, repo_file : str, destination): ...
+        
+    @overload
+    @classmethod
+    def repo_download(cls, repo_url : str, branch : str, repo_file : str, destination): ...
+
+    @classmethod
+    def repo_download(cls, repo_url : str, branch : str, repo_file : str, **destination_kwargs):
+        """Download a file from a repository to the given destination
+
+        Parameters
+        ----------
+        repo_url : str
+            The url linke to the github repository
+        branch : str
+            The branch of the repo to download from
+        repo_file : str
+            The path to the file within the repo
+
+        Returns
+        -------
+        Path
+            Path to the downloaded file
+        """
+        url = cls.repo_raw_file_url(repo_file, branch, repo_url)
+        destination_kwargs.setdefault("destination_file", Path(repo_file).name)
+        return cls.download(url, **destination_kwargs)
+
+    #[ ] See if all these functions can be turned into classmethods so they can be called independently
     def _download_integration_package(self, name : str, package_branch : branchtypes = "main", version : str = "") -> Path:
         filename, package_url = self._make_download_url(name, "integrations", package_branch, version)
-        return self._download_from_url(package_url, filename)
+        return self._download_url_request(package_url, filename)
 
     def _download_platform_package(self, name : str, package_branch : branchtypes = "main", version : str = ""):
         #[ ] for platforms, ask to copy files like readme etc. into the current working directory?
         filename, package_url = self._make_download_url(name, "platforms", package_branch, version)
-        return self._download_from_url(package_url, filename)
+        return self._download_url_request(package_url, filename)
 
     def _make_download_url(self, package_name : str, package_type : Literal["integrations", "platforms"], package_branch: branchtypes, version : str = ''):
         """Creates the raw url for a platform or integration package
@@ -217,18 +327,16 @@ class Downloader:
         filename = f"{package_name}-{fileversion}.zip"
         filepath = f"/{package_type}/{package_name}/{filename}"
 
-        raw_url = self._make_raw_file_link(filepath, package_branch)
+        raw_url = self.repo_raw_file_url(filepath, package_branch)
         return filename, raw_url
 
-    def _download_from_url(self, raw_url : str, filename : str) -> Path:
-        """_summary_
+    def _download_url_request(self, url : str) -> Path:
+        """Downloads what is retrieved from url to the destination of the Downloader instance
 
         Parameters
         ----------
-        raw_url : str
-            _description_
-        filename : str
-            _description_
+        url : str
+            The url to retrieve
 
         Returns
         -------
@@ -236,11 +344,11 @@ class Downloader:
             _description_
         """
 
-        dest = self.destination_folder / filename
-        loc, _ = self._download_raw_file(raw_url, dest)
-        self.file_location = Path(loc)
-        self.file_name = self.file_location.name
-        return self.file_location
+        dest = self.destination_folder / self.destination_file
+        loc, _ = urllib.request.urlretrieve(url, filename=dest)
+        download_path = Path(loc)
+        _LOGGER.debug(f"Successfully downloaded {url} to {download_path}")
+        return download_path
             ##From here an installer instance can be created I think? Since that one reidentifies the package anyways
 
     @classmethod
@@ -248,19 +356,12 @@ class Downloader:
         if _destination_file == None:
             _destination_file = cls.index_file
         _LOGGER.info("Getting inkBoard package index from github")
-        raw_url = cls._make_raw_file_link("index.json")
+        raw_url = cls.repo_raw_file_url("index.json")
         cls._download_raw_file(raw_url, _destination_file)
         _LOGGER.info("Updated inkBoard package index")
 
     @staticmethod
-    def _download_raw_file(raw_file_url : str, destination_file : str):
-
-        path_to_download, headers = urllib.request.urlretrieve(raw_file_url, filename=destination_file)
-        _LOGGER.debug(f"Successfully downloaded {path_to_download}")
-        return path_to_download, headers
-
-    @staticmethod
-    def _make_raw_file_link(file : str, branch = "main", repo_url : str = PACKAGE_INDEX_URL) -> str:
+    def repo_raw_file_url(file : str, branch = "main", repo_url : str = PACKAGE_INDEX_URL) -> str:
         """Returns the link to the raw file on github
 
         Parameters
@@ -268,7 +369,7 @@ class Downloader:
         file : str
             The path to the file to download
         branch : str, optional
-            The brand of the repo to get the file from, by default "main"
+            The branch of the repo to get the file from, by default "main"
         repo_url : str
             url to the repo. Defaults to the inkBoard package index
 
