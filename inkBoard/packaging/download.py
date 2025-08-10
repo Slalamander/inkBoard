@@ -7,6 +7,7 @@ from typing import (
     TYPE_CHECKING,
     Final,
     overload,
+    ClassVar,
 )
 from types import MappingProxyType
 import urllib.request
@@ -27,6 +28,8 @@ from .types import (
 from .constants import (
     PACKAGE_INDEX_URL,
     INTERNAL_PACKAGE_INDEX_FILE,
+    INDEX_FILE_PATH,
+    REPO_INDEX_FILE,
 )
 
 if TYPE_CHECKING:
@@ -57,7 +60,7 @@ class Downloader:
     package_index : PackageIndex = {}
     "inkBoard package index with information on package versions"
 
-    index_file : Final[Path] = INKBOARD_FOLDER / "files" / INTERNAL_PACKAGE_INDEX_FILE
+    index_file : ClassVar[Path] = INKBOARD_FOLDER / "files" / INTERNAL_PACKAGE_INDEX_FILE
 
     file_location : Path
     "Location (with file name) of the downloaded file. `None` until the download has been succesfull."
@@ -65,7 +68,11 @@ class Downloader:
     file_name : str
     "Name of the downloaded file. `None` until the download has been succesfull."
 
-    _last_index_change : str = None
+    _last_index_change : ClassVar[str] = None
+
+    @property
+    def destination(self) -> Path:
+        return self.destination_folder / self.destination_file
 
     # _index_downloaded : bool = False
     #Indicate whether the index has been updated for this instance of the downloader
@@ -76,15 +83,11 @@ class Downloader:
     ##Invalid url (i.e. invalid name thing)
     ##No internet
     ##Mainly just to know what the errors are
-    def __init__(self, url : str, destination : Union[str, Path] = None, *, destination_folder : Union[str, Path] = None, destination_file : Union[str, Path] = None):
+    def __init__(self):
 
-        #FIXME check installer to see if an instance can install more than one file or is made per file. Follow same pattern for downloader.
-
-        ##For downloader/installer:
-        ##Would I think make the Downloader basically only handle direct download tasks.
-        ##So, pass it a destination folder, a filename, and (possibly) a repo url?
-        ##Confirmation handler would all be done within the installer
-
+        return
+    
+    def verify_destination(self, destination : Union[str, Path] = None, *, destination_folder : Union[str, Path] = None, destination_file : Union[str, Path] = None):
         if destination is None and (destination_folder is None or destination_file is None):
             raise ValueError("Pass both a destination folder and destination file when not specifying destination")
         elif destination is not None:
@@ -108,67 +111,33 @@ class Downloader:
 
         if (self.destination_folder / self.destination_file).exists():
             raise FileExistsError(f"File {(self.destination_folder / self.destination_file)} exists")
-
-        self.file_location = self._download_url_request(url)
-
-        # self._confirmation_function = confirmation_function
-
-        #[ ]: Implement confirmation_function
+        return
     
-    @classmethod
-    def get_package_index(cls, force_get = False) -> PackageIndex:
-        """Gets the package index
-
-        If the index file does not exist or is outdated, it will be downloaded.
-        Only opens the index file if required.
-        The index file is located internally in the `files` directory of inkBoard.
+    def safe_instance_download(self, url : str, destination : Union[str, Path] = None, *, destination_folder : Union[str, Path] = None, destination_file : Union[str, Path] = None):
+        """Verifies the destination and downloads the url's contents if it is available.
 
         Parameters
         ----------
-        force_get : bool, optional
-            Forces downloading and updating the index, by default False
+        url : str
+            The url to retrieve
+        destination : Union[str, Path], optional
+            Full destination path, by default None
+        destination_folder : Union[str, Path], optional
+            Destination folder, ignored if destination is specified, by default None
+        destination_file : Union[str, Path], optional
+            File name within the destination_folder, ignored if destination is specified, by default None
 
         Returns
         -------
-        PackageIndex
-            The package index
+        None
         """        
+        self.verify_destination(destination, destination_folder, destination_file)
+        return self._unsafe_instance_download(url)
 
-        if force_get or cls.is_index_outdated():
-            get_index = True
-        else:
-            get_index = False
+    def _unsafe_instance_download(self, url : str):
+        self.file_location = self._download_url_request(url, self.destination)
+        self.file_name = self.file_location.name
 
-        if get_index:
-            cls._download_package_index()
-            cls._last_index_change = os.path.getmtime(cls.index_file)
-
-        if get_index or not cls.package_index:
-            with open(cls.index_file) as f:
-                package_index = MappingProxyType(PackageIndex(json.load(f)))
-            
-            cls.package_index : PackageIndex = package_index
-        
-        return cls.package_index
-
-    @classmethod
-    def is_index_outdated(cls) -> bool:
-
-        if not cls.index_file.exists():
-            return True
-        else:
-            last_change = cls._last_index_change
-            if last_change is None:
-                last_change = os.path.getmtime(cls.index_file)
-            d = dt.now() - dt.fromtimestamp(last_change)
-            if d.days != 0:
-                return True
-        return False
-                
-    #These functions are meant as shorthands to create and instance and download
-    #Maybe though, handle file and destination verification as a seperate function
-    #Main thing, kind of, is how to also make these functions able to handle being passed a destination single or a destination and destination file
-    
     @overload
     @classmethod
     def download(cls, url : str, destination : Union[str,Path]) -> Path:
@@ -209,8 +178,8 @@ class Downloader:
 
     @classmethod
     def download(cls, url : str, **destination_kwargs) -> Path:
-
-        ins = cls(url, **destination_kwargs)
+        ins = cls()
+        ins.safe_instance_download(url, **destination_kwargs)
         return ins.file_location
     
     @overload
@@ -330,8 +299,11 @@ class Downloader:
         raw_url = self.repo_raw_file_url(filepath, package_branch)
         return filename, raw_url
 
-    def _download_url_request(self, url : str) -> Path:
+    @staticmethod
+    def _download_url_request(url : str, dest : Union[Path,str]) -> Path:
         """Downloads what is retrieved from url to the destination of the Downloader instance
+
+        Silently overwrites anything if the file already exists!
 
         Parameters
         ----------
@@ -344,7 +316,7 @@ class Downloader:
             _description_
         """
 
-        dest = self.destination_folder / self.destination_file
+        # dest = self.destination_folder / self.destination_file
         loc, _ = urllib.request.urlretrieve(url, filename=dest)
         download_path = Path(loc)
         _LOGGER.debug(f"Successfully downloaded {url} to {download_path}")
@@ -354,15 +326,15 @@ class Downloader:
     @classmethod
     def _download_package_index(cls, *, _destination_file : Union[Path, str] = None):
         if _destination_file == None:
-            _destination_file = cls.index_file
+            _destination_file = INDEX_FILE_PATH
         _LOGGER.info("Getting inkBoard package index from github")
-        raw_url = cls.repo_raw_file_url("index.json")
-        cls._download_raw_file(raw_url, _destination_file)
+        raw_url = cls.repo_raw_file_url(REPO_INDEX_FILE)
+        cls._download_url_request(raw_url, _destination_file)
         _LOGGER.info("Updated inkBoard package index")
 
     @staticmethod
     def repo_raw_file_url(file : str, branch = "main", repo_url : str = PACKAGE_INDEX_URL) -> str:
-        """Returns the link to the raw file on github
+        """Returns the link to the raw version of the file on github
 
         Parameters
         ----------

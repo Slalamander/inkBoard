@@ -2,6 +2,8 @@
 from types import MappingProxyType
 import zipfile
 
+from inkBoard.constants import INKBOARD_FOLDER
+
 from .types import (
     packagetypes,
 )
@@ -12,7 +14,9 @@ INKBOARD_PACKAGE_INTERNAL_FOLDER = ".inkBoard"
 PACKAGE_INDEX_URL = "https://github.com/Slalamander/inkBoard-package-index"
 "url to the package index"
 
+REPO_INDEX_FILE = "index.json"
 INTERNAL_PACKAGE_INDEX_FILE = "package_index.json"
+INDEX_FILE_PATH = INKBOARD_FOLDER / "files" / INTERNAL_PACKAGE_INDEX_FILE
 
 ZIP_COMPRESSION = zipfile.ZIP_BZIP2
 ZIP_COMPRESSION_LEVEL = 9

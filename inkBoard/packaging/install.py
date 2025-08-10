@@ -4,10 +4,13 @@ from typing import (
     TYPE_CHECKING,
     Callable,
     Union,
+    ClassVar,
     Optional,
     Literal,
+    Final,
     get_args,
 )
+from types import MappingProxyType
 from abc import abstractmethod
 from contextlib import suppress
 import json
@@ -18,6 +21,7 @@ import os
 import tempfile
 import shutil
 from pathlib import Path
+from datetime import datetime as dt
 
 from inkBoard import logging
 from inkBoard.types import (
@@ -35,6 +39,7 @@ from inkBoard.constants import (
 from .types import (
     packagetypes,
     PackageDict,
+    PackageIndex,
     NegativeConfirmation,
     internalinstalltypes,
 )
@@ -45,6 +50,7 @@ from .constants import (
     INDEX_PACKAGE_KEYS,
     PACKAGETYPE_TO_INDEX_KEY,
     INDEX_KEY_TO_PACKAGETYPE,
+    INTERNAL_PACKAGE_INDEX_FILE,
 )
 from .version import (
     InkboardVersion,
@@ -867,6 +873,9 @@ class PackageInstaller(BaseInstaller):
 class PackageIndexInstaller(PackageInstaller):
     "Handles installing packages from the package index"
 
+    index_file : ClassVar[Path] = INKBOARD_FOLDER / "files" / INTERNAL_PACKAGE_INDEX_FILE
+
+
     def __init__(self, 
                 name : str,
                 package_type : packagetypes = None,
@@ -922,8 +931,60 @@ class PackageIndexInstaller(PackageInstaller):
         return
 
     @classmethod
+    def get_package_index(cls, force_get = False) -> PackageIndex:
+        """Gets the package index
+
+        If the index file does not exist or is outdated, it will be downloaded.
+        Only opens the index file if required.
+        The index file is located internally in the `files` directory of inkBoard.
+
+        Parameters
+        ----------
+        force_get : bool, optional
+            Forces downloading and updating the index, by default False
+
+        Returns
+        -------
+        PackageIndex
+            The package index
+        """        
+
+        if force_get or cls.is_index_outdated():
+            get_index = True
+        else:
+            get_index = False
+
+        if get_index:
+            Downloader._download_package_index()
+            cls._last_index_change = os.path.getmtime(cls.index_file)
+
+        if get_index or not cls.package_index:
+            with open(cls.index_file) as f:
+                package_index = MappingProxyType(PackageIndex(json.load(f)))
+            
+            cls.package_index : PackageIndex = package_index
+        
+        return cls.package_index
+
+    @classmethod
+    def is_index_outdated(cls) -> bool:
+        """Determines if the index file is outdated depending on the time since it was last changed
+        """
+
+        if not cls.index_file.exists():
+            return True
+        else:
+            last_change = cls._last_index_change
+            if last_change is None:
+                last_change = os.path.getmtime(cls.index_file)
+            d = dt.now() - dt.fromtimestamp(last_change)
+            if d.days != 0:
+                return True
+        return False
+
+    @classmethod
     def verify_package(cls, name : str, package_type : str):
-        p_index = Downloader.get_package_index()
+        p_index = cls.get_package_index()
 
         index_type = PACKAGETYPE_TO_INDEX_KEY.get(package_type, package_type)
         if index_type not in INDEX_PACKAGE_KEYS:
@@ -937,7 +998,7 @@ class PackageIndexInstaller(PackageInstaller):
     @classmethod
     def identify_package_type(cls, name : str):
         
-        p_index = Downloader.get_package_index()        
+        p_index = cls.get_package_index()        
         if cmp := get_comparitor_string(name):
             package_name, _ = name.split(cmp)
         else:

@@ -1,4 +1,4 @@
-from typing import Literal, TypedDict, TYPE_CHECKING
+from typing import Literal, TypedDict, TYPE_CHECKING, NewType
 
 from inkBoard.types import manifestjson, platformjson  # noqa: F401
 
