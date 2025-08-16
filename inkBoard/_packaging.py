@@ -1,4 +1,4 @@
-"backup version of packaging.py for porting"
+"DEPRECATED backup version of packaging.py for porting"
 
 "Handles inkBoard packages, both creating and installing them."
 
