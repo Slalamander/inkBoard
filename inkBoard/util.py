@@ -16,7 +16,7 @@ from typing import Union, Callable, Literal
 import inkBoard
 
 from PythonScreenStackManager.elements import Element
-from PythonScreenStackManager.tools import DummyTask, update_nested_dict
+from PythonScreenStackManager.tools import DummyTask, update_nested_dict, wrap_to_coroutine, wrap_to_tap_action
 from PythonScreenStackManager.util import classproperty, isclassproperty
 
 
