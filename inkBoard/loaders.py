@@ -116,7 +116,8 @@ def load_custom_elements(core: "CORE") -> MappingProxyType[str, "Element"]:
 
     return MappingProxyType(elts)
 
-
+#TODO: in packaging i.e. make a class that handles reading out integrations etc.
+##Think about where to put it (i.e. in the core module, or in here?)
 class IntegrationLoader:
     "Provides bindings to load inkBoard integrations"
 
@@ -200,10 +201,12 @@ class IntegrationLoader:
         ##And I think just import via here, but make the set or something recognise the base package too.
         ##Or save strings to the modules instead of their folders.
 
-        for config_entry in cls._integration_keys:
-            if config_entry in config.configuration:
-                import_set.add((config_entry, cls._integration_keys[config_entry]))
+        # for config_entry in cls._integration_keys:
+        #     if config_entry in config.configuration:
+        #         import_set.add((config_entry, cls._integration_keys[config_entry]))
         
+        import_set = [cf for cf in cls._integration_keys.items() if cf[0] in config.configuration]
+
         if not import_set: 
             return
 
