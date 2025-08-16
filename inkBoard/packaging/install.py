@@ -38,6 +38,8 @@ from inkBoard.constants import (
 
 from .types import (
     packagetypes,
+    branchtypes,
+    indexpackagedict,
     PackageDict,
     PackageIndex,
     NegativeConfirmation,
@@ -58,9 +60,13 @@ from .version import (
     parse_version,
     compare_versions,
     get_comparitor_string,
-    split_comparison_string
+    split_comparison_string,
+    write_version_filename,
     )
 from .download import Downloader
+
+if TYPE_CHECKING:
+    from .version import Version
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -875,29 +881,32 @@ class PackageIndexInstaller(PackageInstaller):
 
     index_file : ClassVar[Path] = INKBOARD_FOLDER / "files" / INTERNAL_PACKAGE_INDEX_FILE
 
+    #TODO: Implement for PackageIndexInstaller
+    #[ ]: Getting archived version
+    #[ ]: Verifying requirements before downloading (Requires more info in the package index)
+    #[ ]: Comparing to currently installed version
 
     def __init__(self, 
                 name : str,
                 package_type : packagetypes = None,
                 skip_confirmations : bool = False,
                 confirmation_function = None):
+        
+        self._devmode = False
+        self._confirmation_function = confirmation_function
+        self._skip_confirmations = skip_confirmations
         self.downloaded = False
-
-        if get_comparitor_string(name):
-            name, cmp, version = split_comparison_string(name)
-            self.package_name = name
-            self._comparison_string = cmp
-            self.version = version
-        else:
-            self.package_name = name
-            self._comparison_string = None
-            self.version = None
-
+        
         if package_type is None:
+            #Can call this before getting version etc since it handles splitting the name
             package_type = self.identify_package_type(name)
-        else:
-            self.verify_package(self.package_name, package_type)
-        # super().__init__(name, package_type, skip_confirmations, confirmation_function)
+
+        name, version = self.get_package_version(name, package_type, self._devmode)
+        self.package_name = name
+        self.version = version
+        self.verify_package(self.package_name, package_type)
+        self.index_path = self.package_index_filepath(name, package_type, version)
+        _LOGGER.debug(f"Downloading {package_type} {name} version {version} at repo path {self.index_path}")
 
     def install(self, download_folder : Union[Path, str, None] = None):
         ##Ensure first that download has taken place succesfully
@@ -929,6 +938,82 @@ class PackageIndexInstaller(PackageInstaller):
             self.install(tempdir_path)
         
         return
+
+    def get_package_version(self, name_str : str, package_type : packagetypes, dev : bool = False) -> tuple[str,"Version"]:
+        """Determines the version that best fits the requirement in name_str
+
+        Returns
+        -------
+        tuple[str,Version]
+            The name split from the name_str, and the determined version that best fits the requirements
+
+        Raises
+        ------
+        NotImplementedError
+            When requesting archived versions
+        """
+
+        p_index = self.get_package_index()
+        index_type : Literal["platforms", "integrations"] = PACKAGETYPE_TO_INDEX_KEY.get(package_type, package_type)
+        name, version = get_comparitor_string(name_str)
+        p_info : dict[branchtypes, indexpackagedict] = p_index[index_type][name]
+
+        if get_comparitor_string(name_str):
+            name, comp, version = split_comparison_string(name_str)
+            version = parse_version(version)
+        else:
+            version = None
+            comp = None
+            name = name_str
+        if version is None and dev:
+            main_version = parse_version(p_info["main"]["version"])
+            dev_version = parse_version(p_info["dev"]["version"])
+            if main_version > dev_version:
+                msg = f"Package {name} version on main ({main_version}) is more recent than the version on dev ({dev_version}). Do you want to download the main version?"
+                try:
+                    self.ask_confirm(msg)
+                    version = main_version
+                except NegativeConfirmation:
+                    version = dev_version
+            else:
+                version = dev_version
+        elif version is None:
+            version = parse_version(p_info["main"]["version"])
+            #if isinstalled:
+            #   raise FileExistsError
+        else:
+            #[ ]: Implement comparing and getting archive versions
+            if not comp and version in (parse_version(p_info["main"]["version"]), parse_version(p_info["dev"]["version"])) :
+                pass
+            #if current_version comp version:
+            #   FIXME: do not install
+            else:
+                raise NotImplementedError("Getting specific version from the package index is not implemented yet.")
+        return name, version
+
+    def package_index_filepath(self, name : str, package_type : packagetypes, version : "Version", dev : bool = False) -> Path:
+
+        p_index = self.get_package_index()
+        index_type : Literal["platforms", "integrations"] = PACKAGETYPE_TO_INDEX_KEY.get(package_type, package_type)
+        p_info : dict[branchtypes, indexpackagedict] = p_index[index_type][name]
+
+        if isinstance(version, str):
+            version = parse_version(version)
+        
+        if version == parse_version(p_info["main"]["version"]):
+            filename = write_version_filename(name, version)
+            pass
+        elif version == parse_version(p_info["dev"]["version"]):
+            #filename + _dev
+            # filename = 
+            filename = write_version_filename(name, version, "_dev.zip")
+            pass
+        else:
+            filename = Path("archive") / write_version_filename(name, version)
+            raise KeyError(f"Package {name} version {version} is not dev or main version. Archive downloading is not supported yet")
+        
+        filepath = Path(index_type) / filename
+        return filepath
 
     @classmethod
     def get_package_index(cls, force_get = False) -> PackageIndex:
@@ -993,6 +1078,10 @@ class PackageIndexInstaller(PackageInstaller):
         if name not in p_index[index_type]:
             raise FileNotFoundError(f"Package with name {name} does not exist in the {package_type} package index")
         
+        isinstalled = False
+        if isinstalled:
+            #[ ]: compare with current version
+            pass
         return True
 
     @classmethod
