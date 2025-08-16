@@ -7,6 +7,8 @@ from ._core import _CORE
 
 coretype = type[_CORE]
 
+componentypes = Literal["platform", "integration"]
+
 class actionentry(TypedDict):
     """Entry for actions. If not data is required, a string with the action will suffice too.
 
