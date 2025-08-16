@@ -451,7 +451,7 @@ class IntegrationLoader:
         while pending:
             try:
                 done, pending = await asyncio.wait(pending,return_when=asyncio.FIRST_COMPLETED)
-            except:
+            except Exception:
                 for t in done:
                     t : asyncio.Future
                     if t.cancelled():
