@@ -5,12 +5,18 @@ from typing import (
     TypedDict,
     Union,
     )
+from types import ModuleType
+from collections.abc import Callable
 from abc import abstractmethod
 from pathlib import Path
 from functools import cached_property
 import json
+import sys
+import importlib
+import importlib.util
 
-from inkBoard import getLogger
+import inkBoard.integrations
+from inkBoard import getLogger, CORE
 from inkBoard.constants import (
     INKBOARD_FOLDER,
     DESIGNER_FOLDER,
@@ -22,8 +28,12 @@ from inkBoard.types import (
     platformjson,
     manifestjson,
     )
+from inkBoard.util import reload_full_module, wrap_to_coroutine
 
 from .packaging.version import parse_version, Version
+
+if DESIGNER_INSTALLED or TYPE_CHECKING:
+    import inkBoarddesigner.integrations
 
 if TYPE_CHECKING:
     from _inspiration.homeassistant.loader import Integration as hassintegration
@@ -69,7 +79,23 @@ class BaseComponent:
     @cached_property
     def module_name(self) -> str:
         "The name of the component's python module"
-        return
+        base_name = f"{self.component_type}.{self.name}"
+        if self.abstract_component:
+            basemod = "ABSTRACT"
+        elif self.core_component:
+            basemod = inkBoard.integrations.__package__
+        elif self.designer_component:
+            basemod = inkBoarddesigner.integrations.__package__
+        elif self.custom_component:
+            basemod = "custom.integrations"
+
+        return f"{basemod}.{base_name}"
+
+    @property
+    def module(self) -> Union[ModuleType,None]:
+        if self.is_loaded:
+            return sys.modules[self.module_name]
+        return None
 
     @cached_property
     def version(self) -> "Version":
@@ -120,6 +146,10 @@ class BaseComponent:
             return True
         else:
             return False
+        
+    @property
+    def is_loaded(self) -> bool:
+        return self.module_name in sys.modules
 
     @property
     @abstractmethod
@@ -197,12 +227,57 @@ class BaseComponent:
         "Returns a dict with summarised information for the package index"
         return
 
-    def load_module(self):
-        
+    def load_module(self, reload : bool = False):
+        """Loads and imports the component. Returns the module
 
-        return
+        Parameters
+        ----------
+        reload : bool, optional
+            Whether to reload the module if it is already installed, by default False
+
+        Returns
+        -------
+        ModuleType
+            The components module
+
+        Raises
+        ------
+        exce
+            _description_
+        ImportWarning
+            _description_
+        """        
+
+        module = None        
+        if self.module_name in sys.modules and reload:
+            self.reload()
+
+        if self.module_name in sys.modules and not reload:
+            module = sys.modules.get(self.module_name,None)
+        else:
+            spec = importlib.util.find_spec(self.module_name)
+
+            ##Got this code from: https://docs.python.org/3/library/importlib.html#checking-if-a-module-can-be-imported
+            if spec  is None:
+                _LOGGER.error(f"Unable to import {self.component_type} {self.name} from {self.module_name}")
+                return
+            try:
+                module = importlib.util.module_from_spec(spec)
+                module = importlib.import_module(self.module_name)
+            except Exception as exce:
+                msg = f"Error importing {self.module_name} {self.name}: {exce}"
+                _LOGGER.exception(msg, stack_info=True)
+                raise exce
+
+        if not hasattr(module,"async_setup") and not hasattr(module,"setup"):
+            msg = f"{self.component_type} {self.name} is missing the required setup/async_setup function"
+            raise ImportWarning(msg)
+
+        return module
     
-    # def reload(self):
+    def reload(self):
+        reload_full_module(self.module_name)
+        self._module = None
 
 
 class Platform(BaseComponent):
@@ -232,6 +307,73 @@ class Integration(BaseComponent):
             msg = f"Error parsing {self.CONFIG_FILE_NAME} file at {self.config_file}: {err}"
             raise json.JSONDecodeError(msg)
         return config
+    
+    @property
+    def setup_result(self):
+        return self._setup_result
 
+    @property
+    def requires_start(self):
+        return hasattr(self.module, "async_start") or hasattr(self.module, "start")
 
+    async def async_setup(self, core: "CORE"):
+        """Verifies and runs the setup function
 
+        Parameters
+        ----------
+        core : CORE
+            inkBoard CORE object
+
+        Returns
+        -------
+        Any
+            Result of the setup function
+
+        Raises
+        ------
+        TypeError
+            Raised if the setup function is not of a valid type
+        ValueError
+            Raised if the setup function returns None (which is invalid)
+        ImportError
+            Raised if the setup returned False
+        ImportWarning
+            Final exception type, raised from other thrown exceptions or if the component is not loaded yet
+        """        
+
+        if not self.is_loaded:
+            raise ImportWarning(f"Cannot setup {self.component_type} {self.name} before loading it")
+
+        module = self.module
+        if hasattr(module,"async_setup"):
+            setup_func = module.async_setup
+        elif hasattr(module,"setup"):
+            setup_func = module.setup
+        
+        if not isinstance(setup_func,Callable):
+            msg = f"{self.name} does not have a valid setup function, cancelling setup"
+            raise TypeError(msg)
+        try:
+            res = await wrap_to_coroutine(setup_func, core, core.config)
+
+            if res in (None, False):
+                if res is None:
+                    msg = f"Integration setup functions must return a result (at minimum a boolean `True`), or `False`. {self.name} returned `None`"
+                    raise ValueError(msg)
+                else:
+                    msg = f"Something went wrong setting up {self.name}"
+                    raise ImportError(msg)
+        except Exception as exce:
+            res = exce
+
+        if isinstance(res, Exception):
+            raise ImportWarning from res
+
+        self._setup_result = res
+        return res
+    
+    async def async_start(self, core: "CORE"):
+
+        if not self.requires_start:
+            raise AttributeError(f"{self.component_type} has no start functions")
+        
