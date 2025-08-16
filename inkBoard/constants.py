@@ -142,4 +142,7 @@ for i, mod in enumerate(FULL_RELOAD_MODULES):
 ##It's mainly for that, or when making platforms; those may not have a decent ide to work with (like for the kobo)
 FULL_RELOAD_MODULES = (*FULL_RELOAD_MODULES, "custom")
 
-
+COMPONENT_PLURAL_MAP = {
+    "platforms": "platform",
+    "integrations": "integration",
+}
