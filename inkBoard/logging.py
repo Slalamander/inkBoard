@@ -121,6 +121,8 @@ class BaseFormatter(logging.Formatter):
     @classmethod
     def format(cls, record, format_func : Callable = None):
         #[ ]: This should be a method. And return super().format
+        #FIXME instead of doing it like this, provide a string representation for YAML objects, and a default value for it. See docs https://docs.python.org/3/library/logging.html#formatter-objects
+        ##nvm the latter that's from 3.10
         if "YAML" not in record.__dict__:
             record.__dict__["YAML"] = ""
         else:
