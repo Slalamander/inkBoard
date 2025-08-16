@@ -1,6 +1,7 @@
 "Helps with comparing versions"
 
 from typing import TYPE_CHECKING, Union, Literal
+import itertools
 
 import inkBoard
 import PythonScreenStackManager as PSSM
@@ -20,12 +21,25 @@ except ModuleNotFoundError:
 
 if TYPE_CHECKING:
     from packaging.version import Version
+else:
+    class Version:
+        "Dummy Version class to prevent errors when importing outside of type checking"
+
+        def __new__(cls, *args, **kwargs):
+            return parse_version(*args, **kwargs)
+
+        def __init__(self, *args, **kwargs):
+            raise NotImplementedError("Cannot instantiate, use parse_version. This class is only for typehinting")
 
 InkboardVersion = parse_version(inkBoard.__version__)
 PSSMVersion = parse_version(PSSM.__version__)
 
-def get_comparitor_string(input_str: str) -> Literal[comparisonstrings]:
+def get_comparitor_string(input_str: str) -> Union[Literal[comparisonstrings],None]:
     "Returns the comparitor (==, >= etc.) in a string, or None if there is None."
+    for c in itertools.dropwhile(lambda x: x not in input_str, VERSION_COMPARITORS):
+        return c
+    else:
+        return None
     if c := (x for x in VERSION_COMPARITORS if x in input_str):
         return c[0]
     return
