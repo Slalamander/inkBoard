@@ -17,7 +17,6 @@ from inkBoard.helpers import ParsedAction
 from inkBoard.constants import CORESTAGES
 from inkBoard.util import reload_full_module
 from inkBoard.logging import setup_logging
-from inkBoard.types import coretype
 from inkBoard.async_ import is_reload_shielded_task
 
 import PythonScreenStackManager as PSSM
