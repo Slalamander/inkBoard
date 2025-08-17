@@ -6,6 +6,9 @@ from PythonScreenStackManager.exceptions import *
 class InkBoardError(Exception):
     "Base Exception for inkBoard"
 
+class ComponentError(InkBoardError):
+    "Error with a component"
+
 class DeviceError(InkBoardError):
     "Something went wrong setting up the device"
 

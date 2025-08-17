@@ -68,6 +68,13 @@ class TestBaseComponent:
         raw_config["inkboard_requirements"]["designer"] = "0.0.1"
         assert base_component.validate_requirements(validate_designer=True)
         return
+    
+    def test_loading_abstract(self, base_component : Integration):
+        #Test if calling load on an abstract component raises an exception
+        
+        with pytest.raises(ImportError):
+            base_component.load_module()
+        return
 
 def test_dummy_manifest():
     f = DUMMY_INTEGRATION_PATH / Integration.CONFIG_FILE_NAME

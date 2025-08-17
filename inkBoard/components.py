@@ -316,6 +316,9 @@ class BaseComponent:
             _description_
         """        
 
+        if self.abstract_component:
+            raise ImportError(f"Cannot load/import abstract component {self.name}")
+
         module = None        
         if self.module_name in sys.modules and reload:
             self.reload()
