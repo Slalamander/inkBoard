@@ -1,6 +1,6 @@
 from typing import Literal, TypedDict, TYPE_CHECKING, NewType
 
-from inkBoard.types import manifestjson, platformjson  # noqa: F401
+from inkBoard.types import manifestjson, platformjson, inkboardrequirements  # noqa: F401
 
 if TYPE_CHECKING:
     from .version import Version
@@ -24,6 +24,9 @@ class PackageDict(TypedDict):
 
     platform: str
     "The platform the package was created for"
+
+    requirements : inkboardrequirements
+    "Requirements for this package"
 
 class indexpackagedict(TypedDict):
     "Holds information pertaining to a package in the index"
