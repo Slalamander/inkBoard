@@ -1,11 +1,12 @@
 "Types for inkBoard"
 
-from typing import TypedDict
+from typing import TypedDict, TYPE_CHECKING
 from PythonScreenStackManager.pssm_types import *
 
-from ._core import _CORE
+if TYPE_CHECKING:
+    from ._core import _CORE
 
-coretype = type[_CORE]
+coretype = type["_CORE"]
 
 componentypes = Literal["platform", "integration"]
 
@@ -24,13 +25,19 @@ class actionentry(TypedDict):
 actiontype = Union[Callable,str,actionentry]
 
 class inkboardrequirements(TypedDict):
-    "Dict for indicating inkBoard related requirements for platform.json or manifest.json"
+    """Dict for indicating inkBoard related requirements for platform.json or manifest.json
+    
+    If a requirement is not needed (i.e. not minimum inkBoard version etc.) the respective key can be omitted
+    """
 
     inkboard_version: str
     "The inkBoard version requirement. Can use a comparison if needed."
 
     pssm_version: str
     "Required Python Screen Stack Manager version"
+
+    designer_version : str
+    "Required version of the designer when run from it"
 
     platforms: list[str]
     "List of required platforms. Requires at least one of the list entries for the requirement to be met."
