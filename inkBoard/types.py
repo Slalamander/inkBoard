@@ -45,6 +45,12 @@ class inkboardrequirements(TypedDict):
     integrations: list[str]
     "List of required integrations. All integrations must be installed for the requirement to be met."
 
+class basecomponentjson(TypedDict):
+
+    version : str
+
+    inkboard_requirements: inkboardrequirements
+    "inkBoard specific requirements"
 
 class platformjson(TypedDict):
     """Base dict that should be gathered from a platform.json file

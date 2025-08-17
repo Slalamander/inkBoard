@@ -15,6 +15,7 @@ import sys
 import importlib
 import importlib.util
 
+import PythonScreenStackManager as PSSM
 
 import inkBoard.integrations
 from inkBoard import getLogger, CORE
@@ -26,24 +27,78 @@ from inkBoard.constants import (
 )
 from inkBoard.types import (
     componentypes,
+    basecomponentjson,
     platformjson,
     manifestjson,
     inkboardrequirements,
     )
 from inkBoard.util import reload_full_module, wrap_to_coroutine
-from inkBoard.packaging.version import Version, parse_version
+from inkBoard.packaging import version
 
 if DESIGNER_INSTALLED or TYPE_CHECKING:
     import inkBoarddesigner.integrations
 
 if TYPE_CHECKING:
     from _inspiration.homeassistant.loader import Integration as hassintegration
+    from inkBoard.packaging.version import Version
 
 _LOGGER = getLogger(__name__)
 
-class baseconfig(TypedDict):
 
-    version : Version
+def validate_component_requirements(requirements : inkboardrequirements,
+                                validate_designer : bool = False,
+                                validate_deps : bool = False) -> bool:
+    """Validates the requirements as set in a config file
+
+    Parameters
+    ----------
+    requirements : inkboardrequirements
+        Dict with requirements for the package
+    validate_designer : bool, optional
+        Whether to validate the designer version, by default False
+    validate_deps : bool, optional
+        Whether to validate if all the dependencies of the package are installed, by default False
+
+    Returns
+    -------
+    bool
+        _description_
+    """
+
+    inv_msg = []
+    if "inkboard_version" in requirements:
+        vright = requirements["inkboard_version"]
+        if comp := version.get_comparitor_string(vright):
+            vright = vright.lstrip(comp)
+        vleft = version.parse_version(inkBoard.__version__)
+        res = version.compare_versions(vleft, vright, comp)
+        if not res:
+            inv_msg.append(f'Requirement for inkBoard version {requirements["inkboard_version"]} not met (installed version is {vleft})')
+
+    if "pssm_version" in requirements:
+        vright = requirements["pssm_version"]
+        if comp := version.get_comparitor_string(vright):
+            vright = vright.lstrip(comp)
+        vleft = version.parse_version(PSSM.__version__)
+        res = version.compare_versions(vleft, vright, comp)
+        if not res:
+            inv_msg.append(f'Requirement for PSSM version {requirements["pssm_version"]} not met (installed version is {vleft})')
+    
+    if ("designer_version" in requirements and validate_designer):
+        if DESIGNER_INSTALLED:
+            vright = requirements["designer_version"]
+            if comp := version.get_comparitor_string(vright):
+                vright = vright.lstrip(comp)
+            vleft = version.parse_version(inkBoarddesigner.__version__)
+            res = version.compare_versions(vleft, vright, comp)
+        else:
+            vleft = "NOT INSTALLED"
+            res = False
+        
+        if not res:
+            inv_msg.append(f'Requirement for inkBoard designer version {requirements["designer_version"]} not met (installed version is {vleft})')
+    
+    return not bool(inv_msg)
 
 #Base this on the Integration class in Home Assistant: https://github.com/home-assistant/core/blob/dev/homeassistant/loader.py#L650
 
@@ -100,7 +155,7 @@ class BaseComponent:
 
     @cached_property
     def version(self) -> "Version":
-        return parse_version(self.config["version"])
+        return version.parse_version(self.config["version"])
 
     @cached_property
     def dependencies(self):
@@ -154,13 +209,13 @@ class BaseComponent:
 
     @cached_property
     @abstractmethod
-    def config(self) -> baseconfig:
+    def config(self) -> basecomponentjson:
         """The components configuration
         Overwrite this component for typehinting.
         If a raw  config is passed to the base __init__, the attribute is overwritten to that
         """
         try:
-            config = cast(baseconfig, json.loads(self.config_file.read_text()))
+            config = cast(basecomponentjson, json.loads(self.config_file.read_text()))
         except json.JSONDecodeError as err:
             msg = f"Error parsing {self.CONFIG_FILE_NAME} file at {self.config_file}: {err}"
             raise json.JSONDecodeError(msg) from err
@@ -168,8 +223,6 @@ class BaseComponent:
 
     def __init__(self, location, config = {}, *, is_abstract : bool = False):
         
-        #FIXME how to handle passing a raw config maybe?
-        #Mainly considering readout; may be able to be handled via the cached_property?
         if location:
             location = Path(location)
             assert location.is_dir(), "Location must be a folder"
@@ -225,6 +278,8 @@ class BaseComponent:
 
     def validate_requirements(self, validate_designer : bool = False, validate_deps : bool = False) -> bool:
         req = self.inkBoard_requirements
+        if CORE.DESIGNER_RUN:
+            validate_designer = True
         
         #This is currently in install, which most likely means it will cause a circular import eventually
         #Tbf, for the installer that can be taken care of by importing i.e. in the relevant function
@@ -232,7 +287,7 @@ class BaseComponent:
         #Gonna move this back to component from CORE, it is not a thing for CORE tbh
         #Should be fine since install is not imported, only version
         #Will probably use is as a general function mainly though, so it can be called without requiring class instances
-        return CORE.validate_inkboard_requirements(req, validate_designer, validate_deps)
+        return validate_component_requirements(req, validate_designer, validate_deps)
     
     @classmethod
     @abstractmethod

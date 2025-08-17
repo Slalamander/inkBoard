@@ -336,69 +336,7 @@ class _CORE(metaclass=COREMETA):
 
         return cls.screen.create_task(coro, name=name)
 
-    @classmethod
-    def validate_inkboard_requirements(cls, requirements : inkboardrequirements,
-                                validate_designer : bool = False,
-                                validate_deps : bool = False) -> bool:
-        
-        """Validates the requirements as set in a config file
-
-        Parameters
-        ----------
-        requirements : inkboardrequirements
-            Dict with requirements for the package
-        validate_designer : bool, optional
-            Whether to validate the designer version, by default False
-        validate_deps : bool, optional
-            Whether to validate if all the dependencies of the package are installed, by default False
-
-        Returns
-        -------
-        bool
-            _description_
-        """
-
-        #May end up moving this to component in the end still.
-        #And give the install a class based on the base component for packaging etc.
-
-        inv_msg = []
-        if "inkboard_version" in requirements:
-            vright = requirements["inkboard_version"]
-            if comp := version.get_comparitor_string(vright):
-                vright = vright.lstrip(comp)
-            vleft = version.parse_version(inkBoard.__version__)
-            res = version.compare_versions(vleft, vright, comp)
-            if not res:
-                inv_msg.append(f'Requirement for inkBoard version {requirements["inkboard_version"]} not met (installed version is {vleft})')
-
-        if "pssm_version" in requirements:
-            vright = requirements["pssm_version"]
-            if comp := version.get_comparitor_string(vright):
-                vright = vright.lstrip(comp)
-            vleft = version.parse_version(PSSM.__version__)
-            res = version.compare_versions(vleft, vright, comp)
-            if not res:
-                inv_msg.append(f'Requirement for PSSM version {requirements["pssm_version"]} not met (installed version is {vleft})')
-        
-        if ("designer_version" in requirements and 
-            (validate_designer or cls.DESIGNER_RUN)):
-            if DESIGNER_INSTALLED:
-                vright = requirements["designer_version"]
-                if comp := version.get_comparitor_string(vright):
-                    vright = vright.lstrip(comp)
-                vleft = version.parse_version(inkBoarddesigner.__version__)
-                res = version.compare_versions(vleft, vright, comp)
-            else:
-                vleft = "NOT INSTALLED"
-                res = False
-            
-            if not res:
-                inv_msg.append(f'Requirement for inkBoard designer version {requirements["designer_version"]} not met (installed version is {vleft})')
-        
-        return not bool(inv_msg)
-
 _CORE._stage = CORESTAGES.NONE
-
 
 class InkBoardEventLoopPolicy(asyncio.DefaultEventLoopPolicy):
 
