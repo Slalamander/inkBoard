@@ -22,7 +22,12 @@ except ModuleNotFoundError:
 if TYPE_CHECKING:
     from packaging.version import Version
 else:
-    class Version:
+    try:
+        from packaging.version import Version as _VersionClass
+    except (ImportError, ModuleNotFoundError):
+        from packaging.version import LegacyVersion as _VersionClass
+    
+    class Version(_VersionClass):
         "Dummy Version class to prevent errors when importing outside of type checking"
 
         def __new__(cls, *args, **kwargs):
@@ -56,15 +61,18 @@ def split_comparison_string(input_str : str) -> tuple[str, Union[str,None], Unio
 
     Returns
     -------
-    tuple[str, Union[str,None], Union[str,None]]
+    tuple[Union[str,None], str, str]
         _description_
     """    
 
     if cmp := get_comparitor_string(input_str):
         name, version = input_str.split(cmp)
-        return name, cmp, version
-    else:
-        raise ValueError(f"{input_str} does not contain a version comparison")
+        if input_str.strip().startswith(cmp):
+            return None, cmp, version.strip()
+        else:
+            return name.strip(), cmp, version.strip()
+        
+    raise ValueError(f"{input_str} does not contain a version comparison")
 
 # def compare_versions(requirement: Union[str,"Version"], compare_version: Union[str,"Version"]) -> bool:
 def compare_versions(version_left: Union[str,"Version"], version_right: Union[str,"Version"], comparitor : comparisonstrings = ">=") -> bool:
