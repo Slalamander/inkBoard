@@ -2,6 +2,8 @@
 Handles command line arguments for inkboard
 """
 import argparse
+from functools import cache
+
 from . import constants as const
 
 DESIGNER_MOD = const.DESIGNER_INSTALLED
@@ -63,8 +65,9 @@ POST_CORE_ACTIONS = {
 "Actions to run after creating the CORE object, but before doing any setup otherwise."
 
 
-
-def parse_args():
+#Rename this, and have it simply return a parser. Do not parse anything in here but call the parse args in main etc.
+@cache
+def build_parser() -> argparse.ArgumentParser:
 
     ##Code layout mainly used from esphome command line interface
 
@@ -99,7 +102,7 @@ def parse_args():
     if DESIGNER_MOD:
         inkBoarddesigner._add_parser(subparsers, const.COMMAND_DESIGNER)
     else:
-        designer_parser = subparsers.add_parser(const.COMMAND_DESIGNER, 
+        designer_parser = subparsers.add_parser(const.COMMAND_DESIGNER,  # noqa: F841
                                             description="inkBoard designer is not installed",
                                             help="Runs inkBoard in designer mode. inkBoarddesigner must be installed for it.")
 
@@ -154,7 +157,7 @@ def parse_args():
 
     parser_install.add_argument('--no-input', help="Disables any input prompts that are deemed optional", action='store_true')
 
-    parser_logs = subparsers.add_parser(
+    parser_logs = subparsers.add_parser(  # noqa: F841
         const.COMMAND_LOGS, help="Provided connections to instance logs"
     )
 
@@ -165,7 +168,7 @@ def parse_args():
         help="Prints the inkBoard version and exits.",
     )
 
-    return parser.parse_args()
+    return parser
 
 
 # args = parse_args()
