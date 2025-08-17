@@ -22,6 +22,7 @@ import tempfile
 import shutil
 from pathlib import Path
 from datetime import datetime as dt
+from functools import cached_property
 
 import PythonScreenStackManager as PSSM
 
@@ -38,6 +39,7 @@ from inkBoard.constants import (
     DESIGNER_INSTALLED,
     DESIGNER_FOLDER
 )
+from inkBoard.components import BaseComponent, Integration, Platform
 
 from .types import (
     packagetypes,
@@ -77,6 +79,23 @@ if TYPE_CHECKING:
     from .version import Version
 
 _LOGGER = logging.getLogger(__name__)
+
+class PackageComponent(BaseComponent):
+    """Component class for packages
+
+    Mainly meant to ease up installing
+    """
+
+    def __init__(self, config):
+        super().__init__(None, config, is_abstract=True)
+
+    @cached_property
+    def config(self) -> PackageDict:
+        return self.config
+    
+    def to_index_entry(self):
+        
+        return
 
 class BaseInstaller:
     """Base class for installers
