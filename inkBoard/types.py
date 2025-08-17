@@ -39,6 +39,9 @@ class inkboardrequirements(TypedDict):
     designer_version : str
     "Required version of the designer when run from it"
 
+    python_version : str
+    "Version requirement for python"
+
     platforms: list[str]
     "List of required platforms. Requires at least one of the list entries for the requirement to be met."
 

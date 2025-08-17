@@ -98,6 +98,15 @@ def validate_component_requirements(requirements : inkboardrequirements,
         if not res:
             inv_msg.append(f'Requirement for inkBoard designer version {requirements["designer_version"]} not met (installed version is {vleft})')
     
+    if "python_version" in requirements:
+        vright = requirements["python_version"]
+        if comp := version.get_comparitor_string(vright):
+            vright = vright.lstrip(comp)
+        vleft = sys.version
+        res = version.compare_versions(vleft, vright, comp)
+        if not res:
+            inv_msg.append(f'Requirement for python version {requirements["python_version"]} not met (installed version is {vleft})')
+
     return not bool(inv_msg)
 
 #Base this on the Integration class in Home Assistant: https://github.com/home-assistant/core/blob/dev/homeassistant/loader.py#L650
