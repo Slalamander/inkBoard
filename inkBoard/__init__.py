@@ -5,6 +5,8 @@ from types import MappingProxyType
 from typing import TYPE_CHECKING, Literal, Any, Union
 
 if TYPE_CHECKING:
+    #TODO check which of these imports are actually still used like this
+
     ##These are set in the main() function, so they can actually be imported during runtime too.
     CONFIG_FILE: str
     
@@ -32,10 +34,12 @@ __all__ = [
     "CORE"
 ]
 
+#[ ]: check if this needs to be moved
 class DomainError(ValueError):
     "The supplied entity is not of a valid domain."
     pass
 
+#[ ]: move to util?
 class Singleton(type):
     """
     Use as metaclass (class Classtype(metaclass=Singleton)).
@@ -48,4 +52,4 @@ class Singleton(type):
         return cls._instances[cls]
 
 ##Keep this on the bottom, apparently is causes a circular import otherwise
-from ._core import _CORE as CORE
+from ._core import _CORE as CORE  # noqa: E402
