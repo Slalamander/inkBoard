@@ -66,7 +66,8 @@ def split_comparison_string(input_str : str) -> tuple[str, Union[str,None], Unio
     else:
         raise ValueError(f"{input_str} does not contain a version comparison")
 
-def compare_versions(requirement: Union[str,"Version"], compare_version: Union[str,"Version"]) -> bool:
+# def compare_versions(requirement: Union[str,"Version"], compare_version: Union[str,"Version"]) -> bool:
+def compare_versions(version_left: Union[str,"Version"], version_right: Union[str,"Version"], comparitor : comparisonstrings = ">=") -> bool:
     """Does simple version comparisons.
 
     For requirements, accepts both a general requirement string (i.e. '1.0.0'), or a comparison string (i.e. package < 1.0.0))
@@ -84,21 +85,60 @@ def compare_versions(requirement: Union[str,"Version"], compare_version: Union[s
         True if the requirement is satisfied, false if not
     """
 
-    if isinstance(compare_version,str):
-        compare_version = parse_version(compare_version)
+    if isinstance(version_left,str):
+        version_left = parse_version(version_left)
 
-    if not isinstance(requirement, str):
+    if isinstance(version_right, str):
         ##To be sure that the pkg_resources Version is also fine
-        return compare_version >= requirement
-
-    if c := [x for x in VERSION_COMPARITORS if x in requirement]:
-        req_version = requirement.split(c[0])[-1]   ##With how the comparitors are set up, 0 should always be the correct one
-        comp_str = f"compare_version {c[0]} required_version"
-    else:
-        req_version = requirement
-        comp_str = "compare_version >= required_version"
+        version_right = parse_version(version_right)
+    if comparitor is None:
+        comparitor = ">="
+    if comparitor not in VERSION_COMPARITORS:
+        raise ValueError(f"{comparitor} is not a valid symbol for making comparisons")
     
-    return eval(comp_str, {}, {"compare_version": compare_version, "required_version": parse_version(req_version)})
+    comp_str = f"version_left {comparitor} version_right"
+    return eval(comp_str, {}, {"version_left": version_left, "version_right": version_right})
+
+def string_compare_version(input_str : str, **vals) -> bool:
+    """Handles comparisons from a string
+
+    Use vals to substitute variables in the input string. The function splits and substitutes.
+    i.e. `string_compare_version(input_str = "my_package >= 0.0.1", my_package = "0.1.0")` will lead to a string of "0.1.0 >= 0.0.1".
+
+    Parameters
+    ----------
+    input_str : str
+        The string to compare
+
+    Returns
+    -------
+    bool
+        Result of the comparison
+
+    Raises
+    ------
+    ValueError
+        Raised if input_str cannot be used as a comparison
+    """
+
+    comparitor = get_comparitor_string(input_str)
+    if not comparitor:
+        raise ValueError(f"Cannot make version comparison of {input_str}, no comparitor found")
+    
+    vl, comp, vr = split_comparison_string(input_str)
+    vl = vl.strip()
+    vr = vr.strip()
+
+    if vl in vals:
+        vl = vals[vl]
+        if not isinstance(vl, (str, Version)):
+            vl = vl.__version__
+
+    if vr in vals:
+        vr = vals[vr]
+        if not isinstance(vr, (str, Version)):
+            vr = vr.__version__
+    return compare_versions(vl, vr, comp)
 
 def write_version_filename(package_name : str, version : Union[str,"Version"], suffix : str = ".zip") -> str:
     """Creates the appropriate filename for an inkBoard index package
@@ -125,3 +165,4 @@ def write_version_filename(package_name : str, version : Union[str,"Version"], s
         return f"{package_name}-{version}{suffix}"
     else:
         return f"{package_name}-{version}"
+    
