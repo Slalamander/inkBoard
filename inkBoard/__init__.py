@@ -1,5 +1,4 @@
-###Inkboard
-
+"An extendable dashboarding program, configurable in yaml. Barebones for platform flexibility"
 import logging as __logging
 
 from types import MappingProxyType
