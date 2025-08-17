@@ -15,6 +15,7 @@ import sys
 import importlib
 import importlib.util
 
+
 import inkBoard.integrations
 from inkBoard import getLogger, CORE
 from inkBoard.constants import (
@@ -27,10 +28,10 @@ from inkBoard.types import (
     componentypes,
     platformjson,
     manifestjson,
+    inkboardrequirements,
     )
 from inkBoard.util import reload_full_module, wrap_to_coroutine
-
-from .packaging.version import parse_version, Version
+from inkBoard.packaging.version import Version, parse_version
 
 if DESIGNER_INSTALLED or TYPE_CHECKING:
     import inkBoarddesigner.integrations
@@ -110,8 +111,8 @@ class BaseComponent:
         return self.config.get("requirements", [])
 
     @cached_property
-    def inkBoard_requirements(self):
-        return self.config.get("inkboard_requirements", [])
+    def inkBoard_requirements(self) -> inkboardrequirements:
+        return self.config.get("inkboard_requirements", {})
 
     @cached_property
     def component_type(self) -> componentypes:
@@ -216,10 +217,12 @@ class BaseComponent:
         f : Path = folder / cls.CONFIG_FILE_NAME
         return f.is_file()
 
-    @abstractmethod
-    def validate_requirements(self) -> bool:
-
-        return
+    def validate_requirements(self, validate_designer : bool = False, validate_deps : bool = False) -> bool:
+        req = self.inkBoard_requirements
+        
+        #This is currently in install, which most likely means it will cause a circular import eventually
+        #Tbf, for the installer that can be taken care of by importing i.e. in the relevant function
+        return CORE.validate_inkboard_requirements(req, validate_designer, validate_deps)
     
     @classmethod
     @abstractmethod
