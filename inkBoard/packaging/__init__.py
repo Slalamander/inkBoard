@@ -3,17 +3,15 @@
 import asyncio
 from typing import TYPE_CHECKING, Union
 from pathlib import Path
+import logging
 
-import inkBoard
-# from inkBoard.types  import *
-from inkBoard import constants as bootstrap
-from .types import internalinstalltypes, downloadinstalltypes
+from .types import downloadinstalltypes
 
 
 if TYPE_CHECKING:
     from inkBoard import CORE as CORE
 
-_LOGGER = inkBoard.getLogger(__name__)
+_LOGGER = logging.getLogger(__name__)
 _LOGGER.warning("Dont forget to write tests fro this")
 
 def confirm_input(msg: str):
@@ -49,6 +47,7 @@ def create_config_package(configuration: str, name: str = None, pack_all: bool =
     int
         Return code
     """    
+    from .. import bootstrap
     core = asyncio.run(bootstrap.setup_core(configuration, bootstrap.loaders.IntegrationLoader))
     return create_core_package(core, name, pack_all, config, platform, integrations)
 
