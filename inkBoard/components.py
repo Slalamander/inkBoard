@@ -152,10 +152,19 @@ class BaseComponent:
     def is_loaded(self) -> bool:
         return self.module_name in sys.modules
 
-    @property
+    @cached_property
     @abstractmethod
     def config(self) -> baseconfig:
-        return
+        """The components configuration
+        Overwrite this component for typehinting.
+        If a raw  config is passed to the base __init__, the attribute is overwritten to that
+        """
+        try:
+            config = cast(baseconfig, json.loads(self.config_file.read_text()))
+        except json.JSONDecodeError as err:
+            msg = f"Error parsing {self.CONFIG_FILE_NAME} file at {self.config_file}: {err}"
+            raise json.JSONDecodeError(msg) from err
+        return config
 
     def __init__(self, location, config = {}, *, is_abstract : bool = False):
         
@@ -176,9 +185,6 @@ class BaseComponent:
             self.config = config
 
         self._is_loaded = False
-
-    @abstractmethod
-    def read_config(): ...
 
     @classmethod
     def is_core_installed(cls, name : str) -> bool:
@@ -222,6 +228,10 @@ class BaseComponent:
         
         #This is currently in install, which most likely means it will cause a circular import eventually
         #Tbf, for the installer that can be taken care of by importing i.e. in the relevant function
+
+        #Gonna move this back to component from CORE, it is not a thing for CORE tbh
+        #Should be fine since install is not imported, only version
+        #Will probably use is as a general function mainly though, so it can be called without requiring class instances
         return CORE.validate_inkboard_requirements(req, validate_designer, validate_deps)
     
     @classmethod
