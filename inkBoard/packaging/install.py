@@ -23,6 +23,9 @@ import shutil
 from pathlib import Path
 from datetime import datetime as dt
 
+import PythonScreenStackManager as PSSM
+
+import inkBoard
 from inkBoard import logging
 from inkBoard.types import (
     platformjson,
@@ -53,6 +56,7 @@ from .constants import (
     PACKAGETYPE_TO_INDEX_KEY,
     INDEX_KEY_TO_PACKAGETYPE,
     INTERNAL_PACKAGE_INDEX_FILE,
+    VERSION_COMPARITORS,
 )
 from .version import (
     InkboardVersion,
@@ -62,8 +66,12 @@ from .version import (
     get_comparitor_string,
     split_comparison_string,
     write_version_filename,
+    string_compare_version,
     )
 from .download import Downloader
+
+if DESIGNER_INSTALLED or TYPE_CHECKING:
+    import inkBoarddesigner
 
 if TYPE_CHECKING:
     from .version import Version
@@ -216,12 +224,14 @@ class BaseInstaller:
         ##Check: required inkboard version, pssm version and required integrations/platforms 
         warn = False
         if v := ib_requirements.get("inkboard_version", None):
-            if not compare_versions(v, InkboardVersion):
+            v_str = "inkboard" + v if any(c in v for c in VERSION_COMPARITORS) else "inkboard >= " + v            
+            if not string_compare_version(v_str, inkboard=InkboardVersion):
                 warn = True
                 _LOGGER.warning(f"{required_for} requirment for inkBoard's version not met: {v}")
 
         if v := ib_requirements.get("pssm_version", None):  ##I think this should generally be met by having the inkBoard requirement met tho?
-            if not compare_versions(v, PSSMVersion):
+            v_str = "pssm" + v if any(c in v for c in VERSION_COMPARITORS) else "pssm >= " + v 
+            if not string_compare_version(v_str, pssm=PSSMVersion):
                 warn = True
                 _LOGGER.warning(f"{required_for} requirment for PSSM's version not met: {v}")
 
@@ -328,6 +338,7 @@ class BaseInstaller:
     # - Platform
     # - Integration
     # - requirements; internal and external -> internal eh, should be taken care of when actually installing it.
+
 class InternalInstaller(BaseInstaller):
     """Handles installing requirements of already installed platforms and integrations.
     
