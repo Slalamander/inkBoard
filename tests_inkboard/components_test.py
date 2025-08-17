@@ -12,7 +12,7 @@ from inkBoard.components import (
     Platform,
     Integration,
 )
-from inkBoard.types import componentypes, manifestjson
+from inkBoard.types import componentypes, manifestjson, inkboardrequirements
 from inkBoard.constants import COMPONENT_PLURAL_MAP
 
 
@@ -35,27 +35,57 @@ def test_component_type_map():
 class TestPlatformComponent:
     pass
 
-class TestIntegrationComponent:
-    raw_conf = {
-            "name": "test_integration",
-            "version": "0.0.1b1"
-        }
+class TestBaseComponent:
+    #Tests for the basic component functioning
+    #Tests are done with an integration instance, since the BaseComponent itself is an abstract baseclass
 
-    def test_raw_config(self):
+    def test_raw_config(self, raw_config : manifestjson, base_component : Integration):
+        #Test if the base component functions as expected
+        #Also test if simply passing a config causes an error
 
-        conf = self.raw_conf.copy()
         with pytest.raises(TypeError):
-            #Ensure location has to be specified as None
-            testint = Integration(conf)
+            testint = Integration(raw_config)
         
-        testint = Integration(None, conf)
-        assert testint.abstract_component, "Passing a raw config dict means the component should be abstract"
-        assert not testint.core_component, "Abstract components cannot be a real type"
-        assert not testint.designer_component, "Abstract components cannot be a real type"
-        assert not testint.custom_component, "Abstract components cannot be a real type"
-        return 
+        assert base_component.abstract_component, "Passing a raw config dict means the component should be abstract"
+        assert not base_component.core_component, "Abstract components cannot be a real type"
+        assert not base_component.designer_component, "Abstract components cannot be a real type"
+        assert not base_component.custom_component, "Abstract components cannot be a real type"
+        return
+
+    def test_bad_version(self, base_component : Integration):
+        #test if a version returns false
+        raw_config = base_component.config
+        raw_config["inkboard_requirements"]["inkboard_version"] = "<0.0.1"
+        assert not base_component.validate_requirements()
+        return
+    
+    def test_versions(self, base_component : Integration):
+        #test if all versions indeed pass
+
+        raw_config = base_component.config
+
+        raw_config["inkboard_requirements"]["pssm_version"] = "0.0.1"
+        raw_config["inkboard_requirements"]["designer"] = "0.0.1"
+        assert base_component.validate_requirements(validate_designer=True)
+        return
 
 def test_dummy_manifest():
     f = DUMMY_INTEGRATION_PATH / Integration.CONFIG_FILE_NAME
     t = f.read_text()
     return
+
+@pytest.fixture
+def raw_config() -> manifestjson:
+    
+    return manifestjson(
+        name = "test_integration",
+        version="0.0.1b1",
+        inkboard_requirements=inkboardrequirements(
+            inkboard_version="0.0.1"
+        )
+    )
+
+@pytest.fixture
+def base_component(raw_config) -> Integration:
+
+    return Integration(None, raw_config)
