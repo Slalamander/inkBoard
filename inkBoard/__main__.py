@@ -1,11 +1,9 @@
+# ruff: noqa: E402
 
 from multiprocessing import freeze_support
 
-import inkBoard.logging
-
 freeze_support()
 
-import logging
 from typing import Union, TYPE_CHECKING
 from pathlib import Path
 import asyncio
@@ -15,9 +13,10 @@ import concurrent.futures
 from PythonScreenStackManager.exceptions import ReloadWarning, FullReloadWarning
 
 import inkBoard
+import inkBoard.logging
 from inkBoard import constants as const, bootstrap, loaders
 from inkBoard.exceptions import QuitInkboard, ConfigError
-from inkBoard.arguments import parse_args, PRE_CORE_ACTIONS, POST_CORE_ACTIONS
+from inkBoard.arguments import build_parser, PRE_CORE_ACTIONS, POST_CORE_ACTIONS
 
 if TYPE_CHECKING:
     from inkBoard import CORE as CORE
@@ -55,7 +54,8 @@ async def run_inkBoard(configuration: Union[str,Path],
             return 1
         
         if command in POST_CORE_ACTIONS:
-            return POST_CORE_ACTIONS[command](parse_args())
+            parser = build_parser()
+            return POST_CORE_ACTIONS[command](parser.parse_args())
         
         await bootstrap.start_core(CORE)
         
@@ -101,7 +101,9 @@ def main():
     from inkBoard._core import InkBoardEventLoopPolicy
     asyncio.set_event_loop_policy(InkBoardEventLoopPolicy())
 
-    args = parse_args()
+    #TODO: use the vars command to pass arguments as keywords, instead of accessing "unknown" attributes
+    parser = build_parser()
+    args = parser.parse_args()
     inkBoard.logging.init_logging(args.logs, args.quiet, args.verbose)
 
     if args.command in PRE_CORE_ACTIONS:
