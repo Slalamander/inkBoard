@@ -27,6 +27,10 @@ def getLogger(name: Union[str,None] = None) -> "ib_logging.BaseLogger":
     """
     return __logging.getLogger(name)
 
+__all__ = [
+    "getLogger",
+    "CORE"
+]
 
 class DomainError(ValueError):
     "The supplied entity is not of a valid domain."
