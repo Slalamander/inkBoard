@@ -34,6 +34,7 @@ if TYPE_CHECKING:
     from .dummy import DummyClient
     from inkBoard import CORE as CORE
     from inkBoard.configuration.types import MainEntry as ConfigMap
+    from inkBoard.configuration.configure import config as configtype
     from mdi_pil import mdiType
     from PythonScreenStackManager import pssm_types as pssm
     from PythonScreenStackManager.pssm.screen import PSSMScreen
@@ -41,13 +42,16 @@ if TYPE_CHECKING:
 #This if the full dict as read out from the config file.
 #The integration is imported, which means the config entry dummy_integration is guaranteed to be present
 #however, if the user i.e. reloads, the object may change, so be mindful when using it here. The setup functions are always passed the correct, up to date core object.
-conf = CORE.config.configuration.get("dummy_integration")
-if conf:
-    msg = f"Good news, everyone! I've integrated a dummy integration with settings {conf} into inkBoard!"
-else:
-    msg = "Good news, everyone! I've integrated a dummy integration into inkBoard!"
+try:
+    conf = CORE.config.configuration.get("dummy_integration")
+    if conf:
+        msg = f"Good news, everyone! I've integrated a dummy integration with settings {conf} into inkBoard!"
+    else:
+        msg = "Good news, everyone! I've integrated a dummy integration into inkBoard!"
+except (AttributeError, KeyError):
+    msg = "Good news, everyone! I have no idea what I'm doing here"
 
-def setup(core : "CORE", config : "CORE.config") -> Union[Literal[False],Any]:
+def setup(core : "CORE", config : "configtype") -> Union[Literal[False],Any]:
     """
     These are similar to the setup functions for home assistant integrations and are required for an integration to be loaded.
     They're called after the screen and device have been set up. As parameters, it is passed the current inkBoard core and the configuration.
