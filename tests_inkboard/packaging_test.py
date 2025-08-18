@@ -146,3 +146,6 @@ class TestVersions:
             obj = object()
             s = "test > 1.5.3"
             version.string_compare_version(s, test = obj)
+
+class TestDownload:
+    pass
