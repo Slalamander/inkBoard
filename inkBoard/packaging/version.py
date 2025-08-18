@@ -21,6 +21,7 @@ except ModuleNotFoundError:
 
 if TYPE_CHECKING:
     from packaging.version import Version
+    _VersionClass = Version
 else:
     try:
         from packaging.version import Version as _VersionClass
@@ -29,6 +30,11 @@ else:
     
     class Version(_VersionClass):
         "Dummy Version class to prevent errors when importing outside of type checking"
+
+        @classmethod
+        def __instancecheck__(cls, instance):
+            #For some reason this is not called when isinstance is called on the class. Not sure why
+            return
 
         def __new__(cls, *args, **kwargs):
             return parse_version(*args, **kwargs)
@@ -85,7 +91,8 @@ def compare_versions(version_left: Union[str,"Version"], version_right: Union[st
     requirement : Union[str,&quot;Version&quot;]
         The requirement to test
     compare_version : Union[str,Version]
-        The version to compare the requirement to
+        The version to compare the requirement to.
+        If None, it will be treated as '>='
 
     Returns
     -------
@@ -99,6 +106,7 @@ def compare_versions(version_left: Union[str,"Version"], version_right: Union[st
     if isinstance(version_right, str):
         ##To be sure that the pkg_resources Version is also fine
         version_right = parse_version(version_right)
+    
     if comparitor is None:
         comparitor = ">="
     if comparitor not in VERSION_COMPARITORS:
@@ -107,7 +115,7 @@ def compare_versions(version_left: Union[str,"Version"], version_right: Union[st
     comp_str = f"version_left {comparitor} version_right"
     return eval(comp_str, {}, {"version_left": version_left, "version_right": version_right})
 
-def string_compare_version(input_str : str, **vals) -> bool:
+def string_compare_version(input_str : str, **versions) -> bool:
     """Handles comparisons from a string
 
     Use vals to substitute variables in the input string. The function splits and substitutes.
@@ -137,14 +145,14 @@ def string_compare_version(input_str : str, **vals) -> bool:
     vl = vl.strip()
     vr = vr.strip()
 
-    if vl in vals:
-        vl = vals[vl]
-        if not isinstance(vl, (str, Version)):
+    if vl in versions:
+        vl = versions[vl]
+        if not isinstance(vl, (str, _VersionClass)):
             vl = vl.__version__
 
-    if vr in vals:
-        vr = vals[vr]
-        if not isinstance(vr, (str, Version)):
+    if vr in versions:
+        vr = versions[vr]
+        if not isinstance(vr, (str, _VersionClass)):
             vr = vr.__version__
     return compare_versions(vl, vr, comp)
 
