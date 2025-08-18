@@ -144,9 +144,9 @@ class BaseComponent:
     @cached_property
     def module_name(self) -> str:
         "The name of the component's python module"
-        base_name = f"{self.component_type}.{self.name}"
+
         if self.abstract_component:
-            basemod = "ABSTRACT"
+            basemod = "ABSTRACT.integrations"
         elif self.core_component:
             basemod = inkBoard.integrations.__package__
         elif self.designer_component:
@@ -154,7 +154,7 @@ class BaseComponent:
         elif self.custom_component:
             basemod = "custom.integrations"
 
-        return f"{basemod}.{base_name}"
+        return f"{basemod}.{self.name}"
 
     @property
     def module(self) -> Union[ModuleType,None]:
@@ -394,6 +394,8 @@ class Integration(BaseComponent):
 
     @property
     def requires_start(self):
+        if not hasattr(self, "module"):
+            raise AttributeError("Cannot determine attribute before loading module")
         return hasattr(self.module, "async_start") or hasattr(self.module, "start")
 
     async def async_setup(self, core: "CORE"):
