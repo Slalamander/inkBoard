@@ -24,6 +24,7 @@ from inkBoard.constants import (
     DESIGNER_FOLDER,
     DESIGNER_INSTALLED,
     COMPONENT_PLURAL_MAP,
+    COMPONENT_SINGULAR_MAP,
 )
 from inkBoard.types import (
     componentypes,
@@ -144,15 +145,18 @@ class BaseComponent:
     @cached_property
     def module_name(self) -> str:
         "The name of the component's python module"
-
+        self.component_type
+        moduletype = COMPONENT_SINGULAR_MAP[self.component_type]
         if self.abstract_component:
-            basemod = "ABSTRACT.integrations"
+            basemod = f"ABSTRACT.{moduletype}"
         elif self.core_component:
-            basemod = inkBoard.integrations.__package__
+            basemod = getattr(inkBoard, moduletype)
+            basemod = basemod.__package__
         elif self.designer_component:
-            basemod = inkBoarddesigner.integrations.__package__
+            basemod = getattr(inkBoarddesigner, moduletype)
+            basemod = basemod.__package__
         elif self.custom_component:
-            basemod = "custom.integrations"
+            basemod = f"custom.{moduletype}"
 
         return f"{basemod}.{self.name}"
 
@@ -327,6 +331,9 @@ class BaseComponent:
 
         if self.abstract_component:
             raise ImportError(f"Cannot load/import abstract component {self.name}")
+        elif self.custom_component:
+            
+            pass
 
         module = None        
         if self.module_name in sys.modules and reload:
@@ -338,14 +345,14 @@ class BaseComponent:
             spec = importlib.util.find_spec(self.module_name)
 
             ##Got this code from: https://docs.python.org/3/library/importlib.html#checking-if-a-module-can-be-imported
-            if spec  is None:
-                _LOGGER.error(f"Unable to import {self.component_type} {self.name} from {self.module_name}")
-                return
+            if spec is None:
+                msg = f"Unable to import {self.component_type} {self.name} from {self.module_name}"
+                raise ImportError(msg)
             try:
                 module = importlib.util.module_from_spec(spec)
                 module = importlib.import_module(self.module_name)
             except Exception as exce:
-                msg = f"Error importing {self.module_name} {self.name}: {exce}"
+                msg = f"Error importing {self.module_name} {self.name}: {type(exce)}({exce})"
                 _LOGGER.exception(msg, stack_info=True)
                 raise exce
 
@@ -394,7 +401,7 @@ class Integration(BaseComponent):
 
     @property
     def requires_start(self):
-        if not hasattr(self, "module"):
+        if not self.module:
             raise AttributeError("Cannot determine attribute before loading module")
         return hasattr(self.module, "async_start") or hasattr(self.module, "start")
 
