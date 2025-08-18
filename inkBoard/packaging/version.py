@@ -28,13 +28,14 @@ else:
     except (ImportError, ModuleNotFoundError):
         from packaging.version import LegacyVersion as _VersionClass
     
-    class Version(_VersionClass):
-        "Dummy Version class to prevent errors when importing outside of type checking"
+    class _VersionMeta(type):
+        def __instancecheck__(self, instance):
+            if isinstance(instance, _VersionClass):
+                return True
+            return super().__instancecheck__(instance)
 
-        @classmethod
-        def __instancecheck__(cls, instance):
-            #For some reason this is not called when isinstance is called on the class. Not sure why
-            return
+    class Version(_VersionClass, metaclass=_VersionMeta):
+        "Dummy Version class to prevent errors when importing outside of type checking"
 
         def __new__(cls, *args, **kwargs):
             return parse_version(*args, **kwargs)
@@ -147,12 +148,12 @@ def string_compare_version(input_str : str, **versions) -> bool:
 
     if vl in versions:
         vl = versions[vl]
-        if not isinstance(vl, (str, _VersionClass)):
+        if not isinstance(vl, (str, Version)):
             vl = vl.__version__
 
     if vr in versions:
         vr = versions[vr]
-        if not isinstance(vr, (str, _VersionClass)):
+        if not isinstance(vr, (str, Version)):
             vr = vr.__version__
     return compare_versions(vl, vr, comp)
 
