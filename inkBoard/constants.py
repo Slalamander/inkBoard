@@ -146,3 +146,5 @@ COMPONENT_PLURAL_MAP = {
     "platforms": "platform",
     "integrations": "integration",
 }
+
+COMPONENT_SINGULAR_MAP = {v: k for k, v in COMPONENT_PLURAL_MAP.items()}
