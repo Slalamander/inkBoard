@@ -1,6 +1,6 @@
 
 import asyncio
-from typing import TYPE_CHECKING, Literal, Optional, Any, Callable
+from typing import TYPE_CHECKING, Literal, Optional, Any, Callable, Union
 from types import MappingProxyType, MemberDescriptorType
 import logging
 from datetime import datetime as dt
@@ -189,23 +189,33 @@ class _CORE(metaclass=COREMETA):
     #region
     @classproperty
     def DESIGNER_RUN(cls) -> bool:
-        return cls._DESIGNER_RUN
+        "Indicates if inkBoard is running in designer mode"
+        with suppress(AttributeError):
+            return cls._DESIGNER_RUN
+        return False
     
     @classproperty
-    def START_TIME(cls) -> str:
+    def START_TIME(cls) -> Union[str, None]:
         """The time the CORE object was setup
 
         Timestring in isoformat.
         """
-        return cls._START_TIME
-    START_TIME : str
+        with suppress(AttributeError):
+            return cls._START_TIME
+        return None
+    START_TIME : Union[str, None]
     
     @classproperty
-    def IMPORT_TIME(cls): return cls.START_TIME
+    def IMPORT_TIME(cls) -> str:
+        """DEPRECATED
+        
+        The 'IMPORT_TIME', serves as synonym for START_TIME
+        """
+        return cls.START_TIME
 
     @classproperty
     def stage(cls) -> _CoreStage:
-        "The current stage of the inkBoard run"
+        "Current stage of the inkBoard process"
         return cls._stage
 
     @classproperty
