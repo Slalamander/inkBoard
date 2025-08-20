@@ -69,7 +69,8 @@ def reload_full_module(module: Union[str,ModuleType], exclude: list[str] = []):
     if isinstance(exclude,str):
         exclude = [exclude]
 
-    mod_list = [x for x in sys.modules.copy() if x.startswith(module) and not x in exclude]
+    #[ ]: Improve this using the get_submodules function
+    mod_list = [x for x in sys.modules.copy() if x.startswith(module) and x not in exclude]
     for mod_name in mod_list:
         mod = sys.modules[mod_name]
         try:
@@ -82,6 +83,34 @@ def reload_full_module(module: Union[str,ModuleType], exclude: list[str] = []):
     
     return
 
+def get_all_submodules(module: Union[str, ModuleType]) -> tuple[ModuleType]:
+    """Gets all (imported) submodules from a given module
+
+    Parameters
+    ----------
+    module : Union[str, ModuleType]
+        The module to gather the submodules from
+
+    Returns
+    -------
+    tuple[ModuleType]
+        Tuple with all found submodules
+
+    Raises
+    ------
+    ModuleNotFoundError
+        If module is a string and it is not found in `sys.modules`
+    """
+
+    if isinstance(module, str):
+        try:
+            mod = sys.modules[module]
+        except KeyError as exce:
+            raise ModuleNotFoundError(f"Module {module} does not exist or has not been imported yet") from exce
+    else:
+        mod = module
+    submods = tuple(m[1] for m in inspect.getmembers(mod, lambda m: inspect.ismodule(m) and m.__name__.startswith(mod.__name__)))
+    return submods
 
 ##Improve this one with the one created for the documentation?
 def function_parameter_dict(func: Callable, types_as_str: bool = False, is_method: bool = False) -> dict[Literal["required", "optional"], dict[str, dict[Literal["type_hint","default"],str]]]:
