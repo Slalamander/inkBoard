@@ -49,7 +49,7 @@ try:
     else:
         msg = "Good news, everyone! I've integrated a dummy integration into inkBoard!"
 except (AttributeError, KeyError):
-    msg = "Good news, everyone! I have no idea what I'm doing here"
+    msg = "Good news, everyone! I have no idea what I'm doing here."
 
 def setup(core : "CORE", config : "configtype") -> Union[Literal[False],Any]:
     """
@@ -158,4 +158,5 @@ async def async_run(core: "CORE", dummy : "DummyClient"):
     else:
         _LOGGER.warning("Fry! You forgot to deliver the dummy again!")
 
-_LOGGER.info(msg)
+# _LOGGER.info(msg)
+print(msg +  "\n")
