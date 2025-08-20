@@ -198,7 +198,7 @@ class _CORE(metaclass=COREMETA):
     def START_TIME(cls) -> Union[str, None]:
         """The time the CORE object was setup
 
-        Timestring in isoformat.
+        Timestring in isoformat. None if not set up.
         """
         with suppress(AttributeError):
             return cls._START_TIME
