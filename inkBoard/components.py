@@ -291,6 +291,7 @@ class BaseComponent:
 
     def validate_requirements(self, validate_designer : bool = False, validate_deps : bool = False) -> bool:
         req = self.inkBoard_requirements
+        # if getattr(CORE, "DESIGNER_RUN", False):
         if CORE.DESIGNER_RUN:
             validate_designer = True
         
@@ -308,7 +309,7 @@ class BaseComponent:
         "Returns a dict with summarised information for the package index"
         return
 
-    def load_module(self, reload : bool = False):
+    def load_module(self, reload : bool = False, *, load_from_file_location : bool = False):
         """Loads and imports the component. Returns the module
 
         Parameters
@@ -329,11 +330,21 @@ class BaseComponent:
             _description_
         """        
 
+        spec_from_location = False
         if self.abstract_component:
             raise ImportError(f"Cannot load/import abstract component {self.name}")
         elif self.custom_component:
-            
-            pass
+            if load_from_file_location:
+                spec_from_location = True
+            elif "custom" not in sys.modules:
+                raise ImportWarning("Cannot import custom integration if the 'custom' module is not imported")
+            else:
+                try:
+                    basefolder = CORE.config.baseFolder
+                except AttributeError:
+                    basefolder = Path().cwd()
+                if not self.location.is_relative_to(basefolder):
+                    raise ImportWarning("Cannot import custom integration ")
 
         module = None        
         if self.module_name in sys.modules and reload:
@@ -342,19 +353,26 @@ class BaseComponent:
         if self.module_name in sys.modules and not reload:
             module = sys.modules.get(self.module_name,None)
         else:
-            spec = importlib.util.find_spec(self.module_name)
+            if spec_from_location:
+                spec = importlib.util.spec_from_file_location(self.module_name, str(self.location / "__init__.py"), submodule_search_locations=[])
+            else:
+                spec = importlib.util.find_spec(self.module_name)
 
             ##Got this code from: https://docs.python.org/3/library/importlib.html#checking-if-a-module-can-be-imported
             if spec is None:
                 msg = f"Unable to import {self.component_type} {self.name} from {self.module_name}"
                 raise ImportError(msg)
+            
             try:
                 module = importlib.util.module_from_spec(spec)
+                # if spec_from_location:
+                #     sys.modules[self.module_name] = module
+                    # spec.loader.exec_module(module)   #Check with testing if this one is necessary, may be done in get_device in order to load the device module
                 module = importlib.import_module(self.module_name)
             except Exception as exce:
                 msg = f"Error importing {self.module_name} {self.name}: {type(exce)}({exce})"
-                _LOGGER.exception(msg, stack_info=True)
-                raise exce
+                # _LOGGER.exception(msg, stack_info=True)
+                raise ImportError(msg) from exce
 
         if not hasattr(module,"async_setup") and not hasattr(module,"setup"):
             msg = f"{self.component_type} {self.name} is missing the required setup/async_setup function"
