@@ -17,7 +17,7 @@ class TestVersions:
         #Test if the output class of parse_version is ok
         v = "1.0.0"
         v = version.parse_version(v)
-        assert not isinstance(v, Version), "parse_version did returned an instance of the version class"
+        assert isinstance(v, Version), "parse_version did returned an instance of the version class"
         assert issubclass(Version, v.__class__), "The version class should be a subclass of the return type of parse_version"
 
     @staticmethod
