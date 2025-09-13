@@ -22,10 +22,12 @@ import logging
 from time import sleep
 import asyncio
 
+from inkBoard import CORE as CORE
+
+import inkBoarddesigner
+
 _LOGGER = logging.getLogger(__name__)
 _LOGGER.setLevel("INFO")
-
-from inkBoard import CORE as CORE
 
 if TYPE_CHECKING:
     ##During type checking it is fine to import these, 
@@ -50,6 +52,8 @@ try:
         msg = "Good news, everyone! I've integrated a dummy integration into inkBoard!"
 except (AttributeError, KeyError):
     msg = "Good news, everyone! I have no idea what I'm doing here."
+
+DUMMYVALUE = 0
 
 def setup(core : "CORE", config : "configtype") -> Union[Literal[False],Any]:
     """
