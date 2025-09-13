@@ -84,8 +84,15 @@ def run(args):
     This function is blocking"""
 
     debug = const.DEBUGGING
-    # debug = False
     
+    #[ ]: Think about multiprocessing to make reloading easier?
+    #since that creates a seperate, sandboxed process, so upon reload:
+    #stop the process, check exit code, reload if needed
+    #Would prevent needing to reload every module etc and make updating during runtime much easier
+    
+    #Do think about how that would work for Android etc (where multiprocessing is not available)
+    #The "advantage" of that is that those would need to be compiled anyways, so updating during runtime is not available anyway
+
     res = asyncio.run(run_inkBoard(args.configuration, args.command),
             debug = debug)
     return res
@@ -109,7 +116,6 @@ def main():
     if args.command in PRE_CORE_ACTIONS:
         return PRE_CORE_ACTIONS[args.command](args)
     
-    ##Maybe make a core folder similar to ESPhome, to hold things like the config file, screen instance etc.
     return run(args)
 
 if __name__ == "__main__":
