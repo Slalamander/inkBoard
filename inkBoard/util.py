@@ -56,6 +56,8 @@ def reload_full_module(module: Union[str,ModuleType], exclude: list[str] = []):
     Keep in mind reloading imports the module, so things can behave unexpectedly, especially if order matters.
     Generally be careful using this, reloading does not mean imports in none reloaded modules are refreshed, which can cause issuess when i.e. calling `isinstance`
     
+    After reloading, they need to be imported again. Changes are not reflected in the module imported in other modules, unless those are reloaded as well.
+
     Parameters
     ----------
     module : Union[str,ModuleType]
@@ -63,23 +65,27 @@ def reload_full_module(module: Union[str,ModuleType], exclude: list[str] = []):
     exclude : list[str]
         List with module names that do not get excluded. Names need to match in full.
     """    
-    if isinstance(module, ModuleType):
-        module = module.__package__
+    # if isinstance(module, ModuleType):
+    #     module = module.__package__
+    
+    if isinstance(module,str):
+        module = sys.modules[module]
     
     if isinstance(exclude,str):
         exclude = [exclude]
 
-    #[ ]: Improve this using the get_submodules function
-    mod_list = [x for x in sys.modules.copy() if x.startswith(module) and x not in exclude]
-    for mod_name in mod_list:
-        mod = sys.modules[mod_name]
+    mod_list = [m for m in get_all_submodules(module) if m.__name__ not in exclude]
+    mod_list.insert(0, module)
+    for mod in mod_list:
+        # mod = sys.modules[mod_name]
         try:
             importlib.reload(mod)
-        except ModuleNotFoundError:
-            _LOGGER.error(f"Could not reload module {mod_name}")
+        except (ModuleNotFoundError, ImportError, ImportWarning):
+            _LOGGER.error(f"Could not reload module {mod.__name__}")
     
     for mod_name in mod_list:
-        sys.modules.pop(mod_name)
+        # sys.modules.pop(mod_name.__name__)
+        del sys.modules[mod_name.__name__]
     
     return
 
