@@ -3,7 +3,11 @@ import json
 from pathlib import Path
 import sys
 import importlib
+import importlib.util
 from contextlib import suppress
+import tempfile
+import os
+import time
 
 import pytest
 
@@ -78,7 +82,7 @@ class TestBaseComponent:
         #Test if calling load on an abstract component raises an exception
         
         with pytest.raises(ImportError):
-            base_component.load_module()
+            base_component.load_component_module()
         return
 
 class IntegrationTestBase:
@@ -123,38 +127,46 @@ class TestIntegrationImporting(IntegrationTestBase):
     def test_load_before_custom(self, import_dummy: Integration):
 
         with pytest.raises(ImportWarning):
-            import_dummy.load_module()
+            import_dummy.load_component_module()
         return
     
     def test_load_before_custom_with_file_location(self, import_dummy: Integration):
-
-        #For now, this does not work, as custom is not imported
-        #Want to see what happens when it is loaded itself, perhaps?
-        #Or simply not use custom as a name I guess but check what the fromfilename does
-        # n = inspect.getmodulename(import_dummy.location / "__init__.py") #Does not work, simply returns __init__
-        # Idk see what I'm doing for importing platforms or something
+        #Test the component load function with the from_file_location argument
 
         ##Per above comment: try with package name like inkBoard.integrations.custom.{dummy}
-        import_dummy.load_module(load_from_file_location=True)
+        import_dummy.load_component_module(load_from_file_location=True)
+        assert import_dummy.module, "Module should not be None anymore"
+        importlib.import_module(".dummy", import_dummy.module_name)
+        assert f"{import_dummy.module_name}.dummy" in sys.modules, "Dummy module is not in sys.modules"
         return
     
 
-    def test_load(self, import_dummy : Integration):
-        #When testing this, also think about cleanup probably?
+    def test_load_with_custom_path(self, import_dummy : Integration):
+        #Tests loading the module when it is in the custom folder of the config
 
-        #Probably need to append the name to Path here?
-        #I am 100% sure I have done that somewhere -> see init of the config
-        #Test how safe this is when run after each other?
-        #Also, may want to add a from_location key to the function
         add_custom_to_path()
-        import_dummy.load_module()
+        import_dummy.load_component_module()
         assert import_dummy.module is not None, "dummy was not imported correctly"
+        importlib.import_module(".dummy", import_dummy.module_name)
+        assert f"{import_dummy.module_name}.dummy" in sys.modules, "Dummy module is not in sys.modules"
         return
     
-    def test_cleanup(self, import_dummy: Integration):
-        
+    def test_cleanup_with_variable(self, import_dummy: Integration):
+        #Tests if unloading a module works, and is cleaned up when loading it again
+
+        import_dummy.load_component_module(load_from_file_location=True)
+        mod = import_dummy.module
+        init_val = mod.DUMMYVALUE
+        mod.DUMMYVALUE = init_val + 1
+        assert mod.DUMMYVALUE == init_val + 1, "DUMMYVALUE did not increase by one"
+        import_dummy.unload_component_module()
+        import_dummy.load_component_module(load_from_file_location=True)
+        assert import_dummy.module.DUMMYVALUE == init_val, "DUMMYVALUE did not revert to original value after unloading and reloading"
+        return
+
+    def test_cleanup_with_sysmodules(self, import_dummy: Integration):
         add_custom_to_path()
-        import_dummy.load_module()
+        import_dummy.load_component_module()
         newmod = importlib.import_module(".dummy", import_dummy.module_name)
 
         mod = import_dummy.module
@@ -170,6 +182,51 @@ class TestIntegrationImporting(IntegrationTestBase):
         assert "custom" not in sys.modules, "custom was not cleaned up correctly"
         return
 
+    def test_component_reload(self, import_dummy: Integration, temp_submodule: Path):
+        #test the reload_component_module function
+
+        ##There is a weird issue, though it appears to mainly be relevant to the test and not so much the reload function itself
+        #Using the same amount of characters in the file seems to make python not notice it has changed
+        #I.e. going from 0 -> 3 fails the test, but going from 0 -> 20 does not.
+        #Same goes when changing the variable name to something like NEW_RELOAD_VAR, which does not require changing the value
+        #So, confused as to why exactly this happens. But can expect it to not be an issue when reloading a module to handle new changes
+        #Since that would, likely, be done on a new/overwritten file
+
+        load_from_file = True
+        reloadvar = "RELOAD_VAR"
+        
+        def write_val(value):
+            # temp_submodule.write_text(f"{reloadvar} = {value}")
+            with open(temp_submodule, "w") as f:
+                f.write(f"{reloadvar} = {value}")
+            
+        reloadval = 0
+        submodule_name = temp_submodule.stem
+        temp_submodule.write_text(f"{reloadvar} = {reloadval}")
+
+        add_custom_to_path()
+        import_dummy.load_component_module(load_from_file_location=load_from_file)
+        submod = import_dummy.load_component_submodule(submodule_name)
+
+        modval = getattr(submod, reloadvar)
+        assert modval == reloadval, f"{reloadvar} test 1 is not the right value, is {modval}, should be {reloadval}"
+        
+        newreloadval = reloadval + 20
+        newreloadvar = reloadvar
+        temp_submodule.write_text(f"{newreloadvar} = {newreloadval}")
+
+        submod2 = import_dummy.load_component_submodule(submodule_name)
+        modval = getattr(submod2, reloadvar, None)
+        assert modval == reloadval, f"{reloadvar} test 2 changed before reloading, is {modval}, should be {reloadval}"
+
+        import_dummy.reload_component_module()
+        import_dummy.load_component_module(load_from_file_location=load_from_file, reload=True)
+        submod3 = import_dummy.load_component_submodule(submodule_name)
+
+        modval = getattr(submod3, newreloadvar)
+        assert modval == newreloadval, f"{reloadvar} test 3 changed before reloading, is {modval}, should be {newreloadval}"
+        return
+
     @pytest.fixture()
     def import_dummy(self):
         #Use this one to test importing; Should clean up after itself
@@ -179,6 +236,30 @@ class TestIntegrationImporting(IntegrationTestBase):
 
         cleanup_imported_component(dummy)
         return
+
+    @pytest.fixture()
+    def temp_submodule(self, import_dummy: Integration):
+        # img = compute_expensive_image()
+        # fn = tmp_path_factory.mktemp("data") / "img.png"
+        # tmp_path_factory.mktemp
+        # img.save(fn)
+        # with tempfile.NamedTemporaryFile("w+", suffix=".py", 
+        #                                 dir=import_dummy.location, delete=False) as f:
+        #     f.close()
+        tempfile = import_dummy.location / "submodule_temp.py"
+        tempfile.write_text("")
+        
+        yield tempfile
+
+        # if not f.closed:
+        #     f.close()
+        
+        if tempfile.exists():
+            os.remove(tempfile)
+        return
+    
+    #Other tests needed for importing?
+
 
 @pytest.fixture
 def raw_config() -> manifestjson:

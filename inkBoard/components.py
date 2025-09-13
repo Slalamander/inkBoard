@@ -4,9 +4,13 @@ from typing import (
     TYPE_CHECKING,
     TypedDict,
     Union,
+    Protocol,
     )
 from types import ModuleType
-from collections.abc import Callable
+from collections.abc import (
+    Callable,
+    Coroutine,
+)
 from abc import abstractmethod
 from pathlib import Path
 from functools import cached_property
@@ -33,7 +37,7 @@ from inkBoard.types import (
     manifestjson,
     inkboardrequirements,
     )
-from inkBoard.util import reload_full_module, wrap_to_coroutine
+from inkBoard.util import reload_full_module, wrap_to_coroutine, get_all_submodules
 from inkBoard.packaging import version
 
 if DESIGNER_INSTALLED or TYPE_CHECKING:
@@ -112,6 +116,20 @@ def validate_component_requirements(requirements : inkboardrequirements,
 
 #Base this on the Integration class in Home Assistant: https://github.com/home-assistant/core/blob/dev/homeassistant/loader.py#L650
 
+class IntegrationProtocol(Protocol):
+
+    #Checks docs better to understand fully how to work with these
+    async def async_setup(self):
+        return
+
+    def setup(self):
+        return
+    
+    def setup_method(self) -> Union[Coroutine, Callable]:
+        #This should return async setup or setup depending on
+        #but may just ignore the protocol and implement all these things in the integration class
+        return
+
 class BaseComponent:
     """_summary_
 
@@ -145,7 +163,6 @@ class BaseComponent:
     @cached_property
     def module_name(self) -> str:
         "The name of the component's python module"
-        self.component_type
         moduletype = COMPONENT_SINGULAR_MAP[self.component_type]
         if self.abstract_component:
             basemod = f"ABSTRACT.{moduletype}"
@@ -309,7 +326,7 @@ class BaseComponent:
         "Returns a dict with summarised information for the package index"
         return
 
-    def load_module(self, reload : bool = False, *, load_from_file_location : bool = False):
+    def load_component_module(self, reload : bool = False, *, load_from_file_location : bool = False):
         """Loads and imports the component. Returns the module
 
         Parameters
@@ -348,12 +365,17 @@ class BaseComponent:
 
         module = None        
         if self.module_name in sys.modules and reload:
-            self.reload()
+            self.reload_component_module()
 
         if self.module_name in sys.modules and not reload:
             module = sys.modules.get(self.module_name,None)
         else:
             if spec_from_location:
+                #Currently not going to use a different modulename for this, since it also requires poking around/changing some properties
+                #For now, can be left as such since its main usage is for testing purposes for now
+                #With the added benefit that it could, optionally, easily allow for adding integration by paths
+                #Also, this will likely be usable for custom platforms too? Since those already work via this
+                # custommodname = self.module_name
                 spec = importlib.util.spec_from_file_location(self.module_name, str(self.location / "__init__.py"), submodule_search_locations=[])
             else:
                 spec = importlib.util.find_spec(self.module_name)
@@ -365,10 +387,12 @@ class BaseComponent:
             
             try:
                 module = importlib.util.module_from_spec(spec)
-                # if spec_from_location:
-                #     sys.modules[self.module_name] = module
-                    # spec.loader.exec_module(module)   #Check with testing if this one is necessary, may be done in get_device in order to load the device module
-                module = importlib.import_module(self.module_name)
+                if spec_from_location:
+                    sys.modules[self.module_name] = module
+                    spec.loader.exec_module(module)   #Check with testing if this one is necessary, may be done in get_device in order to load the device module
+                    module = importlib.import_module(self.module_name)
+                else:
+                    module = importlib.import_module(self.module_name)
             except Exception as exce:
                 msg = f"Error importing {self.module_name} {self.name}: {type(exce)}({exce})"
                 # _LOGGER.exception(msg, stack_info=True)
@@ -380,9 +404,42 @@ class BaseComponent:
 
         return module
     
-    def reload(self):
+    def load_component_submodule(self, submodule_name : str) -> ModuleType:
+        
+        # submodule_name = f"{self.module_name}.{submodule_name}"
+        if not submodule_name.startswith("."):
+            submodule_name = f".{submodule_name}"
+            fullmodule_name = f"{self.module_name}{submodule_name}"
+        
+        # if fullmodule_name in sys.modules:
+        #     submod = sys.modules[fullmodule_name]
+        # else:
+        submod = importlib.import_module(submodule_name, self.module_name)
+        
+        return submod
+
+    def unload_component_module(self):
+        """Unloads the component's module and all its submodules by removing it from `sys.modules`
+        """        
+        if not self.module:
+            _LOGGER.warning(f"{self.component_type} {self.name} has not been (succesfully) imported yet, not unloading")
+            return
+
+        selfmod = self.module
+        mods = get_all_submodules(selfmod)
+        mod_list = [*mods, selfmod]
+        for mod in mod_list:
+            # importlib.reload(mod)
+            sys.modules.pop(mod.__name__, None)
+            del mod
+        return
+
+    def reload_component_module(self):
+        # self.unload_component_module()
+
+        ##Suspect this does not work rn since the modules are already unloaded in unload_component_module
         reload_full_module(self.module_name)
-        self._module = None
+        # self._module = None
 
 
 class Platform(BaseComponent):
