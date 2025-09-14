@@ -1,0 +1,9 @@
+{
+    "name": "inkBoard dummy api",
+    "config_entry": "api",
+    "codeowners": ["Slalamander"],
+    "documentation": "https://www.example.com",
+    "requirements": ["tornado"],
+
+    "version": "0.1.1"
+}
