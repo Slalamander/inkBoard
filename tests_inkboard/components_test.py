@@ -194,11 +194,6 @@ class TestIntegrationImporting(IntegrationTestBase):
 
         load_from_file = True
         reloadvar = "RELOAD_VAR"
-        
-        def write_val(value):
-            # temp_submodule.write_text(f"{reloadvar} = {value}")
-            with open(temp_submodule, "w") as f:
-                f.write(f"{reloadvar} = {value}")
             
         reloadval = 0
         submodule_name = temp_submodule.stem
