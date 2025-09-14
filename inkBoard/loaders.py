@@ -7,7 +7,14 @@ import inspect
 import asyncio
 import json
 
-from typing import *
+# from typing import *
+from typing import (
+    TYPE_CHECKING,
+    Protocol,
+    Literal,
+    Any,
+)
+from collections.abc import Callable
 from types import MappingProxyType
 from pathlib import Path
 
@@ -15,6 +22,9 @@ import inkBoard
 from inkBoard.decorators import classproperty
 from inkBoard.util import reload_full_module
 from inkBoard import util
+from inkBoard.components import (
+    Integration
+)
 import inkBoard.integrations
 
 if TYPE_CHECKING:
@@ -115,6 +125,13 @@ def load_custom_elements(core: "CORE") -> MappingProxyType[str, "Element"]:
             elts[name] = elt  
 
     return MappingProxyType(elts)
+
+class LoaderProtocol(Protocol):
+
+    def get_components(self) -> dict[str,Path]:
+        return
+    
+
 
 #TODO: in packaging i.e. make a class that handles reading out integrations etc.
 ##Think about where to put it (i.e. in the core module, or in here?)
@@ -268,7 +285,7 @@ class IntegrationLoader:
         return module
 
     @classmethod
-    async def async_setup_integrations(cls, core: "CORE", progress_func=None, value_range=()) -> MappingProxyType[Literal["integration_entry"],Any]:
+    async def async_setup_integrations(cls, core: "CORE", progress_func=None, value_range=()) -> MappingProxyType[Literal["integration_entry"], Any]:
         integration_objects = {}
         
         config = core.config
@@ -498,3 +515,49 @@ class IntegrationLoader:
         cls._imported_modules: dict[str,str] = {}
         cls._loaded_integrations: list[str] = set()
 
+class _IntegrationLoader(LoaderProtocol):
+    #Rewrite the loader; will use it based on a protocol
+    #Also want to use it as an instance instead of a class, and attach the instance to CORE
+
+    def __init__(self):
+        super().__init__()
+
+    def get_components(self, folders : dict[str,Path]):
+        integrations = {}
+        folder_components : dict[Path, dict[str,Integration]] = {}
+        for base_module, folder in folders.items():
+            if folder.exists():
+                folder_integrations = self._read_out_folder(base_module, folder)
+                folder_components[folder] = folder_integrations
+        
+        for folder, folder_integrations in folder_components.items():
+            dupes = integrations.keys() & folder_integrations.keys()
+            if dupes:
+                msg = f"folder {folder} has already loaded integrations {dupes}"
+                _LOGGER.debug(msg)
+            
+            integrations = folder_integrations | integrations
+
+        return MappingProxyType(integrations)
+    
+    @classmethod
+    def _read_out_folder(cls, base_module: str, folder: Path) -> dict:
+        #Change this to simply add anything into a dict and return it
+        #In get_components, do the logging for duplicates/overwrittens
+
+        folders = folder.iterdir()
+        folder_integrations = {}
+        for int_dir in filter(lambda p: (p.is_dir() and not p.name.startswith("_")), folders):
+            # if int_dir.name in cls._installed_integrations:
+            #     _LOGGER.info(f"Integration {int_dir.name} has already been found in module {cls._integration_modules[int_dir.name]}. Will not import from {base_module}")
+            #     continue
+
+            manifest = int_dir / "manifest.json"
+            if not manifest.exists():
+                _LOGGER.error(f"Integration folder {int_dir} is missing the manifest.json file.")
+                continue
+
+            comp = Integration(int_dir)
+            folder_integrations[comp.name] = comp
+
+        return folder_integrations
